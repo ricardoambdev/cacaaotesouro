@@ -9,13 +9,16 @@
 
 ```
 [Computador de desenvolvimento]          [Servidor compartilhado (cPanel)]
-  1. composer install --no-dev      ──►  6. Upload + extração (File Manager)
-  2. npm run build:css              ──►  7. Document root → /public
-  3. (opcional) flutter build apk   ──►  8. Criar banco MySQL
-  4. ./deploy.sh                    ──►  9. Importar sql/schema.mysql.sql
-  5. Pacote deploy/*.tar.gz         ──► 10. Configurar config.php
-                                      11. Permissões + e-mail
-                                      12. Testar (web + app)
+  ─ MÉTODO A (recomendado): git clone ─►  6. git clone (Git Version Control)
+                                          7. Document root → /public
+                                          8. Criar banco MySQL
+                                          9. Importar sql/schema.mysql.sql
+                                         10. Configurar config.php
+                                         11. Permissões + e-mail
+                                         12. Testar (web + app)
+
+  ─ MÉTODO B: pacote de deploy ──────────►  6. Upload + extração (File Manager)
+                                          7–12. Mesmos passos
 ```
 
 ---
@@ -32,7 +35,10 @@
 
 ---
 
-## 3. Gerando o pacote (passo a passo, na sua máquina)
+## 3. Gerando o pacote (Método B — se a hospedagem NÃO tiver git)
+
+> Se sua hospedagem tiver **Git Version Control** (seção 4, Método A), pule
+> este passo — basta clonar o repositório.
 
 ```bash
 # 1. Dependências do backend
@@ -70,6 +76,30 @@ README.md · DEPLOY.md
 ---
 
 ## 4. Enviando para o cPanel
+
+### Método A — git clone (RECOMENDADO e mais simples)
+
+Se a hospedagem tiver **Git Version Control** no cPanel (ou SSH com git):
+
+1. No cPanel: **Git Version Control → Create**.
+2. Preencha:
+   - **Clone URL:** `https://github.com/ricardoambdev/cacaaotesouro.git`
+   - **Repository Path:** `public_html/cacaaotesouro`
+3. O repositório é **privado** → você precisa autorizar o acesso. Opções:
+   - **GitHub Personal Access Token** (clássico, com permissão `repo`):
+     clone URL vira `https://<TOKEN>@github.com/ricardoambdev/cacaaotesouro.git`
+     (o token fica no histórico do cPanel — revogue quando terminar, ou use o
+     **Deploy Key** abaixo);
+   - **Deploy Key** (mais seguro): em GitHub → repo → *Settings → Deploy keys*,
+     adicione uma chave pública SSH e use o URL SSH
+     `git@github.com:ricardoambdev/cacaaotesouro.git`.
+4. Clique **Create** — o cPanel clona o projeto.
+
+> O repositório já contém **`vendor/`** (dependências Composer) e o
+> **`tailwind.css` compilado** — **não precisa de Composer nem build no
+> servidor**. Para atualizar depois: *Git Version Control → Update from Remote*.
+
+### Método B — pacote de deploy (sem git na hospedagem)
 
 1. Acesse o cPanel → **File Manager** (ou use FTP/FileZilla).
 2. Entre na pasta do site (ex.: `public_html/cacaaotesouro/`).
@@ -205,6 +235,8 @@ RewriteRule ^(.*)$ /public/$1 [L]
 
 ## 10. Checklist final
 
+- [ ] **Método A (git)** — repositório clonado via Git Version Control (token/deploy key)
+  **OU** **Método B (pacote)** — `.tar.gz` enviado e extraído
 - [ ] PHP 8.1+ com extensões (`pdo_mysql`, `gd`, `mbstring`, `openssl`)
 - [ ] Document root → `public`
 - [ ] Banco criado + schema importado
