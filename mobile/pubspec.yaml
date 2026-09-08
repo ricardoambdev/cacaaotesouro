@@ -28,6 +28,9 @@ dependencies:
   # Leitura de QR Code
   mobile_scanner: ^5.2.0
 
+  # Gerenciamento de permissões (câmera, GPS)
+  permission_handler: ^11.3.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

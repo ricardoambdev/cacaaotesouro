@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:permission_handler/permission_handler.dart';
 import '../theme.dart';
 import '../models/treasure.dart';
 import '../models/game_state.dart';
@@ -61,7 +62,51 @@ class _AdminScreenState extends State<AdminScreen> {
   }
 
   Future<void> _confirmCoordinate(GameTreasure treasure) async {
-    // 1. Verificar permissão
+    // 0. Verificar permissão de câmera antes de tudo
+    var cameraStatus = await Permission.camera.status;
+    if (cameraStatus.isDenied) {
+      cameraStatus = await Permission.camera.request();
+    }
+
+    if (cameraStatus.isPermanentlyDenied) {
+      if (!mounted) return;
+      await showDialog(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          backgroundColor: AppColors.navyMedium,
+          title: const Text('Câmera desabilitada',
+              style: TextStyle(color: AppColors.gold)),
+          content: const Text(
+            'A permissão da câmera foi negada permanentemente. '
+            'Abra as configurações do app para ativar.',
+            style: TextStyle(color: AppColors.ivory),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Cancelar',
+                  style: TextStyle(color: AppColors.ivoryMuted)),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.pop(ctx);
+                openAppSettings();
+              },
+              child: const Text('Configurações',
+                  style: TextStyle(color: AppColors.gold)),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+
+    if (!cameraStatus.isGranted && !cameraStatus.isLimited) {
+      _showSnackBar('Permissão de câmera negada.', isError: true);
+      return;
+    }
+
+    // 1. Verificar permissão de GPS
     LocationPermission permission = await Geolocator.checkPermission();
     if (permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();

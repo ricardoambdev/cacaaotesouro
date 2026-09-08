@@ -24,6 +24,10 @@ class ApiService {
   // ════════════════════════════════════════════════════════════
   static String baseUrl = 'http://cacaaotesouro.sentapua/api';
 
+  /// Servidor de produção (fallback automático).
+  static const String serverBaseUrl =
+      'https://cacaaotesouro.colegiohelena.com.br/api';
+
   static const String _keyBaseUrl = 'api_base_url';
 
   // ── Singleton ──────────────────────────────────────────────
@@ -78,14 +82,16 @@ class ApiService {
   //  CHECK DE CONEXÃO
   // ════════════════════════════════════════════════════════════
 
-  /// Tenta conectar à API via GET $baseUrl/config.
+  /// Tenta conectar à API via GET $url/config.
+  /// Se [url] não for informada, usa [baseUrl].
   /// Retorna o [ApiConfig] em caso de sucesso.
   /// Lança [ApiException] em caso de falha.
-  Future<ApiConfig> checkConnection() async {
+  Future<ApiConfig> checkConnection({String? url}) async {
+    final targetUrl = url ?? baseUrl;
     try {
       final response = await http
           .get(
-            Uri.parse('$baseUrl/config'),
+            Uri.parse('$targetUrl/config'),
             headers: {'Accept': 'application/json'},
           )
           .timeout(const Duration(seconds: 8));
@@ -116,6 +122,30 @@ class ApiService {
     } catch (_) {
       throw ApiException('Não foi possível conectar à API.');
     }
+  }
+
+  /// Tenta conectar com fallback: primeiro o servidor de produção,
+  /// depois a URL local salva. Lança ApiException se ambos falharem.
+  Future<ApiConfig> connectWithFallback() async {
+    // 1. Tentar servidor de produção
+    try {
+      final config = await checkConnection(url: serverBaseUrl);
+      await saveBaseUrl(serverBaseUrl);
+      return config;
+    } on ApiException {
+      // Servidor de produção falhou — tentar URL local
+    }
+
+    // 2. Tentar URL local salva
+    try {
+      final config = await checkConnection(url: baseUrl);
+      await saveBaseUrl(baseUrl);
+      return config;
+    } on ApiException {
+      // Ambos falharam
+    }
+
+    throw ApiException('Não foi possível conectar ao servidor.');
   }
 
   // ── Cookie de sessão (PHPSESSID) ───────────────────────────
