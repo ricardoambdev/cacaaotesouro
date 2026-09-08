@@ -57,9 +57,9 @@ if (count($parts) >= 2) {
                 <a href="/" class="sidebar-logo">
                     <!-- Bússola SVG -->
                     <svg class="sidebar-logo-icon" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <circle cx="20" cy="20" r="18" stroke="#f5c542" stroke-width="2" opacity="0.4"/>
-                        <circle cx="20" cy="20" r="14" stroke="#f5c542" stroke-width="1" opacity="0.2"/>
-                        <circle cx="20" cy="20" r="3" fill="#f5c542"/>
+                        <circle cx="20" cy="20" r="18" stroke="#F97316" stroke-width="2" opacity="0.4"/>
+                        <circle cx="20" cy="20" r="14" stroke="#F97316" stroke-width="1" opacity="0.2"/>
+                        <circle cx="20" cy="20" r="3" fill="#F97316"/>
                         <polygon points="20,5 22,18 20,20 18,18" fill="#c0392b" opacity="0.9"/>
                         <polygon points="20,35 22,22 20,20 18,22" fill="#f7ecd4" opacity="0.7"/>
                         <polygon points="5,20 18,18 20,20 18,22" fill="#f7ecd4" opacity="0.5"/>

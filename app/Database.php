@@ -211,6 +211,21 @@ final class Database
             . ')'
         );
 
+        // Log de localização das equipes (o app envia a cada ~5s).
+        // A última linha de cada equipe alimenta o telão (/api/telao).
+        $pdo->exec(
+            'CREATE TABLE IF NOT EXISTS team_locations ('
+            . 'id ' . $autoIncrement . ', '
+            . 'team_id INT NOT NULL, '
+            . 'lat DECIMAL(10,7) NOT NULL, '
+            . 'lng DECIMAL(10,7) NOT NULL, '
+            . 'accuracy DECIMAL(10,2) NULL, '
+            . 'created_at DATETIME NOT NULL'
+            . ')'
+        );
+
+        self::ensureTeamLocationsIndex($pdo, $driver);
+
         self::seedDefaultSettings($pdo, $driver);
     }
 
@@ -276,6 +291,40 @@ final class Database
             }
         } catch (PDOException $e) {
             error_log('Database::ensureTeamPasswordColumn: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Garante o índice idx_team_time (team_id, created_at) na tabela
+     * team_locations — usado pelo telão para buscar a última localização
+     * de cada equipe.
+     *
+     * - SQLite: CREATE INDEX IF NOT EXISTS (sintaxe nativa).
+     * - MySQL:  não suporta IF NOT EXISTS em CREATE INDEX; verifica
+     *   information_schema.statistics antes (idempotente).
+     */
+    private static function ensureTeamLocationsIndex(PDO $pdo, string $driver): void
+    {
+        if ($driver !== 'mysql') {
+            $pdo->exec(
+                'CREATE INDEX IF NOT EXISTS idx_team_time '
+                . 'ON team_locations (team_id, created_at)'
+            );
+
+            return;
+        }
+
+        $stmt = $pdo->prepare(
+            'SELECT COUNT(*) FROM information_schema.statistics '
+            . 'WHERE table_schema = DATABASE() AND table_name = :table '
+            . 'AND index_name = :index'
+        );
+        $stmt->execute([':table' => 'team_locations', ':index' => 'idx_team_time']);
+
+        if ((int) $stmt->fetchColumn() === 0) {
+            $pdo->exec(
+                'CREATE INDEX idx_team_time ON team_locations (team_id, created_at)'
+            );
         }
     }
 

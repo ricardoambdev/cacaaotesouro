@@ -236,8 +236,17 @@ class _LoginCard extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
       decoration: BoxDecoration(
-        color: AppColors.cardDark,
         borderRadius: BorderRadius.circular(20),
+        gradient: LinearGradient(
+          begin: Alignment.bottomCenter,
+          end: Alignment.topCenter,
+          colors: [
+            AppColors.navyDark,
+            AppColors.navyDark.withValues(alpha: 0.85),
+            Colors.transparent,
+          ],
+          stops: const [0.0, 0.6, 1.0],
+        ),
       ),
       child: Form(
         key: formKey,

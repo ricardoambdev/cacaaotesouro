@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:geolocator/geolocator.dart';
@@ -32,10 +33,19 @@ class _TeamHomeScreenState extends State<TeamHomeScreen> {
   CheckinResult? _checkinResult;
   AnswerResult? _answerResult;
 
+  // ── Timer de envio de localização ──────────────────────
+  Timer? _locationTimer;
+
   @override
   void initState() {
     super.initState();
     _loadState();
+  }
+
+  @override
+  void dispose() {
+    _locationTimer?.cancel();
+    super.dispose();
   }
 
   Future<void> _loadState() async {
@@ -54,6 +64,7 @@ class _TeamHomeScreenState extends State<TeamHomeScreen> {
         _checkinResult = null;
         _answerResult = null;
       });
+      _startLocationTracking();
     } on ApiException catch (e) {
       if (!mounted) return;
       setState(() {
@@ -67,6 +78,43 @@ class _TeamHomeScreenState extends State<TeamHomeScreen> {
         _isLoading = false;
       });
     }
+  }
+
+  // ════════════════════════════════════════════════════════════
+  //  ENVIO DE LOCALIZAÇÃO EM BACKGROUND
+  // ════════════════════════════════════════════════════════════
+
+  /// Envia a localização atual ao backend de forma silenciosa.
+  Future<void> _sendCurrentLocation() async {
+    try {
+      final position = await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.high,
+          timeLimit: Duration(seconds: 10),
+        ),
+      );
+      await _apiService.sendLocation(
+        lat: position.latitude,
+        lng: position.longitude,
+        accuracy: position.accuracy,
+      );
+    } catch (_) {
+      // Silencioso — não bloqueia a UI
+    }
+  }
+
+  /// Inicia o timer de envio de localização a cada 5 segundos.
+  /// Também envia imediatamente ao iniciar.
+  void _startLocationTracking() {
+    // Enviar imediatamente
+    _sendCurrentLocation();
+
+    // Iniciar timer periódico
+    _locationTimer?.cancel();
+    _locationTimer = Timer.periodic(
+      const Duration(seconds: 5),
+      (_) => _sendCurrentLocation(),
+    );
   }
 
   // ════════════════════════════════════════════════════════════

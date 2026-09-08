@@ -6,20 +6,20 @@ class AppColors {
   AppColors._();
 
   // ── Fundo principal ──────────────────────────────────
-  static const Color navyDark = Color(0xFF0D1B2A);
-  static const Color navyMedium = Color(0xFF1B2D45);
+  static const Color navyDark = Color(0xFF050B12);
+  static const Color navyMedium = Color(0xFF0A1724);
 
-  // ── Dourado / Âmbar ─────────────────────────────────
-  static const Color gold = Color(0xFFF5C542);
-  static const Color goldDark = Color(0xFFD4A017);
+  // ── Dourado / Âmbar → Laranja ───────────────────────
+  static const Color gold = Color(0xFFF97316);
+  static const Color goldDark = Color(0xFFEA580C);
 
   // ── Texto ────────────────────────────────────────────
   static const Color ivory = Color(0xFFF7ECD4);
   static const Color ivoryMuted = Color(0xFFBEB5A0);
 
   // ── Overlay / Transparências ─────────────────────────
-  static const Color cardDark = Color(0xB30D1B2A); // ~70% opacidade
-  static const Color overlayBottom = Color(0x990D1B2A); // 60% opacidade
+  static const Color cardDark = Color(0xB3050B12); // ~70% opacidade
+  static const Color overlayBottom = Color(0x99050B12); // 60% opacidade
 
   /// Converte o nome da cor da equipe (vindo da API) em uma cor.
   /// Aceita 'laranja', 'preta', 'vermelha' ou um hex (#RRGGBB).

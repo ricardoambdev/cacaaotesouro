@@ -42,7 +42,7 @@ foreach ($teams as $t) {
             <?php if ($gameActive): ?>
                 <span style="color: #5fd99f;">▶</span>
             <?php else: ?>
-                <span style="color: #f5c542;">⏸</span>
+                <span style="color: #F97316;">⏸</span>
             <?php endif; ?>
         </div>
         <div class="game-stat-label"><?= $gameActive ? 'Partida ativa' : 'Pausada' ?></div>
@@ -71,7 +71,7 @@ foreach ($teams as $t) {
         <div style="display: flex; align-items: center; gap: 12px;">
             <span style="font-size: 2rem;">🏆</span>
             <div>
-                <h3 style="margin: 0; font-family: 'Pirata One', 'Georgia', cursive; color: #f5c542; font-size: 1.2rem;">
+                <h3 style="margin: 0; font-family: 'Pirata One', 'Georgia', cursive; color: #F97316; font-size: 1.2rem;">
                     Equipe vencedora: <?= e($winner) ?>
                 </h3>
                 <p style="margin: 4px 0 0; opacity: 0.6; font-size: 0.88rem;">

@@ -140,6 +140,11 @@ $app->get('/desafio-final', [GameController::class, 'finalChallenge'])->add($mw[
 $app->post('/desafio-final', [GameController::class, 'finalChallenge'])->add($mw['authRequired']);
 $app->get('/jogo', [GameController::class, 'status'])->add($mw['authRequired']);
 
+// Telão (PÚBLICO — sem authRequired). Página autônoma que consome
+// GET /api/telao; o CSRF global só atinge POST/PUT/DELETE/PATCH,
+// portanto um GET é livre.
+$app->get('/telao', [GameController::class, 'telao']);
+
 // ---------------------------------------------------------------------
 // API (JSON) — sem CSRF (ignorado para paths /api) e sem
 // authRequired/guestOnly: a autenticação é feita manualmente no
@@ -156,11 +161,13 @@ $app->post('/api/team/answer', [ApiController::class, 'teamAnswer']);
 $app->get('/api/team/current', [ApiController::class, 'teamCurrent']);
 $app->post('/api/team/final-answer', [ApiController::class, 'teamFinalAnswer']);
 $app->get('/api/team/points', [ApiController::class, 'teamPoints']);
+$app->post('/api/team/location', [ApiController::class, 'teamLocation']);
 
 // Públicas
 $app->get('/api', [ApiController::class, 'index']);
 $app->get('/api/story', [ApiController::class, 'story']);
 $app->get('/api/config', [ApiController::class, 'config']);
+$app->get('/api/telao', [ApiController::class, 'telao']);
 
 // Admin (app de gerenciamento)
 $app->post('/api/admin/login', [ApiController::class, 'adminLogin']);

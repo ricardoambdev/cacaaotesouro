@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace App\Controllers;
 
+use App\Database;
 use App\Repositories\GameRepository;
 use App\Repositories\SettingsRepository;
 use App\Repositories\TeamRepository;
 use App\Repositories\TreasureRepository;
 use App\Repositories\UserRepository;
+use PDO;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Http\Message\UploadedFileInterface;
@@ -705,9 +707,131 @@ final class ApiController
         ]);
     }
 
+    /**
+     * POST /api/team/location
+     *
+     * Body: { lat, lng, accuracy? }
+     * Registra a posição GPS da equipe. O app envia a cada ~5s, sem
+     * throttle. A ÚLTIMA linha de cada equipe alimenta o telão
+     * (/api/telao).
+     */
+    public function teamLocation(Request $request, Response $response): Response
+    {
+        $team = $this->requireTeam($request);
+
+        if ($team === null) {
+            return $this->unauthorized($response);
+        }
+
+        $body = (array) $request->getParsedBody();
+        $lat = $body['lat'] ?? null;
+        $lng = $body['lng'] ?? null;
+        $accuracy = $body['accuracy'] ?? null;
+
+        if (!is_numeric($lat) || !is_numeric($lng)) {
+            return $this->json($response, [
+                'success' => false,
+                'error'   => 'Coordenadas inválidas.',
+            ], 400);
+        }
+
+        $lat = (float) $lat;
+        $lng = (float) $lng;
+
+        if ($lat < -90 || $lat > 90 || $lng < -180 || $lng > 180) {
+            return $this->json($response, [
+                'success' => false,
+                'error'   => 'Coordenadas inválidas.',
+            ], 400);
+        }
+
+        $stmt = Database::get()->prepare(
+            'INSERT INTO team_locations (team_id, lat, lng, accuracy, created_at) '
+            . 'VALUES (:team_id, :lat, :lng, :accuracy, :created_at)'
+        );
+        $stmt->execute([
+            ':team_id'    => (int) $team['id'],
+            ':lat'        => $lat,
+            ':lng'        => $lng,
+            ':accuracy'   => is_numeric($accuracy) ? (float) $accuracy : null,
+            ':created_at' => date('Y-m-d H:i:s'),
+        ]);
+
+        return $this->json($response, ['success' => true]);
+    }
+
     // ==================================================================
     // Rotas públicas
     // ==================================================================
+
+    /**
+     * GET /api/telao — dados públicos do telão (SEM autenticação).
+     *
+     * Equipes (pontos/status/última localização), tesouros com
+     * coordenada definida (e quem já os encontrou) e as 6 selfies mais
+     * recentes.
+     */
+    public function telao(Request $request, Response $response): Response
+    {
+        $teams = [];
+
+        foreach (TeamRepository::all() as $row) {
+            $teamId = (int) $row['id'];
+
+            $teams[] = [
+                'id'            => $teamId,
+                'name'          => (string) $row['name'],
+                'color'         => (string) $row['color'],
+                'points'        => (int) $row['points'],
+                'status'        => (string) ($row['status'] ?? 'playing'),
+                'found_count'   => GameRepository::foundCount($teamId),
+                'last_location' => self::lastLocation($teamId),
+            ];
+        }
+
+        // Mapa treasure_id => cores que já encontraram (found_at != null).
+        $found = [];
+
+        foreach (self::allFoundProgress() as $progress) {
+            $treasureId = (int) $progress['treasure_id'];
+            $color = (string) $progress['color'];
+
+            if ($color !== '') {
+                $found[$treasureId][$color] = true;
+            }
+        }
+
+        $treasures = [];
+
+        foreach (TreasureRepository::all() as $row) {
+            if (!self::hasLocation($row)) {
+                continue; // Sem coordenada: o mapa não tem onde colocar.
+            }
+
+            $treasureId = (int) $row['id'];
+            $foundByPreta = isset($found[$treasureId]['preta']);
+            $foundByLaranja = isset($found[$treasureId]['laranja']);
+
+            $treasures[] = [
+                'id'               => $treasureId,
+                'code'             => (string) $row['code'],
+                'name'             => (string) $row['name'],
+                'lat'              => self::latOrNull($row),
+                'lng'              => self::lngOrNull($row),
+                'has_coord'        => true,
+                'found_by_preta'   => $foundByPreta,
+                'found_by_laranja' => $foundByLaranja,
+                'finalized'        => $foundByPreta && $foundByLaranja,
+            ];
+        }
+
+        return $this->json($response, [
+            'success'   => true,
+            'teams'     => $teams,
+            'treasures' => $treasures,
+            'selfies'   => self::recentSelfies(6),
+        ]);
+    }
 
     /**
      * GET /api/story — história do jogo (pública).
@@ -1167,6 +1291,85 @@ final class ApiController
     // ==================================================================
     // Privados
     // ==================================================================
+
+    /**
+     * Última localização registrada de uma equipe (a mais recente), ou
+     * null quando ainda não há nenhum registro.
+     *
+     * @return array{lat: float, lng: float, updated_at: string}|null
+     */
+    private static function lastLocation(int $teamId): ?array
+    {
+        $stmt = Database::get()->prepare(
+            'SELECT lat, lng, created_at FROM team_locations '
+            . 'WHERE team_id = :team_id '
+            . 'ORDER BY created_at DESC, id DESC LIMIT 1'
+        );
+        $stmt->execute([':team_id' => $teamId]);
+
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if ($row === false) {
+            return null;
+        }
+
+        return [
+            'lat'        => (float) $row['lat'],
+            'lng'        => (float) $row['lng'],
+            'updated_at' => (string) $row['created_at'],
+        ];
+    }
+
+    /**
+     * Progresso ENCONTRADO (found_at != null) de todas as equipes, com
+     * a cor de cada equipe — usado pelo telão para montar
+     * found_by_preta/found_by_laranja/finalized.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    private static function allFoundProgress(): array
+    {
+        return Database::get()
+            ->query(
+                'SELECT p.treasure_id, t.color '
+                . 'FROM team_treasure_progress p '
+                . 'JOIN teams t ON t.id = p.team_id '
+                . 'WHERE p.found_at IS NOT NULL'
+            )
+            ->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /**
+     * Selfies mais recentes (selfie_path != ''), com nome/cor da equipe
+     * e nome do tesouro.
+     *
+     * @return array<int, array<string, string>>
+     */
+    private static function recentSelfies(int $limit): array
+    {
+        $stmt = Database::get()->prepare(
+            'SELECT t.color AS team_color, t.name AS team_name, '
+            . 'tr.name AS treasure_name, p.selfie_path, p.found_at '
+            . 'FROM team_treasure_progress p '
+            . 'JOIN teams t ON t.id = p.team_id '
+            . 'JOIN treasures tr ON tr.id = p.treasure_id '
+            . 'WHERE p.selfie_path IS NOT NULL AND p.selfie_path != \'\' '
+            . 'AND p.found_at IS NOT NULL '
+            . 'ORDER BY p.found_at DESC, p.id DESC '
+            . 'LIMIT ' . (int) $limit
+        );
+        $stmt->execute();
+
+        return array_map(static function (array $row): array {
+            return [
+                'team_color'    => (string) $row['team_color'],
+                'team_name'     => (string) $row['team_name'],
+                'treasure_name' => (string) $row['treasure_name'],
+                'image_path'    => (string) $row['selfie_path'],
+                'found_at'      => (string) $row['found_at'],
+            ];
+        }, $stmt->fetchAll(PDO::FETCH_ASSOC));
+    }
 
     /**
      * Valida a autenticação de EQUIPE: sessão com time + header X-Device-Id

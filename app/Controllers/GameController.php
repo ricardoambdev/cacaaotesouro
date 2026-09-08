@@ -155,6 +155,26 @@ final class GameController
     }
 
     // ------------------------------------------------------------------
+    // Telão (GET /telao — PÚBLICO, sem autenticação)
+    // ------------------------------------------------------------------
+
+    /**
+     * Página autônoma do telão (projetada para um monitor grande), sem
+     * sidebar nem login. Consome os dados de GET /api/telao (público) e
+     * é renderizada fora do layout autenticado.
+     */
+    public function telao(Request $request, Response $response): Response
+    {
+        $html = View::render('telao', [
+            'siteName' => (string) app_config('app.name', 'Caça ao Tesouro'),
+        ]);
+
+        $response->getBody()->write($html);
+
+        return $response;
+    }
+
+    // ------------------------------------------------------------------
     // Privados
     // ------------------------------------------------------------------
 

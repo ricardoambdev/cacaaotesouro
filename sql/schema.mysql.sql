@@ -216,3 +216,21 @@ CREATE TABLE IF NOT EXISTS points_log (
     reason     VARCHAR(100) NOT NULL DEFAULT '',
     created_at DATETIME     NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ============================================================
+-- Log de localização das equipes (telão)
+-- ------------------------------------------------------------
+-- O aplicativo envia a posição GPS da equipe a cada ~5 segundos
+-- (POST /api/team/location). A ÚLTIMA linha de cada equipe
+-- alimenta o telão público (/api/telao). Sem throttle.
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS team_locations (
+    id         INT AUTO_INCREMENT PRIMARY KEY,
+    team_id    INT          NOT NULL,
+    lat        DECIMAL(10,7) NOT NULL,
+    lng        DECIMAL(10,7) NOT NULL,
+    accuracy   DECIMAL(10,2) NULL,
+    created_at DATETIME     NOT NULL,
+    KEY idx_team_time (team_id, created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

@@ -93,7 +93,7 @@ $historyContent = $historyContent ?? '';
         statusbar: false,
         plugins: 'advlist autolink lists link image charmap anchor searchreplace visualblocks code fullscreen insertdatetime media table help wordcount',
         toolbar: 'undo redo | blocks | bold italic forecolor | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | removeformat | help',
-        content_style: 'body { font-family: Inter, Arial, sans-serif; font-size: 15px; color: #f7ecd4; background: #0d1b2a; }',
+        content_style: 'body { font-family: Inter, Arial, sans-serif; font-size: 15px; color: #f7ecd4; background: #050B12; }',
         setup: function (editor) {
             editor.on('change', function () { editor.save(); });
         },

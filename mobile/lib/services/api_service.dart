@@ -459,6 +459,28 @@ class ApiService {
     throw ApiException(body['error'] as String? ?? 'Erro ao obter pontos.');
   }
 
+  /// POST /api/team/location
+  Future<void> sendLocation({
+    required double lat,
+    required double lng,
+    double? accuracy,
+  }) async {
+    try {
+      final headers = await _teamHeaders();
+      await http.post(
+        Uri.parse('$baseUrl/team/location'),
+        headers: headers,
+        body: json.encode({
+          'lat': lat,
+          'lng': lng,
+          if (accuracy != null) 'accuracy': accuracy,
+        }),
+      );
+    } catch (_) {
+      // Silencioso — falha de rede não deve afetar o usuário
+    }
+  }
+
   // ════════════════════════════════════════════════════════════
   //  MÉTODOS DE ADMIN
   // ════════════════════════════════════════════════════════════

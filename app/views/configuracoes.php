@@ -310,13 +310,13 @@ $teamBlackPassword  = (string) ($teams['preta']['password']  ?? '');
             <?php endif; ?>
 
             <div class="dev-help-text">
-                No emulador Android use <code style="color:#f5c542;">http://10.0.2.2:8080/api</code>.
-                Em celular físico use <code style="color:#f5c542;">http://IP_DA_MAQUINA:8080/api</code> (mesma rede Wi-Fi).
+                No emulador Android use <code style="color:#F97316;">http://10.0.2.2:8080/api</code>.
+                Em celular físico use <code style="color:#F97316;">http://IP_DA_MAQUINA:8080/api</code> (mesma rede Wi-Fi).
                 Abra a porta 8080 no firewall do Windows para testes.
                 <?php if ($currentEnvironment === 'local'): ?>
-                    <br><strong style="color:#6fb8e0;">Ambiente local:</strong> o app se conecta em <code style="color:#f5c542;">localhost:8080</code>.
+                    <br><strong style="color:#6fb8e0;">Ambiente local:</strong> o app se conecta em <code style="color:#F97316;">localhost:8080</code>.
                 <?php elseif ($currentEnvironment === 'rede'): ?>
-                    <br><strong style="color:#f5c542;">Ambiente rede:</strong> o app se conecta via <code style="color:#f5c542;"><?= e($lanIp ?: 'IP_DA_MAQUINA') ?>:8080</code>.
+                    <br><strong style="color:#F97316;">Ambiente rede:</strong> o app se conecta via <code style="color:#F97316;"><?= e($lanIp ?: 'IP_DA_MAQUINA') ?>:8080</code>.
                 <?php else: ?>
                     <br><strong style="color:#5fd99f;">Ambiente servidor:</strong> o app se conecta à URL de produção.
                 <?php endif; ?>
