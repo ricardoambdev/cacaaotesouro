@@ -1,5 +1,5 @@
-# Dependências
-/vendor/
+# Dependências (vendor é versionado para facilitar o deploy via git clone)
+# /vendor/
 /node_modules/
 
 # Banco de dados local (SQLite) e arquivos de journal/wal
