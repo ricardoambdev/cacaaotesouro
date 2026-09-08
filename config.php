@@ -5,12 +5,14 @@ declare(strict_types=1);
 /**
  * Configuração global do sistema Caça ao Tesouro.
  *
- * Edite este arquivo para apontar para o banco do seu servidor compartilhado.
- * Em produção, prefira definir as variáveis de ambiente (getenv) no painel
- * de hospedagem para não expor credenciais no código.
+ * A configuração é carregada nesta ordem (a última vence):
+ *   1. Valores padrão abaixo.
+ *   2. Variáveis de ambiente (getenv) — recomendado em produção.
+ *   3. Arquivo data/install.php — gravado pelo instalador no primeiro
+ *      acesso (quando o banco ainda não está configurado).
  */
 
-return [
+$config = [
     'app' => [
         // 'dev'  -> mostra links de recuperação de senha na tela (sem SMTP real)
         // 'prod' -> envia e-mail real via mail()
@@ -39,3 +41,17 @@ return [
         'lifetime' => 60 * 60 * 24 * 7, // 7 dias
     ],
 ];
+
+// Configuração gravada pelo instalador (data/install.php) — se existir,
+// tem prioridade sobre os valores padrão acima.
+$installFile = __DIR__ . '/data/install.php';
+
+if (is_file($installFile)) {
+    $local = require $installFile;
+
+    if (is_array($local)) {
+        $config = array_replace_recursive($config, $local);
+    }
+}
+
+return $config;

@@ -28,13 +28,13 @@ function e(string $value): string
  */
 function app_config(string $key, $default = null)
 {
-    static $config = null;
+    global $__caca_config;
 
-    if ($config === null) {
-        $config = require dirname(__DIR__) . '/config.php';
+    if ($__caca_config === null) {
+        $__caca_config = require dirname(__DIR__) . '/config.php';
     }
 
-    $value = $config;
+    $value = $__caca_config;
 
     foreach (explode('.', $key) as $part) {
         if (is_array($value) && array_key_exists($part, $value)) {
@@ -45,6 +45,16 @@ function app_config(string $key, $default = null)
     }
 
     return $value;
+}
+
+/**
+ * Invalida o cache da configuração — o próximo app_config() relê o
+ * config.php (usado pelo instalador após gravar data/install.php).
+ */
+function app_config_reload(): void
+{
+    global $__caca_config;
+    $__caca_config = null;
 }
 
 /**

@@ -370,4 +370,101 @@ final class Database
             ]);
         }
     }
+
+    /**
+     * Semeia os dados PRIMÁRIOS do sistema (usado pelo instalador no
+     * primeiro acesso): usuário admin e os 10 tesouros iniciais.
+     *
+     * Idempotente: só insere quando as tabelas estão vazias.
+     */
+    public static function seedPrimaryData(): void
+    {
+        $pdo = self::get();
+        $driver = app_config('db.driver', 'mysql');
+
+        // ── Usuário administrador ─────────────────────────────
+        $count = (int) $pdo->query('SELECT COUNT(*) FROM users')->fetchColumn();
+
+        if ($count === 0) {
+            $pdo->prepare(
+                'INSERT INTO users (name, username, role, email, password_hash, created_at) '
+                . 'VALUES (:name, :username, :role, :email, :password_hash, :created_at)'
+            )->execute([
+                ':name'          => 'Admin',
+                ':username'      => 'admin',
+                ':role'          => 'admin',
+                ':email'         => 'admin@cacaaotesouro.com',
+                ':password_hash' => password_hash('admin1234', PASSWORD_DEFAULT),
+                ':created_at'    => date('Y-m-d H:i:s'),
+            ]);
+        }
+
+        // ── Tesouros iniciais (apenas se não houver nenhum) ───
+        $count = (int) $pdo->query('SELECT COUNT(*) FROM treasures')->fetchColumn();
+
+        if ($count > 0) {
+            return;
+        }
+
+        $treasures = [
+            ['code' => 'T01', 'name' => 'Praça do Quico', 'description' => 'A praça onde o Quico brinca de bola com a Chiquinha.', 'clue' => 'Procure o banco onde o Quico senta para esperar a Chiquinha.', 'riddle1' => 'Quantas pernas tem o total de personagens da vila?', 'answer1' => '0412', 'riddle2' => 'Qual o número da casa da bruxa do 71?', 'answer2' => '0071'],
+            ['code' => 'T02', 'name' => 'Barril da Vila', 'description' => 'Um barril antigo na entrada da vila.', 'clue' => 'Atrás do barril com o buraco redondo.', 'riddle1' => 'Quantas rodas tem o carro do Sr. Madruga?', 'answer1' => '0004', 'riddle2' => 'Quantas letras tem CHAVES?', 'answer2' => '0006'],
+            ['code' => 'T03', 'name' => 'Portão do Colégio', 'description' => 'O portão da escola onde todos estudam.', 'clue' => 'No portão, do lado de fora, há um número pintado.', 'riddle1' => 'Qual o ano em que a série começou?', 'answer1' => '1972', 'riddle2' => 'Quantos dedos tem a mão do Professor Girafales?', 'answer2' => '0005'],
+            ['code' => 'T04', 'name' => 'Pipoca da Chiquinha', 'description' => 'A barraquinha de pipoca da Chiquinha.', 'clue' => 'Atrás da barraquinha há uma sacola de pipoca amarela.', 'riddle1' => 'Quantos grãos de milho tem uma espiga média?', 'answer1' => '0800', 'riddle2' => 'Quantos minutos tem uma hora?', 'answer2' => '0060'],
+            ['code' => 'T05', 'name' => 'Muralha do Pátio', 'description' => 'O muro onde as crianças se escondem.', 'clue' => 'Entre o muro e a árvore grande.', 'riddle1' => 'Quantos dias tem uma semana?', 'answer1' => '0007', 'riddle2' => 'Quantos lados tem um quadrado?', 'answer2' => '0004'],
+            ['code' => 'T06', 'name' => 'Caixa do Correio', 'description' => 'A caixa de correio da vila.', 'clue' => 'Do lado da caixa azul, próximo ao poste.', 'riddle1' => 'Quantas cores tem o arco-íris?', 'answer1' => '0007', 'riddle2' => 'Quantos zeros tem 100?', 'answer2' => '0002'],
+            ['code' => 'T07', 'name' => 'Fonte dos Desejos', 'description' => 'A fonte no centro da praça.', 'clue' => 'Na borda da fonte, onde a água não alcança.', 'riddle1' => 'Quantas pernas tem uma cadeira?', 'answer1' => '0004', 'riddle2' => 'Quantos palitos tem uma caixa de fósforos comum?', 'answer2' => '0030'],
+            ['code' => 'T08', 'name' => 'Venda do Seu Barriga', 'description' => 'A despensa do Seu Barriga.', 'clue' => 'Do lado direito da porta da venda.', 'riddle1' => 'Quantos dias tem um ano?', 'answer1' => '0365', 'riddle2' => 'Quantas semanas tem um mês médio?', 'answer2' => '0004'],
+            ['code' => 'T09', 'name' => 'Bicicleta da Chiquinha', 'description' => 'O local onde a Chiquinha guarda sua bicicleta.', 'clue' => 'Perto do corrimão, embaixo da escada.', 'riddle1' => 'Quantos pneus tem uma bicicleta?', 'answer1' => '0002', 'riddle2' => 'Quantas letras tem SANCHEZ?', 'answer2' => '0008'],
+            ['code' => 'T10', 'name' => 'Esconderijo do Quico', 'description' => 'O esconderijo secreto do Quico.', 'clue' => 'No canto do pátio, atrás das caixas empilhadas.', 'riddle1' => 'Quantos lados tem um triângulo?', 'answer1' => '0003', 'riddle2' => 'Quantas cordas tem um violão?', 'answer2' => '0006'],
+        ];
+
+        $sort = 0;
+        $insert = $pdo->prepare(
+            'INSERT INTO treasures '
+            . '(code, name, description, clue, riddle1, answer1, riddle2, answer2, '
+            . 'qr_content, qr_svg_path, sort_order, active, created_at) '
+            . 'VALUES (:code, :name, :description, :clue, :riddle1, :answer1, '
+            . ':riddle2, :answer2, :qr_content, :qr_svg_path, :sort_order, 0, :created_at)'
+        );
+
+        $updateQr = $pdo->prepare(
+            'UPDATE treasures SET qr_content = :qr_content, qr_svg_path = :qr_svg_path WHERE id = :id'
+        );
+
+        foreach ($treasures as $t) {
+            $sort++;
+            $code = random_alnum(20);
+
+            $insert->execute([
+                ':code'          => $t['code'],
+                ':name'          => $t['name'],
+                ':description'   => $t['description'],
+                ':clue'          => $t['clue'],
+                ':riddle1'       => $t['riddle1'],
+                ':answer1'       => $t['answer1'],
+                ':riddle2'       => $t['riddle2'],
+                ':answer2'       => $t['answer2'],
+                ':qr_content'    => $code,
+                ':qr_svg_path'   => '',
+                ':sort_order'    => $sort,
+                ':created_at'    => date('Y-m-d H:i:s'),
+            ]);
+
+            $id = (int) $pdo->lastInsertId();
+            $qrPath = '';
+
+            try {
+                $qrPath = \App\Services\QrService::generateSvg($code, $id);
+            } catch (\Throwable $e) {
+                error_log('Database::seedPrimaryData QR: ' . $e->getMessage());
+            }
+
+            $updateQr->execute([
+                ':qr_content'    => $code,
+                ':qr_svg_path'   => $qrPath,
+                ':id'            => $id,
+            ]);
+        }
+    }
 }

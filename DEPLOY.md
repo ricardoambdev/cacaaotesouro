@@ -124,18 +124,25 @@ A raiz do projeto já contém um **`.htaccess`** que redireciona tudo para
 > `public/` — o `.htaccess` da raiz fica inativo nesse caso (nunca é
 > alcançado) e o `.htaccess` interno de `public/` assume.
 
-### 5.2 Banco de dados
+### 5.2 Banco de dados — INSTALADOR AUTOMÁTICO (recomendado)
 
-1. cPanel → **MySQL Databases**: crie o banco + usuário e vincule.
-2. phpMyAdmin → importe **`sql/schema.mysql.sql`** (cria tabelas e seeds).
-   - **Alternativa**: se o usuário tiver permissão `CREATE`, basta abrir o
-     site uma vez — a aplicação cria as tabelas sozinha
-     (`Database::ensureSchema`). Mesmo assim, importe o schema para o
-     estado completo (settings + equipes + 10 tesouros de exemplo).
-3. **Importante sobre os tesouros de exemplo:** os `qr_content` do seed
-   são exemplos. Na prática, **crie/exclua tesouros pela tela admin** —
-   os QR SVGs são gerados automaticamente com código aleatório. Se quiser
-   começar do zero, apague os tesouros de exemplo em /tesouros.
+O sistema tem um **instalador no primeiro acesso**: se o banco ainda não
+estiver configurado (`data/install.php` ausente) ou a conexão falhar, a tela
+**"Instalação"** aparece pedindo as configurações do banco (driver, host,
+porta, nome, usuário, senha, nome do site e URL).
+
+1. Acesse `https://SEU-DOMINIO.com/` → abre o instalador.
+2. Preencha as credenciais do banco criado no cPanel.
+3. Clique **Instalar sistema**.
+4. Ao conectar, o instalador **cria o banco (se puder), as tabelas e os
+   dados primários**: admin, equipes Laranja/Preta, configurações e os 10
+   tesouros iniciais (com QR SVG gerado).
+5. Redireciona para o login.
+
+**Importação manual (alternativa):** se preferir, pode importar
+`sql/schema.mysql.sql` no phpMyAdmin antes de acessar — o instalador
+perceberá que o banco já está pronto (apenas pede as credenciais) e não
+duplica dados.
 
 ### 5.3 Configuração (config.php ou variáveis de ambiente)
 
@@ -240,7 +247,8 @@ Nenhum ajuste adicional é necessário.
   **OU** **Método B (pacote)** — `.tar.gz` enviado e extraído
 - [ ] PHP 8.1+ com extensões (`pdo_mysql`, `gd`, `mbstring`, `openssl`)
 - [ ] Acesso pela raiz OK (`.htaccess` da raiz) **ou** document root → `public`
-- [ ] Banco criado + schema importado
+- [ ] Banco criado no cPanel (ou o instalador cria) + schema/dados semeados
+- [ ] `data/` com permissão de escrita (o instalador grava `install.php` ali)
 - [ ] `config.php` com `APP_ENV=prod` e credenciais do banco
 - [ ] `public/uploads` com permissão de escrita
 - [ ] Admin alterou senhas padrão
