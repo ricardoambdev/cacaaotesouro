@@ -1,0 +1,33 @@
+# ═══════════════════════════════════════════════════════════════
+#  Caça ao Tesouro — acesso pela RAIZ (sem entrar em /public)
+#
+#  Coloque este arquivo na RAIZ do projeto (ex.:
+#  public_html/cacaaotesouro/.htaccess). Assim, ao acessar
+#  https://SEU-DOMINIO.com/ o sistema abre direto, sem precisar
+#  apontar o document root para a pasta /public.
+#
+#  Funciona em Apache (padrão do cPanel / servidores compartilhados).
+# ═══════════════════════════════════════════════════════════════
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # 1. Já está em /public? Deixa o .htaccess de public/ cuidar.
+    RewriteCond %{REQUEST_URI} ^/public(/|$)
+    RewriteRule ^ - [L]
+
+    # 2. Arquivo ou pasta existente em public/? Serve direto
+    #    (assets, imagens, uploads).
+    RewriteCond %{DOCUMENT_ROOT}/public%{REQUEST_URI} -f [OR]
+    RewriteCond %{DOCUMENT_ROOT}/public%{REQUEST_URI} -d
+    RewriteRule ^(.*)$ public/$1 [L]
+
+    # 3. Qualquer outra rota → front controller do Slim
+    #    (as rotas /login, /tesouros, /api/... são resolvidas aqui).
+    RewriteRule ^(.*)$ public/index.php [QSA,L]
+</IfModule>
+
+# Bloqueia acesso direto a arquivos sensíveis que porventura
+# estejam fora de /public (defesa em profundidade).
+<FilesMatch "^(config\.php|composer\.(json|lock)|\.env.*)$">
+    Require all denied
+</FilesMatch>

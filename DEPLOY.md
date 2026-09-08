@@ -110,15 +110,19 @@ Se a hospedagem tiver **Git Version Control** no cPanel (ou SSH com git):
 
 ## 5. Configurando o servidor
 
-### 5.1 Document root → `public`
+### 5.1 Acesso pela raiz (sem mudar document root)
 
-No cPanel: **Domains → Manage → Document Root** — aponte para
-`public_html/cacaaotesouro/public`.
+A raiz do projeto já contém um **`.htaccess`** que redireciona tudo para
+`public/` automaticamente. Ou seja:
 
-- ✅ Segurança: código em `app/` e `config.php` ficam FORA do acesso web.
-- ✅ O `.htaccess` já roteia tudo para `index.php` (Slim).
-- ⚠️ Se NÃO puder mudar o document root: adicione um `.htaccess` na raiz
-  que redirecione tudo para `public/` (veja seção 9).
+- **Não é preciso** apontar o document root para `public/` no cPanel.
+- Acessando `https://SEU-DOMINIO.com/` o sistema abre direto (o `.htaccess`
+  roteia para `public/index.php`, serve os assets de `public/` e protege
+  arquivos sensíveis como `config.php` e `composer.json`).
+
+> Se preferir a configuração clássica, pode aponhar o document root para
+> `public/` — o `.htaccess` da raiz fica inativo nesse caso (nunca é
+> alcançado) e o `.htaccess` interno de `public/` assume.
 
 ### 5.2 Banco de dados
 
@@ -221,15 +225,12 @@ use um remetente como `no-reply@seu-dominio.com.br`.
 
 ---
 
-## 9. Se NÃO puder alterar o document root
+## 9. Usando o document root clássico (`/public`)
 
-Coloque este `.htaccess` na RAIZ (junto de `app/`, `public/`):
-
-```apache
-RewriteEngine On
-RewriteCond %{REQUEST_URI} !^/public/
-RewriteRule ^(.*)$ /public/$1 [L]
-```
+Se preferir (ou se a hospedagem exigir), o document root pode apontar para
+`public/`. Nesse caso o `.htaccess` da raiz é ignorado (nunca alcançado)
+e o `.htaccess` interno de `public/` faz o roteamento do Slim normalmente.
+Nenhum ajuste adicional é necessário.
 
 ---
 
@@ -238,7 +239,7 @@ RewriteRule ^(.*)$ /public/$1 [L]
 - [ ] **Método A (git)** — repositório clonado via Git Version Control (token/deploy key)
   **OU** **Método B (pacote)** — `.tar.gz` enviado e extraído
 - [ ] PHP 8.1+ com extensões (`pdo_mysql`, `gd`, `mbstring`, `openssl`)
-- [ ] Document root → `public`
+- [ ] Acesso pela raiz OK (`.htaccess` da raiz) **ou** document root → `public`
 - [ ] Banco criado + schema importado
 - [ ] `config.php` com `APP_ENV=prod` e credenciais do banco
 - [ ] `public/uploads` com permissão de escrita
