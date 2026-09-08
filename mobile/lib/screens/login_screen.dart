@@ -165,10 +165,11 @@ class _LoginScreenState extends State<LoginScreen> {
                   end: Alignment.bottomCenter,
                   colors: [
                     Colors.transparent,
-                    AppColors.navyDark.withValues(alpha: 0.3),
-                    AppColors.navyDark.withValues(alpha: 0.9),
+                    AppColors.navyDark.withValues(alpha: 0.4),
+                    AppColors.navyDark.withValues(alpha: 0.92),
+                    AppColors.navyDark,
                   ],
-                  stops: const [0.0, 0.4, 0.7],
+                  stops: const [0.0, 0.35, 0.65, 0.85],
                 ),
               ),
             ),
@@ -179,9 +180,9 @@ class _LoginScreenState extends State<LoginScreen> {
             child: SafeArea(
               child: Column(
                 children: [
-                  const Spacer(flex: 6),
+                  const Spacer(flex: 2),
                   Flexible(
-                    flex: 4,
+                    flex: 1,
                     child: _LoginCard(
                       formKey: _formKey,
                       usuarioController: _usuarioController,
@@ -197,7 +198,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       onEntrar: _onEntrar,
                     ),
                   ),
-                  SizedBox(height: padding.bottom + 16),
+                  SizedBox(height: padding.bottom + 12),
                 ],
               ),
             ),
@@ -232,13 +233,13 @@ class _LoginCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: 28),
+      padding: const EdgeInsets.symmetric(horizontal: 24),
       child: Container(
         width: double.infinity,
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 28),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
         decoration: BoxDecoration(
           color: AppColors.cardDark,
-          borderRadius: BorderRadius.circular(24),
+          borderRadius: BorderRadius.circular(20),
           border: Border.all(
             color: AppColors.gold.withValues(alpha: 0.2),
             width: 1,
@@ -249,33 +250,48 @@ class _LoginCard extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // ── Título ──────────────────────────────────
+              // ── Logo pequeno (bússola) ────────────────────
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppColors.gold.withValues(alpha: 0.12),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.explore_outlined,
+                  color: AppColors.gold,
+                  size: 28,
+                ),
+              ),
+              const SizedBox(height: 10),
+
+              // ── Título compacto ──────────────────────────
               const Text(
                 'Entrar no Jogo',
                 style: TextStyle(
-                  fontSize: 24,
+                  fontSize: 18,
                   fontWeight: FontWeight.w700,
                   color: AppColors.ivory,
                 ),
               ),
-              const SizedBox(height: 6),
+              const SizedBox(height: 4),
               Text(
                 'Use suas credenciais para acessar',
                 style: TextStyle(
-                  fontSize: 13,
+                  fontSize: 12,
                   color: AppColors.ivoryMuted,
                 ),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 16),
 
               // ── Mensagem de erro ────────────────────────
               if (errorMessage != null) ...[
                 Container(
                   width: double.infinity,
-                  padding: const EdgeInsets.all(12),
+                  padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
                     color: Colors.redAccent.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(10),
+                    borderRadius: BorderRadius.circular(8),
                     border: Border.all(
                       color: Colors.redAccent.withValues(alpha: 0.4),
                     ),
@@ -285,7 +301,7 @@ class _LoginCard extends StatelessWidget {
                       const Icon(
                         Icons.error_outline,
                         color: Colors.redAccent,
-                        size: 20,
+                        size: 18,
                       ),
                       const SizedBox(width: 8),
                       Expanded(
@@ -293,14 +309,14 @@ class _LoginCard extends StatelessWidget {
                           errorMessage!,
                           style: const TextStyle(
                             color: Colors.redAccent,
-                            fontSize: 13,
+                            fontSize: 12,
                           ),
                         ),
                       ),
                     ],
                   ),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 12),
               ],
 
               // ── Campo Usuário ───────────────────────────
@@ -313,6 +329,8 @@ class _LoginCard extends StatelessWidget {
                 decoration: const InputDecoration(
                   labelText: 'Usuário',
                   prefixIcon: Icon(Icons.person_outline),
+                  contentPadding:
+                      EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                 ),
                 validator: (value) {
                   if (value == null || value.trim().isEmpty) {
@@ -321,94 +339,113 @@ class _LoginCard extends StatelessWidget {
                   return null;
                 },
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 12),
 
-              // ── Campo Senha ─────────────────────────────
-              TextFormField(
-                controller: senhaController,
-                style: const TextStyle(color: AppColors.ivory),
-                obscureText: !senhaVisivel,
-                keyboardType: TextInputType.visiblePassword,
-                textInputAction: TextInputAction.done,
-                enabled: !isLoading,
-                onFieldSubmitted: (_) => onEntrar(),
-                decoration: InputDecoration(
-                  labelText: 'Senha',
-                  prefixIcon: const Icon(Icons.lock_outline),
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                      senhaVisivel
-                          ? Icons.visibility_off_outlined
-                          : Icons.visibility_outlined,
-                      color: AppColors.ivoryMuted,
+              // ── Campo Senha + Botão Entrar ──────────────
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Campo senha (expandido)
+                  Expanded(
+                    child: TextFormField(
+                      controller: senhaController,
+                      style: const TextStyle(
+                          color: AppColors.ivory, fontSize: 14),
+                      obscureText: !senhaVisivel,
+                      keyboardType: TextInputType.visiblePassword,
+                      textInputAction: TextInputAction.done,
+                      enabled: !isLoading,
+                      onFieldSubmitted: (_) => onEntrar(),
+                      decoration: InputDecoration(
+                        labelText: 'Senha',
+                        prefixIcon: const Icon(Icons.lock_outline, size: 20),
+                        suffixIcon: IconButton(
+                          iconSize: 20,
+                          icon: Icon(
+                            senhaVisivel
+                                ? Icons.visibility_off_outlined
+                                : Icons.visibility_outlined,
+                            color: AppColors.ivoryMuted,
+                          ),
+                          onPressed: onToggleSenha,
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 14, vertical: 12),
+                      ),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Senha é obrigatória';
+                        }
+                        return null;
+                      },
                     ),
-                    onPressed: onToggleSenha,
                   ),
-                ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Senha é obrigatória';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 24),
+                  const SizedBox(width: 10),
 
-              // ── Botão Entrar ────────────────────────────
-              SizedBox(
-                width: double.infinity,
-                height: 52,
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: isLoading
-                          ? [AppColors.ivoryMuted, AppColors.ivoryMuted]
-                          : [AppColors.gold, AppColors.goldDark],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    borderRadius: BorderRadius.circular(14),
-                    boxShadow: [
-                      BoxShadow(
-                        color: (isLoading
-                                ? AppColors.ivoryMuted
-                                : AppColors.gold)
-                            .withValues(alpha: 0.3),
-                        blurRadius: 12,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: ElevatedButton(
-                    onPressed: isLoading ? null : onEntrar,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.transparent,
-                      shadowColor: Colors.transparent,
-                      foregroundColor: AppColors.navyDark,
-                      disabledBackgroundColor: Colors.transparent,
-                      disabledForegroundColor:
-                          AppColors.navyDark.withValues(alpha: 0.5),
-                      textStyle: const TextStyle(
-                        fontSize: 17,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: 0.5,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                    ),
-                    child: isLoading
-                        ? const SizedBox(
-                            width: 24,
-                            height: 24,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2.5,
-                              color: AppColors.navyDark,
+                  // Botão Entrar
+                  Padding(
+                    padding: const EdgeInsets.only(top: 0),
+                    child: SizedBox(
+                      height: 48,
+                      width: 110,
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: isLoading
+                                ? [
+                                    AppColors.ivoryMuted,
+                                    AppColors.ivoryMuted
+                                  ]
+                                : [AppColors.gold, AppColors.goldDark],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          borderRadius: BorderRadius.circular(12),
+                          boxShadow: [
+                            BoxShadow(
+                              color: (isLoading
+                                      ? AppColors.ivoryMuted
+                                      : AppColors.gold)
+                                  .withValues(alpha: 0.3),
+                              blurRadius: 8,
+                              offset: const Offset(0, 3),
                             ),
-                          )
-                        : const Text('Entrar'),
+                          ],
+                        ),
+                        child: ElevatedButton(
+                          onPressed: isLoading ? null : onEntrar,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.transparent,
+                            shadowColor: Colors.transparent,
+                            foregroundColor: AppColors.navyDark,
+                            disabledBackgroundColor: Colors.transparent,
+                            disabledForegroundColor:
+                                AppColors.navyDark.withValues(alpha: 0.5),
+                            textStyle: const TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: 0.3,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            padding: EdgeInsets.zero,
+                          ),
+                          child: isLoading
+                              ? const SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2.5,
+                                    color: AppColors.navyDark,
+                                  ),
+                                )
+                              : const Text('Entrar'),
+                        ),
+                      ),
+                    ),
                   ),
-                ),
+                ],
               ),
             ],
           ),

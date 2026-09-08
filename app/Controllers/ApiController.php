@@ -308,12 +308,13 @@ final class ApiController
         if ($existing !== null && (int) $existing['gps_confirmed'] === 1) {
             return $this->json($response, [
                 'success'         => true,
-                'message'         => 'Você já fez check-in neste tesouro.',
+                'message'         => 'Você já fez check-in neste tesouro. A selfie no local é obrigatória antes de responder.',
                 'assigned_riddle' => (int) $existing['assigned_riddle'],
                 'riddle'          => (string) ((int) $existing['assigned_riddle'] === 1
                     ? $treasure['riddle1']
                     : $treasure['riddle2']),
                 'selfie_question' => true,
+                'selfie_required' => true,
             ]);
         }
 
@@ -329,10 +330,11 @@ final class ApiController
 
         return $this->json($response, [
             'success'         => true,
-            'message'         => 'Check-in confirmado! Resolva a charada.',
+            'message'         => 'Check-in confirmado! Envie a selfie no local para liberar a charada.',
             'assigned_riddle' => $assignedRiddle,
             'riddle'          => $riddle,
             'selfie_question' => true,
+            'selfie_required' => true,
         ]);
     }
 
@@ -485,6 +487,17 @@ final class ApiController
             return $this->json($response, [
                 'success' => false,
                 'error'   => 'Faça o check-in neste tesouro antes de responder.',
+            ], 400);
+        }
+
+        // Selfie OBRIGATÓRIA: só é possível responder a charada depois de
+        // enviada a foto no local (selfie_points = 1). Nada de pontos é
+        // movimentado nem a resposta é avaliada enquanto não houver selfie.
+        if ((int) $progress['selfie_points'] !== 1) {
+            return $this->json($response, [
+                'success' => false,
+                'error'   => 'A selfie é obrigatória no local antes de responder a charada.',
+                'code'    => 'selfie_required',
             ], 400);
         }
 

@@ -154,6 +154,7 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
   /// Tela de erro quando a câmera falha.
   Widget _buildErrorView() {
     final isPermDenied = _errorMessage?.contains('permanentemente') ?? false;
+    final isPermission = _errorMessage?.contains('Permissão') ?? false;
 
     return Center(
       child: Padding(
@@ -223,7 +224,7 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
             ),
 
             // Botão Abrir configurações (se negado permanentemente)
-            if (isPermDenied) ...[
+            if (isPermDenied || isPermission) ...[
               const SizedBox(height: 12),
               TextButton.icon(
                 onPressed: () => openAppSettings(),
@@ -248,8 +249,14 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
         MobileScanner(
           controller: _controller!,
           onDetect: _onDetect,
-          errorBuilder: (context, error, child) {
-            // Trata erros internos do MobileScanner
+          errorBuilder: (context, error) {
+            // Captura o erro real do MobileScanner para diagnóstico.
+            final code = error.errorCode.name;
+            final details = error.errorDetails?.message ?? '';
+            _errorMessage = details.isNotEmpty
+                ? 'Erro ($code): $details'
+                : 'Erro da câmera ($code).';
+            _hasError = true;
             return _buildErrorView();
           },
         ),

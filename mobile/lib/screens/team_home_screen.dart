@@ -211,8 +211,8 @@ class _TeamHomeScreenState extends State<TeamHomeScreen> {
         final points = result['points'] ?? 0;
         _showSnackBar('Selfie enviada! +$points pontos', isError: false);
 
-        // Atualizar estado
-        await _loadState();
+        // Avançar direto para a charada
+        setState(() => _flowState = TreasureFlowState.showingRiddle);
       } on ApiException catch (e) {
         if (!mounted) return;
         _showSnackBar(e.message, isError: true);
@@ -228,10 +228,6 @@ class _TeamHomeScreenState extends State<TeamHomeScreen> {
       if (!mounted) return;
       _showSnackBar('Não foi possível acessar a câmera.', isError: true);
     }
-  }
-
-  void _skipSelfie() {
-    setState(() => _flowState = TreasureFlowState.showingRiddle);
   }
 
   Future<void> _submitAnswer(String answer) async {
@@ -784,8 +780,8 @@ class _TeamHomeScreenState extends State<TeamHomeScreen> {
 
           const SizedBox(height: 20),
 
-          // ── Pergunta selfie ──────────────────────────
-          if (result.selfieQuestion) ...[
+          // ── Selfie obrigatória ──────────────────────────
+          if (result.selfieRequired || result.selfieQuestion) ...[
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(16),
@@ -793,7 +789,7 @@ class _TeamHomeScreenState extends State<TeamHomeScreen> {
                 color: AppColors.navyMedium,
                 borderRadius: BorderRadius.circular(14),
                 border: Border.all(
-                  color: AppColors.gold.withValues(alpha: 0.2),
+                  color: Colors.orangeAccent.withValues(alpha: 0.4),
                 ),
               ),
               child: Column(
@@ -802,57 +798,60 @@ class _TeamHomeScreenState extends State<TeamHomeScreen> {
                       color: AppColors.gold, size: 28),
                   const SizedBox(height: 10),
                   const Text(
-                    'Enviar selfie?',
+                    'Selfie obrigatória',
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w700,
                       color: AppColors.ivory,
                     ),
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 6),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: Colors.orangeAccent.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: Colors.orangeAccent.withValues(alpha: 0.35),
+                      ),
+                    ),
+                    child: const Text(
+                      'Todos os integrantes devem aparecer na foto. '
+                      'Se os alunos não saírem na foto, os pontos podem ser CANCELADOS.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 13,
+                        height: 1.4,
+                        color: Colors.orangeAccent,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 6),
                   Text(
-                    'Ganhe +5 pontos!',
+                    'Ganhe +5 pontos',
                     style: TextStyle(
                       fontSize: 13,
-                      color: AppColors.gold,
+                      color: AppColors.gold.withValues(alpha: 0.8),
                     ),
                   ),
                   const SizedBox(height: 14),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: OutlinedButton(
-                          onPressed: _skipSelfie,
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: AppColors.ivoryMuted,
-                            side: BorderSide(
-                              color: AppColors.ivoryMuted.withValues(alpha: 0.3),
-                            ),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                          ),
-                          child: const Text('Pular'),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: _takeSelfie,
+                      icon: const Icon(Icons.camera_alt, size: 18),
+                      label: const Text('Tirar selfie'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.gold,
+                        foregroundColor: AppColors.navyDark,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
                         ),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
                       ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: ElevatedButton.icon(
-                          onPressed: _takeSelfie,
-                          icon: const Icon(Icons.camera_alt, size: 18),
-                          label: const Text('Selfie'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.gold,
-                            foregroundColor: AppColors.navyDark,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                          ),
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
                 ],
               ),

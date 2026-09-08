@@ -86,12 +86,14 @@ class CheckinResult {
   final int assignedRiddle;
   final String riddle;
   final bool selfieQuestion;
+  final bool selfieRequired;
 
   const CheckinResult({
     required this.message,
     required this.assignedRiddle,
     required this.riddle,
     required this.selfieQuestion,
+    this.selfieRequired = false,
   });
 
   factory CheckinResult.fromJson(Map<String, dynamic> json) {
@@ -100,6 +102,7 @@ class CheckinResult {
       assignedRiddle: (json['assigned_riddle'] as num?)?.toInt() ?? 1,
       riddle: (json['riddle'] as String?) ?? '',
       selfieQuestion: json['selfie_question'] == true,
+      selfieRequired: json['selfie_required'] == true,
     );
   }
 }
