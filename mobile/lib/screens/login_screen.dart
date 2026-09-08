@@ -198,7 +198,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       onEntrar: _onEntrar,
                     ),
                   ),
-                  SizedBox(height: padding.bottom + 12),
+SizedBox(height: padding.bottom + 12),
                 ],
               ),
             ),
@@ -232,57 +232,36 @@ class _LoginCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: 24),
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
-        decoration: BoxDecoration(
-          color: AppColors.cardDark,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: AppColors.gold.withValues(alpha: 0.2),
-            width: 1,
-          ),
-        ),
-        child: Form(
-          key: formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // ── Logo pequeno (bússola) ────────────────────
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: AppColors.gold.withValues(alpha: 0.12),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  Icons.explore_outlined,
-                  color: AppColors.gold,
-                  size: 28,
-                ),
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+      decoration: BoxDecoration(
+        color: AppColors.cardDark,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Form(
+        key: formKey,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // ── Título compacto ──────────────────────────
+            const Text(
+              'Entrar no Jogo',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+                color: AppColors.ivory,
               ),
-              const SizedBox(height: 10),
-
-              // ── Título compacto ──────────────────────────
-              const Text(
-                'Entrar no Jogo',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.ivory,
-                ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Use suas credenciais para acessar',
+              style: TextStyle(
+                fontSize: 12,
+                color: AppColors.ivoryMuted,
               ),
-              const SizedBox(height: 4),
-              Text(
-                'Use suas credenciais para acessar',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: AppColors.ivoryMuted,
-                ),
-              ),
-              const SizedBox(height: 16),
+            ),
+            const SizedBox(height: 16),
 
               // ── Mensagem de erro ────────────────────────
               if (errorMessage != null) ...[
@@ -450,7 +429,6 @@ class _LoginCard extends StatelessWidget {
             ],
           ),
         ),
-      ),
     );
   }
 }
