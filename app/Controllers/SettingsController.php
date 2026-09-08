@@ -32,9 +32,47 @@ final class SettingsController
             ? 'http://' . $lanIp . ':8080'
             : $appUrl;
 
+        $apiUrl = $systemUrl . '/api';
+
         $devMode = (string) SettingsRepository::get('apiDevMode', '0') === '1' || $isDevEnv;
 
         $hasApk = is_file(dirname(__DIR__, 2) . '/public/uploads/apk/cacaaotesouro.apk');
+
+        // Matriz de ambientes: detecta de onde o painel está sendo acessado
+        // e monta as URLs da API a usar no aplicativo (servidor/rede/local).
+        $httpHost = (string) ($_SERVER['HTTP_HOST'] ?? '');
+
+        if (app_config('app.env', 'prod') === 'prod' || $devMode === false) {
+            $currentEnvironment = 'servidor';
+        } elseif ($lanIp !== '' && $httpHost !== '' && str_contains($httpHost, $lanIp)) {
+            $currentEnvironment = 'rede';
+        } else {
+            $currentEnvironment = 'local';
+        }
+
+        $environments = [
+            [
+                'id'         => 'servidor',
+                'name'       => 'Servidor (produção)',
+                'url'        => rtrim($appUrl, '/') . '/api',
+                'desc'       => 'Sistema publicado na internet. Use esta URL no APK final. Se ainda não configurou, defina APP_URL (ou a URL no config).',
+                'is_current' => $currentEnvironment === 'servidor',
+            ],
+            [
+                'id'         => 'rede',
+                'name'       => 'Rede local',
+                'url'        => $lanIp !== '' ? $apiUrl : '',
+                'desc'       => 'Testando o app num celular na mesma rede Wi-Fi do servidor.',
+                'is_current' => $currentEnvironment === 'rede',
+            ],
+            [
+                'id'         => 'local',
+                'name'       => 'Local (desenvolvimento)',
+                'url'        => 'http://localhost:8080/api',
+                'desc'       => 'Testando no PC. Emulador Android use http://10.0.2.2:8080/api.',
+                'is_current' => $currentEnvironment === 'local',
+            ],
+        ];
 
         // Equipes: Laranja e Preta (a view monta a aba de credenciais).
         // $old tem prioridade sobre $teams (preserva o que o admin digitou
@@ -52,10 +90,12 @@ final class SettingsController
             'errors'    => [],
             'lanIp'     => $lanIp,
             'systemUrl' => $systemUrl,
-            'apiUrl'    => $systemUrl . '/api',
+            'apiUrl'    => $apiUrl,
             'hasApk'    => $hasApk,
             'devMode'   => $devMode,
             'appUrl'    => $appUrl,
+            'currentEnvironment' => $currentEnvironment,
+            'environments'       => $environments,
             'teams'     => $teams,
             'treasureOrder' => (string) ($old['treasureOrder'] ?? SettingsRepository::get('treasureOrder', 'estabelecida')),
             'adminUsername' => (string) ($old['adminUsername'] ?? SettingsRepository::get('adminUsername', 'admin')),

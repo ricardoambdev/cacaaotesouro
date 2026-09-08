@@ -1208,6 +1208,90 @@
     color: #5fd99f;
   }
 
+  /* ---- Environment Panel (Ambiente) ---- */
+  .env-current-indicator {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+    background: rgba(13, 27, 42, 0.45);
+    border-radius: 10px;
+    border: 1px solid rgba(39, 174, 96, 0.15);
+    margin-bottom: 20px;
+  }
+
+  .env-current-label {
+    color: rgba(247, 236, 212, 0.6);
+    font-size: 0.85rem;
+    font-weight: 500;
+  }
+
+  .env-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 8px;
+  }
+
+  .env-row {
+    padding: 16px 18px;
+    background: rgba(13, 27, 42, 0.4);
+    border: 1px solid rgba(247, 236, 212, 0.08);
+    border-radius: 12px;
+    transition: border-color 150ms cubic-bezier(0.22, 1, 0.36, 1),
+                box-shadow 150ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .env-row:hover {
+    border-color: rgba(247, 236, 212, 0.15);
+  }
+
+  .env-row--current {
+    border-color: rgba(39, 174, 96, 0.4);
+    background: rgba(39, 174, 96, 0.06);
+    box-shadow: 0 0 0 1px rgba(39, 174, 96, 0.12);
+  }
+
+  .env-row-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 4px;
+  }
+
+  .env-name {
+    font-weight: 600;
+    font-size: 0.95rem;
+    color: #f7ecd4;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .env-desc {
+    color: rgba(247, 236, 212, 0.5);
+    font-size: 0.82rem;
+    margin-bottom: 10px;
+    line-height: 1.5;
+  }
+
+  .env-url-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .env-url-row .api-url-box {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .env-url-row .btn-copy {
+    flex-shrink: 0;
+  }
+
   .dev-help-text {
     color: rgba(247, 236, 212, 0.45);
     font-size: 0.82rem;
@@ -1730,6 +1814,15 @@
 
   .dev-panel {
     padding: 20px 20px 8px;
+  }
+
+  .env-url-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .env-url-row .btn-copy {
+    width: 100%;
   }
 
   .page-header-row {

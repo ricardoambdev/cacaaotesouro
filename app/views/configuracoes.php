@@ -26,6 +26,8 @@ $apiUrl     = $apiUrl ?? '';
 $hasApk     = $hasApk ?? false;
 $devMode    = $devMode ?? false;
 $appUrl     = $appUrl ?? '';
+$environments     = $environments ?? [];
+$currentEnvironment = $currentEnvironment ?? 'servidor';
 
 // Existing fields
 $siteName          = (string) ($old['siteName'] ?? $config['siteName'] ?? '');
@@ -199,7 +201,7 @@ $teamBlackPassword  = (string) ($teams['preta']['password']  ?? '');
         </div>
 
         <?php if ($devMode): ?>
-        <!-- Painel: Teste em rede (só aparece quando devMode está ativo no servidor) -->
+        <!-- Painel: Ambiente (só aparece quando devMode está ativo no servidor) -->
         <div class="dev-panel">
             <h2 class="settings-card-title">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -207,40 +209,95 @@ $teamBlackPassword  = (string) ($teams['preta']['password']  ?? '');
                     <line x1="8" y1="21" x2="16" y2="21"/>
                     <line x1="12" y1="17" x2="12" y2="21"/>
                 </svg>
-                Teste em rede
+                Ambiente
             </h2>
 
-            <div class="dev-info-line">
-                <span class="dev-info-label">IP na rede:</span>
-                <?php if (!empty($lanIp)): ?>
-                    <span class="dev-info-value mono"><?= e($lanIp) ?></span>
-                <?php else: ?>
-                    <span class="dev-info-value" style="opacity:0.5;">não detectado</span>
-                <?php endif; ?>
+            <!-- Indicador do ambiente atual -->
+            <div class="env-current-indicator">
+                <?php
+                $envLabels = [
+                    'servidor' => ['icon' => '🌐', 'label' => 'Servidor',  'badge' => 'badge-success'],
+                    'rede'     => ['icon' => '📡', 'label' => 'Rede local', 'badge' => 'badge-warning'],
+                    'local'    => ['icon' => '💻', 'label' => 'Local',     'badge' => 'badge-info'],
+                ];
+                $envInfo = $envLabels[$currentEnvironment] ?? $envLabels['servidor'];
+                ?>
+                <span class="env-current-label">Ambiente ativo:</span>
+                <span class="badge <?= e($envInfo['badge']) ?>"><?= $envInfo['icon'] ?> <?= e($envInfo['label']) ?></span>
             </div>
 
-            <div class="dev-info-line">
-                <span class="dev-info-label">Sistema em rede:</span>
-                <?php if (!empty($systemUrl)): ?>
-                    <span class="dev-info-value mono"><?= e($systemUrl) ?></span>
-                    <a href="<?= e($systemUrl) ?>" target="_blank" rel="noopener" class="btn btn-primary btn-auto btn-sm">Abrir sistema</a>
-                <?php else: ?>
-                    <span class="dev-info-value" style="opacity:0.5;">indisponível</span>
-                <?php endif; ?>
-            </div>
+            <!-- Lista de ambientes -->
+            <?php if (!empty($environments)): ?>
+                <div class="env-list">
+                    <?php foreach ($environments as $e): ?>
+                        <?php
+                        $isCurrent  = !empty($e['is_current']);
+                        $envName    = (string) ($e['name'] ?? '');
+                        $envDesc    = (string) ($e['desc'] ?? '');
+                        $envUrl     = (string) ($e['url']  ?? '');
+                        $envBadge   = $envLabels[$e['id'] ?? ''] ?? null;
+                        ?>
+                        <div class="env-row <?= $isCurrent ? 'env-row--current' : '' ?>">
+                            <div class="env-row-header">
+                                <span class="env-name">
+                                    <?php if ($envBadge): ?>
+                                        <?= $envBadge['icon'] ?>
+                                    <?php endif; ?>
+                                    <?= e($envName) ?>
+                                </span>
+                                <?php if ($isCurrent): ?>
+                                    <span class="badge badge-success" style="font-size:0.65rem;">você está aqui</span>
+                                <?php endif; ?>
+                            </div>
+                            <?php if ($envDesc): ?>
+                                <div class="env-desc"><?= e($envDesc) ?></div>
+                            <?php endif; ?>
+                            <?php if ($envUrl): ?>
+                                <div class="env-url-row">
+                                    <span class="api-url-box"><span class="url-text"><?= e($envUrl) ?></span></span>
+                                    <button type="button" class="btn btn-primary btn-auto btn-sm btn-copy" data-copy="<?= e($envUrl) ?>">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                                        Copiar
+                                    </button>
+                                </div>
+                            <?php endif; ?>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+            <?php else: ?>
+                <!-- Fallback: sem lista de ambientes — exibe as linhas clássicas -->
+                <div class="dev-info-line">
+                    <span class="dev-info-label">IP na rede:</span>
+                    <?php if (!empty($lanIp)): ?>
+                        <span class="dev-info-value mono"><?= e($lanIp) ?></span>
+                    <?php else: ?>
+                        <span class="dev-info-value" style="opacity:0.5;">não detectado</span>
+                    <?php endif; ?>
+                </div>
 
-            <div class="dev-info-line">
-                <span class="dev-info-label">API para o app:</span>
-                <?php if (!empty($apiUrl)): ?>
-                    <span class="api-url-box"><span class="url-text"><?= e($apiUrl) ?></span></span>
-                    <button type="button" class="btn btn-primary btn-auto btn-sm btn-copy" data-copy="<?= e($apiUrl) ?>">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-                        Copiar
-                    </button>
-                <?php else: ?>
-                    <span class="dev-info-value" style="opacity:0.5;">indisponível</span>
-                <?php endif; ?>
-            </div>
+                <div class="dev-info-line">
+                    <span class="dev-info-label">Sistema em rede:</span>
+                    <?php if (!empty($systemUrl)): ?>
+                        <span class="dev-info-value mono"><?= e($systemUrl) ?></span>
+                        <a href="<?= e($systemUrl) ?>" target="_blank" rel="noopener" class="btn btn-primary btn-auto btn-sm">Abrir sistema</a>
+                    <?php else: ?>
+                        <span class="dev-info-value" style="opacity:0.5;">indisponível</span>
+                    <?php endif; ?>
+                </div>
+
+                <div class="dev-info-line">
+                    <span class="dev-info-label">API para o app:</span>
+                    <?php if (!empty($apiUrl)): ?>
+                        <span class="api-url-box"><span class="url-text"><?= e($apiUrl) ?></span></span>
+                        <button type="button" class="btn btn-primary btn-auto btn-sm btn-copy" data-copy="<?= e($apiUrl) ?>">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                            Copiar
+                        </button>
+                    <?php else: ?>
+                        <span class="dev-info-value" style="opacity:0.5;">indisponível</span>
+                    <?php endif; ?>
+                </div>
+            <?php endif; ?>
 
             <?php if ($hasApk): ?>
             <div class="dev-info-line">
@@ -256,6 +313,13 @@ $teamBlackPassword  = (string) ($teams['preta']['password']  ?? '');
                 No emulador Android use <code style="color:#f5c542;">http://10.0.2.2:8080/api</code>.
                 Em celular físico use <code style="color:#f5c542;">http://IP_DA_MAQUINA:8080/api</code> (mesma rede Wi-Fi).
                 Abra a porta 8080 no firewall do Windows para testes.
+                <?php if ($currentEnvironment === 'local'): ?>
+                    <br><strong style="color:#6fb8e0;">Ambiente local:</strong> o app se conecta em <code style="color:#f5c542;">localhost:8080</code>.
+                <?php elseif ($currentEnvironment === 'rede'): ?>
+                    <br><strong style="color:#f5c542;">Ambiente rede:</strong> o app se conecta via <code style="color:#f5c542;"><?= e($lanIp ?: 'IP_DA_MAQUINA') ?>:8080</code>.
+                <?php else: ?>
+                    <br><strong style="color:#5fd99f;">Ambiente servidor:</strong> o app se conecta à URL de produção.
+                <?php endif; ?>
             </div>
         </div>
         <?php else: ?>
