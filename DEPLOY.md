@@ -256,3 +256,25 @@ Nenhum ajuste adicional é necessário.
 - [ ] Coordenadas dos tesouros confirmadas **no local** via app admin
 - [ ] APK disponível em `/uploads/apk/cacaaotesouro.apk`
 - [ ] Testes web + API + app ok
+---
+
+## 11. Sincronizar tesouros/QRs com o servidor de produção
+
+O app das equipes prioriza o **servidor de produção** (se estiver no ar).
+Para que os QR codes impressos funcionem, o servidor precisa ter os MESMOS
+tesouros/QRs do ambiente onde foram gerados:
+
+1. Gere o SQL de sincronização (na máquina de origem):
+   ```bash
+   php "C:/Users/ricar/AppData/Local/Temp/opencode/gen-sync.php"
+   ```
+   (ou rode um dump da tabela `treasures`). O arquivo sai em `sql/sync-treasures.sql`.
+2. **Importe** `sql/sync-treasures.sql` no banco de produção (phpMyAdmin ou CLI).
+3. **Envie os arquivos** `public/uploads/qr/*.svg` para a pasta
+   `public/uploads/qr/` do servidor.
+4. Se necessário, o admin confirma as coordenadas REAIS no local pelo app admin.
+5. O telão usa `GET /api/telao` (público) e a página `GET /telao`.
+
+> O app móvel exibe o status **ONLINE/OFFLINE** das equipes no telão com
+> base na última localização (enviada a cada 5s). O mapa do telão NÃO mostra
+> pontos de tesouro — apenas as posições das equipes.

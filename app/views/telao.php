@@ -160,6 +160,16 @@ $siteName = $siteName ?? 'Caça ao Tesouro';
             margin-bottom: 12px;
         }
 
+        .sb-status.sb-online {
+            color: #22C55E;
+            font-weight: 700;
+        }
+
+        .sb-status.sb-offline {
+            color: #EF4444;
+            font-weight: 700;
+        }
+
         .sb-points {
             text-align: center;
             font-family: 'Pirata One', Georgia, cursive;
@@ -478,7 +488,6 @@ $siteName = $siteName ?? 'Caça ao Tesouro';
         /* ---- STATE ---- */
         let map = null;
         let teamMarkers = {};     // { 'laranja': L.circleMarker, 'preta': L.circleMarker }
-        let treasureMarkers = {}; // { treasureId: L.circleMarker }
         let firstLoad = true;
 
         /* ---- DOM REFS ---- */
@@ -502,7 +511,7 @@ $siteName = $siteName ?? 'Caça ao Tesouro';
            ============================================================ */
         function initMap() {
             map = L.map('telao-map', {
-                center: [-23.55, -46.63],
+                center: [-22.01392755007763, -47.42434367236048],
                 zoom: 15,
                 zoomControl: true,
                 attributionControl: true,
@@ -527,12 +536,11 @@ $siteName = $siteName ?? 'Caça ao Tesouro';
 
                 errorEl.style.display = 'none';
                 renderTeams(data.teams || []);
-                renderTreasures(data.treasures || []);
                 renderSelfies(data.selfies || []);
 
                 /* Fit bounds on first load */
                 if (firstLoad) {
-                    fitMapBounds(data.teams || [], data.treasures || []);
+                    fitMapBounds(data.teams || []);
                     firstLoad = false;
                 }
             } catch (err) {
@@ -544,13 +552,10 @@ $siteName = $siteName ?? 'Caça ao Tesouro';
         /* ============================================================
            FIT MAP BOUNDS
            ============================================================ */
-        function fitMapBounds(teams, treasures) {
+        function fitMapBounds(teams) {
             const pts = [];
             teams.forEach(t => {
                 if (t.last_location) pts.push([t.last_location.lat, t.last_location.lng]);
-            });
-            treasures.forEach(t => {
-                if (t.has_coord) pts.push([t.lat, t.lng]);
             });
             if (pts.length > 0) {
                 map.fitBounds(pts, { padding: [50, 50], maxZoom: 16 });
@@ -573,19 +578,24 @@ $siteName = $siteName ?? 'Caça ao Tesouro';
                 $(prefix + '-found').textContent = team.found_count || 0;
 
                 const statusText = team.status === 'finished' ? 'Terminou' : 'Jogando';
-                $(prefix + '-status').textContent = statusText;
+                $(prefix + '-status').textContent = team.online ? '● ONLINE' : '○ OFFLINE';
+                $(prefix + '-status').className = 'sb-status ' + (team.online ? 'sb-online' : 'sb-offline');
                 $(prefix + '-game-status').textContent = statusText;
 
                 /* ---- Map marker ---- */
                 if (team.last_location) {
                     const lat = team.last_location.lat;
                     const lng = team.last_location.lng;
-                    const markerColor = (colorKey === 'laranja') ? COLORS.laranja : COLORS.preta;
+                    const isOnline = !!team.online;
+                    const markerColor = !isOnline
+                        ? '#6b7280' /* offline: cinza */
+                        : ((colorKey === 'laranja') ? COLORS.laranja : COLORS.preta);
                     const borderColor = (colorKey === 'laranja') ? '#FDBA74' : COLORS.pretaBorder;
 
                     if (teamMarkers[colorKey]) {
                         /* Update existing */
                         teamMarkers[colorKey].setLatLng([lat, lng]);
+                        teamMarkers[colorKey].setStyle({ fillColor: markerColor });
                     } else {
                         /* Create new */
                         teamMarkers[colorKey] = L.circleMarker([lat, lng], {
@@ -599,9 +609,14 @@ $siteName = $siteName ?? 'Caça ao Tesouro';
                     }
 
                     teamMarkers[colorKey].bindPopup(
-                        '<strong>' + (team.name || side) + '</strong><br>Pontos: ' + (team.points || 0),
+                        '<strong>' + (team.name || side) + '</strong><br>Pontos: ' + (team.points || 0) +
+                            '<br>' + (isOnline ? '● ONLINE' : '○ OFFLINE'),
                         { className: 'telao-popup' }
                     );
+                } else if (teamMarkers[colorKey]) {
+                    /* Sem localização (offline) — remove o marcador */
+                    map.removeLayer(teamMarkers[colorKey]);
+                    delete teamMarkers[colorKey];
                 }
             });
         }
@@ -609,42 +624,6 @@ $siteName = $siteName ?? 'Caça ao Tesouro';
         /* ============================================================
            RENDER TREASURES (map markers)
            ============================================================ */
-        function renderTreasures(treasures) {
-            treasures.forEach(treasure => {
-                if (!treasure.has_coord) return;
-
-                const id = treasure.id;
-                const isFinalized = !!treasure.finalized;
-                const fillColor = isFinalized ? COLORS.treasureFinalized : COLORS.treasureNormal;
-
-                /* Popup content */
-                const foundByPreta   = treasure.found_by_preta   ? '✓ Preta'   : '✗ Preta';
-                const foundByLaranja = treasure.found_by_laranja ? '✓ Laranja' : '✗ Laranja';
-                const popupHtml = '<strong>' + (treasure.name || treasure.code) + '</strong><br>' +
-                    foundByPreta + '<br>' + foundByLaranja;
-
-                if (treasureMarkers[id]) {
-                    /* Update existing */
-                    treasureMarkers[id].setLatLng([treasure.lat, treasure.lng]);
-                    treasureMarkers[id].setStyle({ fillColor: fillColor, color: fillColor });
-                    treasureMarkers[id].setPopupContent(popupHtml);
-                } else {
-                    /* Create new */
-                    const icon = isFinalized ? '★' : '◆';
-                    treasureMarkers[id] = L.circleMarker([treasure.lat, treasure.lng], {
-                        radius: 10,
-                        fillColor: fillColor,
-                        color: fillColor,
-                        weight: 2,
-                        opacity: 0.9,
-                        fillOpacity: isFinalized ? 0.85 : 0.55,
-                    }).addTo(map);
-
-                    treasureMarkers[id].bindPopup(popupHtml, { className: 'telao-popup' });
-                }
-            });
-        }
-
         /* ============================================================
            RENDER SELFIES
            ============================================================ */

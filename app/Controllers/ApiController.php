@@ -778,6 +778,15 @@ final class ApiController
         foreach (TeamRepository::all() as $row) {
             $teamId = (int) $row['id'];
 
+            $lastLocation = self::lastLocation($teamId);
+
+            // Online = enviou localização nos últimos 15s (o app envia a cada 5s).
+            $online = false;
+
+            if ($lastLocation !== null && !empty($lastLocation['updated_at'])) {
+                $online = (strtotime((string) $lastLocation['updated_at']) + 15) >= time();
+            }
+
             $teams[] = [
                 'id'            => $teamId,
                 'name'          => (string) $row['name'],
@@ -785,7 +794,8 @@ final class ApiController
                 'points'        => (int) $row['points'],
                 'status'        => (string) ($row['status'] ?? 'playing'),
                 'found_count'   => GameRepository::foundCount($teamId),
-                'last_location' => self::lastLocation($teamId),
+                'online'        => $online,
+                'last_location' => $lastLocation,
             ];
         }
 
