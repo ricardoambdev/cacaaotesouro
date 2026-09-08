@@ -1,0 +1,10 @@
+# Caça ao Tesouro - Apache (servidor compartilhado / cPanel)
+# Todas as requisições que não correspondem a arquivos/diretórios reais
+# são roteadas para o front controller (index.php).
+
+RewriteEngine On
+
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+
+RewriteRule ^ index.php [QSA,L]

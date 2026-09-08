@@ -1,0 +1,11 @@
+{
+  "name": "cacaaotesouro-frontend",
+  "private": true,
+  "scripts": {
+    "build:css": "tailwindcss -i ./public/assets/css/input.css -o ./public/assets/css/tailwind.css --minify",
+    "watch:css": "tailwindcss -i ./public/assets/css/input.css -o ./public/assets/css/tailwind.css --watch"
+  },
+  "devDependencies": {
+    "tailwindcss": "^3.4.14"
+  }
+}

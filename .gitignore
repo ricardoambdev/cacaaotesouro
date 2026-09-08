@@ -1,0 +1,33 @@
+# Dependências
+/vendor/
+/node_modules/
+
+# Banco de dados local (SQLite) e arquivos de journal/wal
+/data/*.sqlite
+/data/*.sqlite-journal
+/data/*.sqlite-shm
+/data/*.sqlite-wal
+
+# Variáveis de ambiente / segredos
+.env
+.env.*
+
+# Arquivos temporários e do sistema
+*.log
+Thumbs.db
+.DS_Store
+
+# Uploads gerados (QR codes SVG, selfies, APK compilado)
+/public/uploads/qr/
+/public/uploads/selfies/
+/public/uploads/apk/
+
+# Flutter / mobile (build e ferramentas)
+/mobile/build/
+/mobile/.dart_tool/
+/mobile/.idea/
+/mobile/*.iml
+/mobile/.flutter-plugins*
+
+# Configuração do opencode (node_modules do workspace)
+/.opencode/node_modules/

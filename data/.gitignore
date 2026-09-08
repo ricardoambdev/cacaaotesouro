@@ -1,0 +1,5 @@
+# Mantém a pasta data/ no repositório, ignorando todo o conteúdo.
+# Em produção (SQLite) o arquivo do banco é criado automaticamente aqui.
+
+*
+!.gitignore
