@@ -22,6 +22,9 @@ Thumbs.db
 /public/uploads/selfies/
 /public/uploads/apk/
 
+# Pacotes de deploy gerados
+/deploy/
+
 # Flutter / mobile (build e ferramentas)
 /mobile/build/
 /mobile/.dart_tool/
