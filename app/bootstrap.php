@@ -158,6 +158,7 @@ $app->post('/api/team/final-answer', [ApiController::class, 'teamFinalAnswer']);
 $app->get('/api/team/points', [ApiController::class, 'teamPoints']);
 
 // Públicas
+$app->get('/api', [ApiController::class, 'index']);
 $app->get('/api/story', [ApiController::class, 'story']);
 $app->get('/api/config', [ApiController::class, 'config']);
 

@@ -1107,6 +1107,30 @@ final class ApiController
     }
 
     /**
+     * GET /api — índice/informações da API (health check).
+     */
+    public function index(Request $request, Response $response): Response
+    {
+        $devMode = (string) SettingsRepository::get('apiDevMode', '0') === '1'
+            || app_config('app.env', 'prod') === 'dev';
+
+        return $this->json($response, [
+            'success' => true,
+            'name'    => (string) app_config('app.name', 'Caça ao Tesouro') . ' API',
+            'version' => '1.0',
+            'env'     => (string) app_config('app.env', 'prod'),
+            'devMode' => (bool) $devMode,
+            'time'    => date('Y-m-d H:i:s'),
+            'endpoints' => [
+                'health'    => '/api/config',
+                'story'     => '/api/story',
+                'team'      => '/api/team/login',
+                'admin'     => '/api/admin/login',
+            ],
+        ]);
+    }
+
+    /**
      * GET /api/config — configuração pública do app.
      */
     public function config(Request $request, Response $response): Response
