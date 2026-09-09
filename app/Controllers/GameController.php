@@ -507,6 +507,187 @@ final class GameController
         redirect('/configuracoes');
     }
 
+    /**
+     * GET /admin/backup — baixa os tesouros em JSON (para backup/edição).
+     */
+    public function exportBackup(Request $request, Response $response): Response
+    {
+        $pdo = Database::get();
+        $treasures = $pdo->query(
+            'SELECT id, code, name, description, clue, riddle1, answer1, riddle2, answer2, sort_order '
+            . 'FROM treasures ORDER BY sort_order, id'
+        )->fetchAll(PDO::FETCH_ASSOC);
+
+        $payload = json_encode([
+            'version'     => '1.0',
+            'exported_at' => date('c'),
+            'treasures'   => $treasures,
+        ], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+
+        $response->getBody()->write($payload);
+
+        return $response
+            ->withHeader('Content-Type', 'application/json; charset=utf-8')
+            ->withHeader('Content-Disposition', 'attachment; filename="tesouros-' . date('Ymd-His') . '.json"');
+    }
+
+    /**
+     * GET /admin/apk-qr.svg — baixa o QR code (SVG) do link de download
+     * do aplicativo.
+     */
+    public function apkQrDownload(Request $request, Response $response): Response
+    {
+        // Servidor de produção (link de download do aplicativo).
+        $apkUrl = 'https://cacaaotesouro.colegiohelena.com.br/app.apk';
+        $svg = '';
+
+        try {
+            $options = new \chillerlan\QRCode\QROptions([
+                'outputType'   => \chillerlan\QRCode\QRCode::OUTPUT_MARKUP_SVG,
+                'eccLevel'     => \chillerlan\QRCode\QRCode::ECC_M,
+                'scale'        => 10,
+                'addQuietzone' => true,
+                'imageBase64'  => false,
+            ]);
+            $svg = (new \chillerlan\QRCode\QRCode($options))->render($apkUrl);
+        } catch (\Throwable $e) {
+            error_log('apkQrDownload: ' . $e->getMessage());
+        }
+
+        $response->getBody()->write($svg);
+
+        return $response
+            ->withHeader('Content-Type', 'image/svg+xml; charset=utf-8')
+            ->withHeader('Content-Disposition', 'attachment; filename="qrcode-app.apk.svg"');
+    }
+
+    /**
+     * POST /admin/import — importa tesouros de um arquivo JSON.
+     * Tesouros com código já existente são ignorados; os novos são
+     * adicionados automaticamente (com QR SVG gerado).
+     */
+    public function importBackup(Request $request, Response $response): Response
+    {
+        $files = $request->getUploadedFiles();
+        $file = $files['file'] ?? null;
+
+        if ($file === null || $file->getError() !== UPLOAD_ERR_OK) {
+            flash_set('error', 'Selecione o arquivo JSON de backup para importar.');
+            redirect('/configuracoes');
+        }
+
+        $raw = trim((string) $file->getStream());
+
+        if ($raw === '') {
+            flash_set('error', 'O arquivo está vazio.');
+            redirect('/configuracoes');
+        }
+
+        $data = json_decode($raw, true);
+
+        if (!is_array($data)) {
+            flash_set('error', 'JSON inválido. Verifique o arquivo de backup.');
+            redirect('/configuracoes');
+        }
+
+        $treasures = $data['treasures'] ?? $data;
+
+        if (!is_array($treasures)) {
+            flash_set('error', 'O JSON deve conter um array de tesouros (ou a chave "treasures").');
+            redirect('/configuracoes');
+        }
+
+        $pdo = Database::get();
+        $existingCodes = array_map('strval', $pdo->query('SELECT code FROM treasures')->fetchAll(PDO::FETCH_COLUMN));
+
+        $nextSort = (int) $pdo->query('SELECT COALESCE(MAX(sort_order), 0) FROM treasures')->fetchColumn();
+
+        $insert = $pdo->prepare(
+            'INSERT INTO treasures '
+            . '(code, name, description, clue, riddle1, answer1, riddle2, answer2, '
+            . 'qr_content, qr_svg_path, sort_order, active, created_at) '
+            . 'VALUES (:code, :name, :description, :clue, :riddle1, :answer1, '
+            . ':riddle2, :answer2, :qr_content, :qr_svg_path, :sort_order, 0, :created_at)'
+        );
+        $updateQr = $pdo->prepare('UPDATE treasures SET qr_content = :qr, qr_svg_path = :svg WHERE id = :id');
+
+        $added = 0;
+        $skipped = 0;
+        $errors = [];
+
+        foreach ($treasures as $item) {
+            if (!is_array($item)) {
+                continue;
+            }
+
+            $t = array_map('trim', array_map('strval', $item));
+            $code = strtoupper((string) ($t['code'] ?? ''));
+
+            if ($code === '') {
+                $errors[] = 'Tesouro sem código ignorado.';
+                continue;
+            }
+
+            if (in_array($code, $existingCodes, true)) {
+                $skipped++;
+                continue;
+            }
+
+            // Validações dos campos obrigatórios.
+            $name = (string) ($t['name'] ?? '');
+            $description = (string) ($t['description'] ?? '');
+            $clue = (string) ($t['clue'] ?? '');
+            $riddle1 = (string) ($t['riddle1'] ?? '');
+            $answer1 = (string) ($t['answer1'] ?? '');
+            $riddle2 = (string) ($t['riddle2'] ?? '');
+            $answer2 = (string) ($t['answer2'] ?? '');
+
+            if ($name === '' || $clue === '' || $riddle1 === '' || $riddle2 === ''
+                || !preg_match('/^\d{1,8}$/', $answer1) || !preg_match('/^\d{1,8}$/', $answer2)
+            ) {
+                $errors[] = 'Tesouro "' . $code . '" ignorado: campos obrigatórios incompletos ou respostas inválidas (1-8 dígitos).';
+                continue;
+            }
+
+            $qrContent = random_alnum(20);
+            $nextSort++;
+
+            $insert->execute([
+                ':code' => $code, ':name' => $name, ':description' => $description,
+                ':clue' => $clue, ':riddle1' => $riddle1, ':answer1' => $answer1,
+                ':riddle2' => $riddle2, ':answer2' => $answer2,
+                ':qr_content' => $qrContent, ':qr_svg_path' => '', ':sort_order' => $nextSort,
+                ':created_at' => date('Y-m-d H:i:s'),
+            ]);
+
+            $id = (int) $pdo->lastInsertId();
+            $svg = '';
+
+            try {
+                $svg = \App\Services\QrService::generateSvg($qrContent, $id);
+            } catch (\Throwable $e) {
+                error_log('importBackup QR: ' . $e->getMessage());
+            }
+
+            $updateQr->execute([':qr' => $qrContent, ':svg' => $svg, ':id' => $id]);
+            $existingCodes[] = $code;
+            $added++;
+        }
+
+        $msg = sprintf('%d tesouro(s) importado(s).', $added);
+
+        if ($skipped > 0) {
+            $msg .= sprintf(' %d ignorado(s) (código já existente).', $skipped);
+        }
+
+        if ($errors !== []) {
+            $msg .= ' Avisos: ' . implode(' ', array_slice($errors, 0, 5));
+        }
+
+        flash_set($added > 0 ? 'success' : 'error', $msg);
+        redirect('/configuracoes');
+    }
+
     // ------------------------------------------------------------------
     // Privados
     // ------------------------------------------------------------------

@@ -18,7 +18,7 @@ $config = [
         // 'prod' -> envia e-mail real via mail()
         'env'      => getenv('APP_ENV') ?: 'dev',
         // URL pública do sistema (usada para montar links de recuperação)
-        'url'      => getenv('APP_URL') ?: 'http://localhost:8080',
+        'url'      => getenv('APP_URL') ?: 'https://cacaaotesouro.colegiohelena.com.br',
         'name'     => 'Caça ao Tesouro',
         'timezone' => 'America/Sao_Paulo',
     ],

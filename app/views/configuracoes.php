@@ -306,7 +306,7 @@ $teamBlackPassword  = (string) ($teams['preta']['password']  ?? '');
             <div style="margin-top:18px; padding:18px; border:1px solid rgba(34,197,94,0.3); border-radius:14px; background:rgba(34,197,94,0.05);">
                 <div style="font-weight:700; color:#22C55E; margin-bottom:8px; font-size:.85rem; text-transform:uppercase; letter-spacing:.06em;">📱 Instalar o aplicativo</div>
                 <p style="font-size:.85rem; color:rgba(247,236,212,.75); margin-bottom:14px;">
-                    Link para baixar o APK:
+                    Link para baixar o APK (servidor de produção):
                     <a href="<?= e($apkUrl) ?>" target="_blank" rel="noopener" style="color:#22C55E; font-weight:600; word-break:break-all;"><?= e($apkUrl) ?></a>
                 </p>
                 <div style="display:flex; gap:16px; align-items:center; flex-wrap:wrap;">
@@ -319,6 +319,10 @@ $teamBlackPassword  = (string) ($teams['preta']['password']  ?? '');
                         <br><br>
                         <a href="<?= e($apkUrl) ?>" class="btn btn-primary btn-auto btn-sm" style="background:linear-gradient(135deg,#22C55E,#168a3a);">
                             Baixar APK
+                        </a>
+                        &nbsp;
+                        <a href="/admin/apk-qr.svg" class="btn btn-secondary btn-auto btn-sm" style="background:rgba(247,236,212,0.1);color:#f7ecd4;border:1px solid rgba(247,236,212,0.2);">
+                            Baixar QR SVG
                         </a>
                     </div>
                 </div>

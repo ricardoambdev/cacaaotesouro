@@ -39,8 +39,9 @@ final class SettingsController
         $hasApk = is_file(dirname(__DIR__, 2) . '/public/app.apk')
         || is_file(dirname(__DIR__, 2) . '/public/uploads/apk/cacaaotesouro.apk');
 
-        // URL pública do APK (para baixar/instalar nos celulares).
-        $apkUrl = rtrim($systemUrl, '/') . '/app.apk';
+        // URL pública do APK — SEMPRE o servidor de produção (para baixar/
+        // instalar em qualquer celular, mesmo fora da rede local).
+        $apkUrl = 'https://cacaaotesouro.colegiohelena.com.br/app.apk';
 
         // QR code SVG do link do APK (escaneável para baixar em outros
         // celulares) — gerado inline, sem salvar arquivo.
@@ -52,6 +53,7 @@ final class SettingsController
                     'eccLevel'     => \chillerlan\QRCode\QRCode::ECC_M,
                     'scale'        => 6,
                     'addQuietzone' => true,
+                    'imageBase64'  => false,
                 ]);
                 $apkQrSvg = (new \chillerlan\QRCode\QRCode($qrOptions))->render($apkUrl);
             } catch (\Throwable $e) {
