@@ -209,7 +209,7 @@ final class GameController
     public function cleanGameLight(Request $request, Response $response): Response
     {
         $pdo = Database::get();
-        $root = dirname(__DIR__);
+        $root = dirname(__DIR__, 2); // raiz do projeto (app/Controllers → projeto)
 
         // ── Selfies (arquivos) ──────────────────────────────
         $selfiesDir = $root . '/public/uploads/selfies';
@@ -302,7 +302,7 @@ final class GameController
     private static function clearGameData(): void
     {
         $pdo = Database::get();
-        $root = dirname(__DIR__);
+        $root = dirname(__DIR__, 2); // raiz do projeto
 
         // ── Selfies (arquivos) ──────────────────────────────
         $selfiesDir = $root . '/public/uploads/selfies';
