@@ -358,7 +358,7 @@ class _LoginCard extends StatelessWidget {
                           onPressed: onToggleSenha,
                         ),
                         contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 18),
+                            horizontal: 16, vertical: 12),
                       ),
                       validator: (value) {
                         if (value == null || value.isEmpty) {
@@ -374,8 +374,8 @@ class _LoginCard extends StatelessWidget {
                   Padding(
                     padding: const EdgeInsets.only(top: 0),
                     child: SizedBox(
-                      height: 44,
-                      width: 92,
+                      height: 48,
+                      width: 48,
                       child: DecoratedBox(
                         decoration: BoxDecoration(
                           gradient: LinearGradient(
@@ -409,11 +409,6 @@ class _LoginCard extends StatelessWidget {
                             disabledBackgroundColor: Colors.transparent,
                             disabledForegroundColor:
                                 AppColors.navyDark.withValues(alpha: 0.5),
-                            textStyle: const TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w700,
-                              letterSpacing: 0.2,
-                            ),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
@@ -421,22 +416,14 @@ class _LoginCard extends StatelessWidget {
                           ),
                           child: isLoading
                               ? const SizedBox(
-                                  width: 20,
-                                  height: 20,
+                                  width: 22,
+                                  height: 22,
                                   child: CircularProgressIndicator(
                                     strokeWidth: 2.5,
                                     color: AppColors.navyDark,
                                   ),
                                 )
-                              : const Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Icon(Icons.login, size: 16),
-                                    SizedBox(width: 4),
-                                    Text('Entrar'),
-                                  ],
-                                ),
+                              : const Icon(Icons.login, size: 22),
                         ),
                       ),
                     ),
