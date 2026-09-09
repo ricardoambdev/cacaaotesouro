@@ -380,46 +380,51 @@ $siteName = $siteName ?? 'Caça ao Tesouro';
 
         /* ═══ PIN CARTUNESCO DAS EQUIPES ═══ */
         .team-pin-wrap {
-            filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.5));
+            filter: drop-shadow(0 5px 8px rgba(0, 0, 0, 0.45));
         }
         .team-pin {
             position: relative;
-            display: inline-flex;
+            display: flex;
+            flex-direction: column;
             align-items: center;
-            gap: 7px;
-            padding: 5px 12px;
-            background: #fdf6e3;
+            justify-content: center;
+            padding: 5px 16px 9px;
+            background: linear-gradient(180deg, #fffdf6 0%, #fdf3dd 100%);
             border: 3px solid;
-            border-radius: 22px;
-            box-shadow: inset 0 -3px 0 rgba(0, 0, 0, 0.12);
+            border-radius: 16px 16px 16px 16px;
+            box-shadow: inset 0 -4px 0 rgba(0, 0, 0, 0.08);
             font-family: 'Comic Sans MS', 'Segoe UI', sans-serif;
             white-space: nowrap;
+            line-height: 1;
             animation: pin-bounce 1.4s ease-in-out infinite;
         }
-        .team-pin-name {
-            font-size: 12px;
-            font-weight: 800;
-            letter-spacing: 0.3px;
+        .team-pin-label {
+            font-size: 9px;
+            font-weight: 700;
+            letter-spacing: 1.6px;
+            text-transform: uppercase;
+            color: #8b8378;
+            margin-bottom: 4px;
         }
-        .team-pin-dot {
-            width: 9px;
-            height: 9px;
-            border-radius: 50%;
-            background: currentColor;
+        .team-pin-name {
+            font-size: 16px;
+            font-weight: 900;
         }
         .team-pin-tail {
             position: absolute;
-            bottom: -11px;
+            bottom: -13px;
             left: 50%;
             transform: translateX(-50%);
             width: 0;
             height: 0;
             border-left: 9px solid transparent;
             border-right: 9px solid transparent;
-            border-top: 12px solid currentColor;
+            border-top: 13px solid currentColor;
         }
-        .team-pin-preta { color: #000; border-color: #000; }
+        .team-pin-preta { color: #111; border-color: #111; }
+        .team-pin-preta .team-pin-name { color: #000; }
         .team-pin-laranja { color: #F97316; border-color: #F97316; }
+        .team-pin-laranja .team-pin-name { color: #F97316; }
         @keyframes pin-bounce {
             0%, 100% { transform: translateY(0); }
             50% { transform: translateY(-4px); }
@@ -635,16 +640,17 @@ $siteName = $siteName ?? 'Caça ao Tesouro';
                     const teamColor = (colorKey === 'laranja') ? COLORS.laranja : COLORS.preta;
 
                     /* Pin cartunesco com o nome da equipe */
+                    const colorName = (colorKey === 'laranja') ? 'Laranja' : 'Preta';
                     const icon = L.divIcon({
                         className: 'team-pin-wrap',
                         html: '<div class="team-pin team-pin-' + colorKey + '">' +
-                            '<span class="team-pin-name">' + team.name + '</span>' +
-                            '<span class="team-pin-dot"></span>' +
+                            '<span class="team-pin-label">Equipe</span>' +
+                            '<span class="team-pin-name">' + colorName + '</span>' +
                             '<div class="team-pin-tail"></div>' +
                             '</div>',
-                        iconSize: [150, 48],
-                        iconAnchor: [75, 48],
-                        popupAnchor: [0, -44],
+                        iconSize: [130, 54],
+                        iconAnchor: [65, 54],
+                        popupAnchor: [0, -50],
                     });
 
                     if (teamMarkers[colorKey]) {
