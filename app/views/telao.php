@@ -5,7 +5,7 @@
  *
  * Exibe mapa em tempo real com:
  *   - Placar ao vivo (equipes Laranja e Preta)
- *   - Mapa Leaflet com posicoes e tesouros
+ *   - Mapa Leaflet com posições das equipes em tempo real
  *   - Selfies das equipes
  *   - Relogio ao vivo e indicador AO VIVO
  *
@@ -481,8 +481,6 @@ $siteName = $siteName ?? 'Caça ao Tesouro';
             laranja: '#F97316',
             preta:   '#2C3E50',
             pretaBorder: '#94a3b8',
-            treasureNormal: '#a3a3a3',
-            treasureFinalized: '#22C55E',
         };
 
         /* ---- STATE ---- */
