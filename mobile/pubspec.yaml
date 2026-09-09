@@ -34,6 +34,9 @@ dependencies:
   # Sons (acerto/erro)
   audioplayers: ^6.1.0
 
+  # Renderização de HTML nas histórias
+  flutter_widget_from_html_core: ^0.15.1
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_widget_from_html_core/flutter_widget_from_html_core.dart'
+    show HtmlWidget;
 import 'package:geolocator/geolocator.dart';
 import 'package:image_picker/image_picker.dart';
 import '../theme.dart';
@@ -1412,9 +1414,9 @@ class _TeamHomeScreenState extends State<TeamHomeScreen> {
                 ),
                 child: story.isNotEmpty
                     ? SingleChildScrollView(
-                        child: Text(
+                        child: HtmlWidget(
                           story,
-                          style: const TextStyle(
+                          textStyle: const TextStyle(
                             fontSize: 14,
                             height: 1.7,
                             color: AppColors.ivory,

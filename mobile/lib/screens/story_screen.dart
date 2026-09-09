@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_widget_from_html_core/flutter_widget_from_html_core.dart';
 import '../theme.dart';
 import '../services/device_service.dart';
 import 'team_home_screen.dart';
@@ -157,9 +158,9 @@ class _StoryScreenState extends State<StoryScreen>
                           ),
                           child: hasStory
                               ? SingleChildScrollView(
-                                  child: Text(
+                                  child: HtmlWidget(
                                     widget.story,
-                                    style: const TextStyle(
+                                    textStyle: const TextStyle(
                                       fontSize: 15,
                                       height: 1.7,
                                       color: AppColors.ivory,
