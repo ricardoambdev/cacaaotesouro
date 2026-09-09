@@ -384,6 +384,23 @@ $colorMap = [
     border-color: rgba(239,68,68,0.5);
 }
 
+.db-btn-selfie {
+    padding: 4px 8px;
+    border: 1px solid rgba(249,115,22,0.4);
+    border-radius: 6px;
+    background: rgba(249,115,22,0.12);
+    color: #F97316;
+    font-size: 0.85rem;
+    cursor: pointer;
+    white-space: nowrap;
+    flex-shrink: 0;
+    transition: all 0.15s;
+}
+.db-btn-selfie:hover {
+    background: rgba(249,115,22,0.25);
+    border-color: #F97316;
+}
+
 /* ---- TEAM PIN (flat, copiado do telão) ---- */
 .team-pin {
     position: relative;
@@ -567,8 +584,12 @@ $colorMap = [
                                 <div class="db-treasure-date"><?= e((string)$treasure['found_at']) ?></div>
                                 <?php endif; ?>
                             </div>
+                            <?php if (!empty($treasure['selfie_path'])): ?>
+                            <button type="button" class="db-btn-selfie" data-selfie="<?= e((string)$treasure['selfie_path']) ?>"
+                                    title="Abrir selfie">📷</button>
+                            <?php endif; ?>
                             <form method="post" action="/admin/desclassificar"
-                                  onsubmit="return confirm('Desclassificar este tesouro da <?= e($teamName) ?>? Os pontos serão revertidos.')">
+                                  onsubmit="return confirm('Desclassificar este tesouro da <?= e($teamName) ?>? Os pontos serão revertidos e o tesouro não poderá ser refeito.')">
                                 <?= csrf_field() ?>
                                 <input type="hidden" name="team_id" value="<?= $teamId ?>">
                                 <input type="hidden" name="treasure_id" value="<?= (int)($treasure['id'] ?? 0) ?>">
@@ -578,6 +599,34 @@ $colorMap = [
                         <?php endforeach; ?>
                     </div>
                 <?php endif; ?>
+
+            <!-- Modal da selfie -->
+            <div id="selfie-modal" style="display:none; position:fixed; inset:0; z-index:2000; background:rgba(0,0,0,0.85); align-items:center; justify-content:center; padding:20px;">
+                <div style="max-width:560px; width:100%; text-align:center;">
+                    <img id="selfie-modal-img" src="" alt="Selfie" style="max-width:100%; max-height:80vh; border-radius:12px; border:2px solid rgba(249,115,22,0.4);">
+                    <div style="margin-top:14px;">
+                        <button id="selfie-modal-close" class="db-btn-apply" style="background:linear-gradient(135deg,#F97316,#EA580C);">Fechar</button>
+                    </div>
+                </div>
+            </div>
+            <script>
+            (function () {
+                var modal = document.getElementById('selfie-modal');
+                var img = document.getElementById('selfie-modal-img');
+                var close = document.getElementById('selfie-modal-close');
+                if (!modal || !img || !close) return;
+                document.querySelectorAll('[data-selfie]').forEach(function (btn) {
+                    btn.addEventListener('click', function () {
+                        img.src = this.getAttribute('data-selfie');
+                        modal.style.display = 'flex';
+                    });
+                });
+                close.addEventListener('click', function () { modal.style.display = 'none'; img.src = ''; });
+                modal.addEventListener('click', function (e) {
+                    if (e.target === modal) { modal.style.display = 'none'; img.src = ''; }
+                });
+            })();
+            </script>
 
             </div>
             <?php endforeach; ?>

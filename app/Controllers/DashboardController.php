@@ -37,24 +37,25 @@ final class DashboardController
             ];
         }, TeamRepository::all());
 
-        // Tesouros encontrados por cada equipe (para desclassificar).
+        // Tesouros encontrados por cada equipe (para desclassificar/ver selfie).
         $foundByTeam = [];
         $pdo = Database::get();
         $rows = $pdo->query(
-            'SELECT tt.team_id, t.id, t.code, t.name, tt.found_at '
+            'SELECT tt.team_id, t.id, t.code, t.name, tt.found_at, tt.selfie_path '
             . 'FROM team_treasure_progress tt '
             . 'JOIN treasures t ON t.id = tt.treasure_id '
-            . "WHERE tt.riddle_correct = 1 "
+            . 'WHERE tt.riddle_correct = 1 AND tt.disqualified = 0 '
             . 'ORDER BY tt.found_at DESC'
         )->fetchAll(PDO::FETCH_ASSOC);
 
         foreach ($rows as $row) {
             $teamId = (int) $row['team_id'];
             $foundByTeam[$teamId][] = [
-                'id'       => (int) $row['id'],
-                'code'     => (string) $row['code'],
-                'name'     => (string) $row['name'],
-                'found_at' => $row['found_at'] ?? '',
+                'id'          => (int) $row['id'],
+                'code'        => (string) $row['code'],
+                'name'        => (string) $row['name'],
+                'found_at'    => $row['found_at'] ?? '',
+                'selfie_path' => $row['selfie_path'] ?? '',
             ];
         }
 
@@ -161,26 +162,18 @@ final class DashboardController
 
         if ((int) ($progress['selfie_points'] ?? 0) === 1) {
             $delta -= 5;
-
-            // Apagar o arquivo da selfie.
-            $selfiePath = (string) ($progress['selfie_path'] ?? '');
-
-            if ($selfiePath !== '') {
-                $file = dirname(__DIR__) . '/public' . $selfiePath;
-                if (is_file($file)) {
-                    @unlink($file);
-                }
-            }
         }
 
         $newPoints = max(0, (int) $team['points'] + $delta);
         TeamRepository::updateGameState($teamId, ['points' => $newPoints]);
 
-        // Remover o progresso (tesouro volta a "não encontrado").
-        $del = $pdo->prepare(
-            'DELETE FROM team_treasure_progress WHERE team_id = :team_id AND treasure_id = :treasure_id'
+        // Marcar como DESCLASSIFICADO (mantém o registro e a selfie para
+        // auditoria; o tesouro NÃO pode ser refeito pela equipe).
+        $upd = $pdo->prepare(
+            'UPDATE team_treasure_progress SET disqualified = 1, updated_at = NOW() '
+            . 'WHERE team_id = :team_id AND treasure_id = :treasure_id'
         );
-        $del->execute([':team_id' => $teamId, ':treasure_id' => $treasureId]);
+        $upd->execute([':team_id' => $teamId, ':treasure_id' => $treasureId]);
 
         GameRepository::logPoints($teamId, $delta, 'desclassificação do tesouro "' . $treasureName . '"');
 

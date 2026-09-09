@@ -397,9 +397,27 @@ class _TeamHomeScreenState extends State<TeamHomeScreen> {
 
     setState(() => _flowState = TreasureFlowState.submittingAnswer);
     try {
+      // Obtém a posição atual (bônus de responder no local: +5 pontos).
+      double? lat;
+      double? lng;
+      try {
+        final pos = await Geolocator.getCurrentPosition(
+          locationSettings: const LocationSettings(
+            accuracy: LocationAccuracy.high,
+            timeLimit: Duration(seconds: 6),
+          ),
+        );
+        lat = pos.latitude;
+        lng = pos.longitude;
+      } catch (_) {
+        // Sem GPS no momento — envia sem posição (sem bônus).
+      }
+
       final result = await _apiService.answer(
         treasureId: treasure.id,
         answer: answer,
+        lat: lat,
+        lng: lng,
       );
 
       if (!mounted) return;

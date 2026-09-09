@@ -348,6 +348,15 @@ final class ApiController
         // mesmo resultado (re-exibe a charada assinalada).
         $existing = GameRepository::progress($teamId, $treasureId);
 
+        if ($existing !== null && (int) ($existing['disqualified'] ?? 0) === 1) {
+            // Tesouro desclassificado pelo admin: NÃO pode ser refeito.
+            return $this->json($response, [
+                'success' => false,
+                'error'   => 'Este tesouro foi desclassificado e não pode ser refeito.',
+                'code'    => 'treasure_disqualified',
+            ], 403);
+        }
+
         if ($existing !== null && (int) $existing['gps_confirmed'] === 1) {
             return $this->json($response, [
                 'success'         => true,
@@ -522,6 +531,10 @@ final class ApiController
         $teamId = (int) $team['id'];
         $treasureId = (int) ($body['treasure_id'] ?? 0);
         $answer = trim((string) ($body['answer'] ?? ''));
+        // Posição da equipe ao responder (opcional) — usada para o bônus
+        // de "responder no local" (+5).
+        $answerLat = isset($body['lat']) ? (float) $body['lat'] : null;
+        $answerLng = isset($body['lng']) ? (float) $body['lng'] : null;
 
         $treasure = TreasureRepository::find($treasureId);
 
@@ -577,6 +590,19 @@ final class ApiController
             TeamRepository::addPoints($teamId, 20);
             GameRepository::logPoints($teamId, 20, 'tesouro');
 
+            $bonusMessage = '';
+
+            // Bônus: responder a charada NO LOCAL (+5 pontos) — GPS a menos
+            // de 30m do tesouro no momento da resposta.
+            if ($answerLat !== null && $answerLng !== null
+                && self::hasLocation($treasure)
+                && haversine_meters($answerLat, $answerLng, self::latOrNull($treasure), self::lngOrNull($treasure)) <= 30
+            ) {
+                TeamRepository::addPoints($teamId, 5);
+                GameRepository::logPoints($teamId, 5, 'resposta no local');
+                $bonusMessage = ' +5 por responder no local!';
+            }
+
             $newStep = (int) $team['current_step'] + 1;
             TeamRepository::updateGameState($teamId, ['current_step' => $newStep]);
 
@@ -603,8 +629,8 @@ final class ApiController
             return $this->json($response, [
                 'success'         => true,
                 'correct'         => true,
-                'message'         => 'Resposta correta! +20 pontos.',
-                'points'          => $points + 20,
+                'message'         => 'Resposta correta! +20 pontos.' . $bonusMessage,
+                'points'          => $points + 20 + (($bonusMessage !== '') ? 5 : 0),
                 'selfie_required' => true,
                 'next'            => [
                     'treasure'        => $next,
@@ -768,6 +794,24 @@ final class ApiController
             'success' => true,
             'points'  => (int) $team['points'],
             'status'  => (string) ($team['status'] ?? 'playing'),
+        ]);
+    }
+
+    /**
+     * GET /api/team/messages — mensagens NÃO lidas da equipe
+     * (usado pelo app para verificar notificações periodicamente).
+     */
+    public function teamMessagesList(Request $request, Response $response): Response
+    {
+        $team = $this->requireTeam($request);
+
+        if ($team === null) {
+            return $this->unauthorized($response);
+        }
+
+        return $this->json($response, [
+            'success'  => true,
+            'messages' => self::teamMessages((int) $team['id'], 50),
         ]);
     }
 
@@ -1974,7 +2018,7 @@ final class ApiController
                 'SELECT p.treasure_id, t.color '
                 . 'FROM team_treasure_progress p '
                 . 'JOIN teams t ON t.id = p.team_id '
-                . 'WHERE p.found_at IS NOT NULL'
+                . 'WHERE p.found_at IS NOT NULL AND p.disqualified = 0'
             )
             ->fetchAll(PDO::FETCH_ASSOC);
     }

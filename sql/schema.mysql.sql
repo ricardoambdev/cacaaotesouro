@@ -207,6 +207,7 @@ CREATE TABLE IF NOT EXISTS team_treasure_progress (
     gps_confirmed    TINYINT(1)   NOT NULL DEFAULT 0,
     found_at         DATETIME     NULL,
     points_awarded   TINYINT(1)   NOT NULL DEFAULT 0,
+    disqualified     TINYINT(1)   NOT NULL DEFAULT 0,
     created_at       DATETIME     NOT NULL,
     updated_at       DATETIME     NULL,
     UNIQUE (team_id, treasure_id)

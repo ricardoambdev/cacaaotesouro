@@ -171,6 +171,7 @@ $app->get('/api/team/current', [ApiController::class, 'teamCurrent']);
 $app->post('/api/team/final-answer', [ApiController::class, 'teamFinalAnswer']);
 $app->get('/api/team/points', [ApiController::class, 'teamPoints']);
 $app->post('/api/team/messages/read', [ApiController::class, 'teamMessagesRead']);
+$app->get('/api/team/messages', [ApiController::class, 'teamMessagesList']);
 $app->post('/api/team/location', [ApiController::class, 'teamLocation']);
 
 // Públicas

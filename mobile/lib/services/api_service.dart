@@ -399,15 +399,20 @@ class ApiService {
   Future<AnswerResult> answer({
     required int treasureId,
     required String answer,
+    double? lat,
+    double? lng,
   }) async {
     final headers = await _teamHeaders();
+    final payload = <String, dynamic>{
+      'treasure_id': treasureId,
+      'answer': answer,
+      if (lat != null) 'lat': lat,
+      if (lng != null) 'lng': lng,
+    };
     final response = await http.post(
       Uri.parse('$baseUrl/team/answer'),
       headers: headers,
-      body: json.encode({
-        'treasure_id': treasureId,
-        'answer': answer,
-      }),
+      body: json.encode(payload),
     );
 
     _extractCookie(response);
