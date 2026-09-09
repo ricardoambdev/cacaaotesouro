@@ -328,6 +328,9 @@ final class ApiController
                 'riddle'          => (string) ((int) $existing['assigned_riddle'] === 1
                     ? $treasure['riddle1']
                     : $treasure['riddle2']),
+                'answer_length'   => (int) strlen((string) ((int) $existing['assigned_riddle'] === 1
+                    ? $treasure['answer1']
+                    : $treasure['answer2'])),
                 'selfie_question' => true,
                 'selfie_required' => true,
             ]);
@@ -343,11 +346,16 @@ final class ApiController
             ? (string) $treasure['riddle1']
             : (string) $treasure['riddle2'];
 
+        $answer = $assignedRiddle === 1
+            ? (string) $treasure['answer1']
+            : (string) $treasure['answer2'];
+
         return $this->json($response, [
             'success'         => true,
             'message'         => 'Check-in confirmado! Envie a selfie no local para liberar a charada.',
             'assigned_riddle' => $assignedRiddle,
             'riddle'          => $riddle,
+            'answer_length'   => (int) strlen($answer),
             'selfie_question' => true,
             'selfie_required' => true,
         ]);
@@ -1439,17 +1447,17 @@ final class ApiController
             ], 400);
         }
 
-        if (!preg_match('/^\d{4,8}$/', $answer1)) {
+        if (!preg_match('/^\d{1,8}$/', $answer1)) {
             return $this->json($response, [
                 'success' => false,
-                'error'   => 'A resposta 1 deve conter de 4 a 8 dígitos.',
+                'error'   => 'A resposta 1 deve conter de 1 a 8 dígitos.',
             ], 400);
         }
 
-        if (!preg_match('/^\d{4,8}$/', $answer2)) {
+        if (!preg_match('/^\d{1,8}$/', $answer2)) {
             return $this->json($response, [
                 'success' => false,
-                'error'   => 'A resposta 2 deve conter de 4 a 8 dígitos.',
+                'error'   => 'A resposta 2 deve conter de 1 a 8 dígitos.',
             ], 400);
         }
 

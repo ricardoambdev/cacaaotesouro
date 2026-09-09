@@ -127,7 +127,7 @@ $hasQr = $qrPath !== '';
                 <input type="hidden" name="answer1" value="<?= e($value('answer1')) ?>">
             </div>
             <div class="error-inline"></div>
-            <p class="form-help-text">Somente dígitos, de 4 a 8.</p>
+            <p class="form-help-text">Somente dígitos, de 1 a 8.</p>
         </div>
     </div>
 
@@ -164,7 +164,7 @@ $hasQr = $qrPath !== '';
                 <input type="hidden" name="answer2" value="<?= e($value('answer2')) ?>">
             </div>
             <div class="error-inline"></div>
-            <p class="form-help-text">Somente dígitos, de 4 a 8. Cada equipe recebe uma das duas charadas.</p>
+            <p class="form-help-text">Somente dígitos, de 1 a 8. Cada equipe recebe uma das duas charadas.</p>
         </div>
     </div>
 

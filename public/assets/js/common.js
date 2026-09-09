@@ -204,7 +204,7 @@
           }
         });
 
-        // Digit input validation: 4-8 digits required
+        // Digit input validation: 1-8 digits required
         var digitContainers = form.querySelectorAll('[data-digit-input]');
         digitContainers.forEach(function (container) {
           var boxes = container.querySelectorAll('.digit-box');
@@ -217,14 +217,14 @@
             if (b.value) digits += b.value;
           });
 
-          // Must have 4-8 digits
-          if (digits.length < 4 || digits.length > 8) {
+          // Must have 1-8 digits
+          if (digits.length < 1 || digits.length > 8) {
             valid = false;
             var group = container.closest('.form-group');
             if (group) {
               group.classList.add('has-error');
               var inline = group.querySelector('.error-inline');
-              if (inline) inline.textContent = 'A resposta deve ter de 4 a 8 dígitos.';
+              if (inline) inline.textContent = 'A resposta deve ter de 1 a 8 dígitos.';
             }
             // Focus first empty or first box
             var firstEmpty = Array.from(boxes).find(function (b) { return !b.value; });

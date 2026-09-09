@@ -99,7 +99,7 @@ class _TreasureEditScreenState extends State<TreasureEditScreen> {
     }
   }
 
-  /// Validação client-side de respostas (4-8 dígitos).
+  /// Validação client-side de respostas (1-8 dígitos).
   String? _validateAnswer(String? value, String fieldName) {
     if (value == null || value.trim().isEmpty) {
       return '$fieldName é obrigatório';
@@ -108,8 +108,8 @@ class _TreasureEditScreenState extends State<TreasureEditScreen> {
     if (!RegExp(r'^\d+$').hasMatch(trimmed)) {
       return '$fieldName deve conter apenas dígitos';
     }
-    if (trimmed.length < 4 || trimmed.length > 8) {
-      return '$fieldName deve ter 4 a 8 dígitos';
+    if (trimmed.length < 1 || trimmed.length > 8) {
+      return '$fieldName deve ter 1 a 8 dígitos';
     }
     return null;
   }

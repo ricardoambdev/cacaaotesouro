@@ -366,8 +366,8 @@ final class TreasureController
         foreach (['answer1' => 'da charada 1', 'answer2' => 'da charada 2'] as $field => $label) {
             if ($data[$field] === '') {
                 $errors[] = 'Informe a resposta ' . $label . '.';
-            } elseif (!preg_match('/^\d{4,8}$/', $data[$field])) {
-                $errors[] = 'A resposta ' . $label . ' deve ter de 4 a 8 dígitos.';
+            } elseif (!preg_match('/^\d{1,8}$/', $data[$field])) {
+                $errors[] = 'A resposta ' . $label . ' deve ter de 1 a 8 dígitos.';
             }
         }
 

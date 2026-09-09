@@ -129,6 +129,7 @@ class CheckinResult {
   final String riddle;
   final bool selfieQuestion;
   final bool selfieRequired;
+  final int answerLength;
 
   const CheckinResult({
     required this.message,
@@ -136,15 +137,18 @@ class CheckinResult {
     required this.riddle,
     required this.selfieQuestion,
     this.selfieRequired = false,
+    this.answerLength = 6,
   });
 
   factory CheckinResult.fromJson(Map<String, dynamic> json) {
+    final rawLen = (json['answer_length'] as num?)?.toInt() ?? 0;
     return CheckinResult(
       message: (json['message'] as String?) ?? '',
       assignedRiddle: (json['assigned_riddle'] as num?)?.toInt() ?? 1,
       riddle: (json['riddle'] as String?) ?? '',
       selfieQuestion: json['selfie_question'] == true,
       selfieRequired: json['selfie_required'] == true,
+      answerLength: rawLen >= 1 && rawLen <= 8 ? rawLen : 6,
     );
   }
 }

@@ -1038,6 +1038,7 @@ class _TeamHomeScreenState extends State<TeamHomeScreen> {
 
     return _RiddleInput(
       riddleText: result.riddle,
+      answerLength: result.answerLength,
       onSubmit: _submitAnswer,
     );
   }
@@ -1485,10 +1486,12 @@ enum TreasureFlowState {
 // ═══════════════════════════════════════════════════════════════
 class _RiddleInput extends StatefulWidget {
   final String riddleText;
+  final int answerLength;
   final ValueChanged<String> onSubmit;
 
   const _RiddleInput({
     required this.riddleText,
+    required this.answerLength,
     required this.onSubmit,
   });
 
@@ -1497,7 +1500,7 @@ class _RiddleInput extends StatefulWidget {
 }
 
 class _RiddleInputState extends State<_RiddleInput> {
-  static const int _numDigits = 6;
+  int get _numDigits => widget.answerLength;
   late List<TextEditingController> _controllers;
   late List<FocusNode> _focusNodes;
 
@@ -1599,72 +1602,88 @@ class _RiddleInputState extends State<_RiddleInput> {
           const SizedBox(height: 28),
 
           // ── Caixas de dígitos ────────────────────────
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: List.generate(_numDigits, (index) {
-              return Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 4),
-                child: KeyboardListener(
-                  focusNode: FocusNode(),
-                  onKeyEvent: (event) => _onKey(index, event),
-                  child: SizedBox(
-                    width: 44,
-                    height: 54,
-                    child: TextFormField(
-                      controller: _controllers[index],
-                      focusNode: _focusNodes[index],
-                      keyboardType: TextInputType.number,
-                      textAlign: TextAlign.center,
-                      maxLength: 1,
-                      style: const TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.ivory,
-                      ),
-                      inputFormatters: [
-                        FilteringTextInputFormatter.digitsOnly,
-                      ],
-                      decoration: InputDecoration(
-                        counterText: '',
-                        filled: true,
-                        fillColor: AppColors.navyDark,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10),
-                          borderSide: BorderSide(
-                            color: AppColors.gold.withValues(alpha: 0.3),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              // Compute box width to fit within available space
+              final maxWidth = constraints.maxWidth;
+              final maxBoxWidth = 44.0;
+              final minBoxWidth = 34.0;
+              final spacing = _numDigits <= 6 ? 8.0 : 6.0;
+              final idealTotal = _numDigits * maxBoxWidth + (_numDigits - 1) * spacing;
+              final boxWidth = idealTotal > maxWidth
+                  ? ((maxWidth - (_numDigits - 1) * spacing) / _numDigits).clamp(minBoxWidth, maxBoxWidth)
+                  : maxBoxWidth;
+              final boxHeight = (boxWidth * 54 / 44).clamp(44.0, 54.0);
+              final fontSize = boxWidth < 38 ? 18.0 : 22.0;
+
+              return Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: List.generate(_numDigits, (index) {
+                  return Padding(
+                    padding: EdgeInsets.symmetric(horizontal: spacing / 2),
+                    child: KeyboardListener(
+                      focusNode: FocusNode(),
+                      onKeyEvent: (event) => _onKey(index, event),
+                      child: SizedBox(
+                        width: boxWidth,
+                        height: boxHeight,
+                        child: TextFormField(
+                          controller: _controllers[index],
+                          focusNode: _focusNodes[index],
+                          keyboardType: TextInputType.number,
+                          textAlign: TextAlign.center,
+                          maxLength: 1,
+                          style: TextStyle(
+                            fontSize: fontSize,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.ivory,
+                          ),
+                          inputFormatters: [
+                            FilteringTextInputFormatter.digitsOnly,
+                          ],
+                          decoration: InputDecoration(
+                            counterText: '',
+                            filled: true,
+                            fillColor: AppColors.navyDark,
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10),
+                              borderSide: BorderSide(
+                                color: AppColors.gold.withValues(alpha: 0.3),
+                              ),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10),
+                              borderSide: BorderSide(
+                                color: AppColors.gold.withValues(alpha: 0.3),
+                              ),
+                            ),
+                            focusedBorder: const OutlineInputBorder(
+                              borderRadius:
+                                  BorderRadius.all(Radius.circular(10)),
+                              borderSide:
+                                  BorderSide(color: AppColors.gold, width: 2),
+                            ),
+                            contentPadding: EdgeInsets.zero,
+                          ),
+                          onChanged: (v) => _onDigitChanged(index, v),
+                          onTap: () => _controllers[index].selection =
+                              TextSelection(
+                            baseOffset: 0,
+                            extentOffset:
+                                _controllers[index].text.length,
                           ),
                         ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10),
-                          borderSide: BorderSide(
-                            color: AppColors.gold.withValues(alpha: 0.3),
-                          ),
-                        ),
-                        focusedBorder: const OutlineInputBorder(
-                          borderRadius:
-                              BorderRadius.all(Radius.circular(10)),
-                          borderSide:
-                              BorderSide(color: AppColors.gold, width: 2),
-                        ),
-                        contentPadding: EdgeInsets.zero,
-                      ),
-                      onChanged: (v) => _onDigitChanged(index, v),
-                      onTap: () => _controllers[index].selection =
-                          TextSelection(
-                        baseOffset: 0,
-                        extentOffset:
-                            _controllers[index].text.length,
                       ),
                     ),
-                  ),
-                ),
+                  );
+                }),
               );
-            }),
+            },
           ),
 
           const SizedBox(height: 8),
           Text(
-            'Digite o código de $_numDigits dígitos',
+            'Digite o código de $_numDigits dígito${_numDigits > 1 ? 's' : ''}',
             style: TextStyle(
               fontSize: 12,
               color: AppColors.ivoryMuted.withValues(alpha: 0.6),
