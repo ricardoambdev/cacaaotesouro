@@ -180,7 +180,7 @@ class _LoginScreenState extends State<LoginScreen> {
             child: SafeArea(
               child: Column(
                 children: [
-                  const Spacer(flex: 2),
+                  const Spacer(flex: 3),
                   Flexible(
                     flex: 1,
                     child: _LoginCard(
