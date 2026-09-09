@@ -36,6 +36,9 @@ class _TeamHomeScreenState extends State<TeamHomeScreen> {
   // ── Timer de envio de localização ──────────────────────
   Timer? _locationTimer;
 
+  // ── Mensagens não lidas ────────────────────────────────
+  List<TeamMessage> _unreadMessages = [];
+
   @override
   void initState() {
     super.initState();
@@ -59,12 +62,17 @@ class _TeamHomeScreenState extends State<TeamHomeScreen> {
       if (!mounted) return;
       setState(() {
         _gameState = state;
+        _unreadMessages = List<TeamMessage>.from(state.messages);
         _isLoading = false;
         _flowState = TreasureFlowState.viewingClue;
         _checkinResult = null;
         _answerResult = null;
       });
       _startLocationTracking();
+      // Marcar mensagens como lidas após exibir
+      if (_unreadMessages.isNotEmpty) {
+        _markMessagesRead();
+      }
     } on ApiException catch (e) {
       if (!mounted) return;
       setState(() {
@@ -77,6 +85,19 @@ class _TeamHomeScreenState extends State<TeamHomeScreen> {
         _error = 'Erro ao carregar estado do jogo.';
         _isLoading = false;
       });
+    }
+  }
+
+  /// Marca as mensagens como lidas no backend e remove da lista local.
+  Future<void> _markMessagesRead() async {
+    final ids = _unreadMessages.map((m) => m.id).toList();
+    try {
+      await _apiService.teamMarkMessagesRead(ids);
+      if (mounted) {
+        setState(() => _unreadMessages.clear());
+      }
+    } catch (_) {
+      // Silencioso — não bloqueia o app
     }
   }
 
@@ -559,28 +580,107 @@ class _TeamHomeScreenState extends State<TeamHomeScreen> {
     }
 
     // Flow state
+    Widget content;
     switch (_flowState) {
       case TreasureFlowState.viewingClue:
-        return _buildClueView();
+        content = _buildClueView();
+        break;
       case TreasureFlowState.gettingLocation:
-        return _buildLoadingState('Obtendo sua localização...');
+        content = _buildLoadingState('Obtendo sua localização...');
+        break;
       case TreasureFlowState.checkingIn:
-        return _buildLoadingState('Verificando checkin...');
+        content = _buildLoadingState('Verificando checkin...');
+        break;
       case TreasureFlowState.checkinSuccess:
-        return _buildCheckinSuccess();
+        content = _buildCheckinSuccess();
+        break;
       case TreasureFlowState.uploadingSelfie:
-        return _buildLoadingState('Enviando selfie...');
+        content = _buildLoadingState('Enviando selfie...');
+        break;
       case TreasureFlowState.showingRiddle:
-        return _buildRiddleView();
+        content = _buildRiddleView();
+        break;
       case TreasureFlowState.submittingAnswer:
-        return _buildLoadingState('Verificando resposta...');
+        content = _buildLoadingState('Verificando resposta...');
+        break;
       case TreasureFlowState.answerResult:
-        return _buildAnswerResult();
+        content = _buildAnswerResult();
+        break;
       case TreasureFlowState.finalChallenge:
-        return _buildFinalChallengeInput();
+        content = _buildFinalChallengeInput();
+        break;
       case TreasureFlowState.finalResult:
-        return _buildFinalResult();
+        content = _buildFinalResult();
+        break;
     }
+
+    // Envolver com banner de mensagens se houver
+    return Column(
+      children: [
+        // Banner de mensagens
+        ..._unreadMessages.map((msg) => _buildMessageBanner(msg)),
+        // Conteúdo principal
+        Expanded(child: content),
+      ],
+    );
+  }
+
+  Widget _buildMessageBanner(TeamMessage msg) {
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppColors.gold.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: AppColors.gold.withValues(alpha: 0.3),
+        ),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(
+              color: AppColors.gold.withValues(alpha: 0.2),
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: const Icon(
+              Icons.notifications_active,
+              color: AppColors.gold,
+              size: 18,
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'MENSAGEM DO ADMIN',
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 1.5,
+                    color: AppColors.gold,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  msg.message,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    height: 1.4,
+                    color: AppColors.ivory,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buildWaitingState() {

@@ -161,6 +161,7 @@ $app->post('/api/team/answer', [ApiController::class, 'teamAnswer']);
 $app->get('/api/team/current', [ApiController::class, 'teamCurrent']);
 $app->post('/api/team/final-answer', [ApiController::class, 'teamFinalAnswer']);
 $app->get('/api/team/points', [ApiController::class, 'teamPoints']);
+$app->post('/api/team/messages/read', [ApiController::class, 'teamMessagesRead']);
 $app->post('/api/team/location', [ApiController::class, 'teamLocation']);
 
 // Públicas
@@ -176,6 +177,12 @@ $app->get('/api/admin/treasures', [ApiController::class, 'adminTreasures']);
 $app->post('/api/admin/confirm-coordinate', [ApiController::class, 'adminConfirmCoordinate']);
 $app->post('/api/admin/disconnect-all', [ApiController::class, 'adminDisconnectAll']);
 $app->get('/api/admin/status', [ApiController::class, 'adminStatus']);
+$app->get('/api/admin/game', [ApiController::class, 'adminGame']);
+$app->put('/api/admin/game', [ApiController::class, 'adminGameUpdate']);
+$app->post('/api/admin/team-points', [ApiController::class, 'adminTeamPoints']);
+$app->post('/api/admin/team-message', [ApiController::class, 'adminTeamMessage']);
+$app->get('/api/admin/treasures/{id}', [ApiController::class, 'adminTreasureShow']);
+$app->put('/api/admin/treasures/{id}', [ApiController::class, 'adminTreasureUpdate']);
 
 // Endpoints legados (compatibilidade com o app antigo)
 $app->post('/api/login', [ApiController::class, 'login']);

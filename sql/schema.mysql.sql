@@ -44,7 +44,11 @@ INSERT INTO settings (`key`, `value`) VALUES
     ('finalClue',        ''),
     ('finalAnswer',      ''),
     ('gameActive',       '0'),
-    ('winnerTeamId',     '')
+    ('winnerTeamId',     ''),
+    ('gameStatus',       'playing'),
+    ('gameStartDate',    ''),
+    ('gameStartTime',    '08:00'),
+    ('gameEndTime',      '17:00')
 ON DUPLICATE KEY UPDATE `key` = `key`;
 
 -- ============================================================
@@ -231,6 +235,24 @@ CREATE TABLE IF NOT EXISTS team_locations (
     lat        DECIMAL(10,7) NOT NULL,
     lng        DECIMAL(10,7) NOT NULL,
     accuracy   DECIMAL(10,2) NULL,
+    created_at DATETIME     NOT NULL,
+    KEY idx_team_time (team_id, created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ============================================================
+-- Mensagens do admin para as equipes
+-- ------------------------------------------------------------
+-- O admin envia mensagens (POST /api/admin/team-message) que
+-- aparecem no app (GET /api/team/state -> messages) até serem
+-- marcadas como lidas (POST /api/team/messages/read).
+-- read_at NULL = não lida.
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS team_messages (
+    id         INT AUTO_INCREMENT PRIMARY KEY,
+    team_id    INT          NOT NULL,
+    message    TEXT         NOT NULL,
+    read_at    DATETIME     NULL,
     created_at DATETIME     NOT NULL,
     KEY idx_team_time (team_id, created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

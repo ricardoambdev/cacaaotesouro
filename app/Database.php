@@ -91,6 +91,12 @@ final class Database
                     self::$pdo = new PDO($dsn, $user, $pass, $options);
                 }
             }
+
+            // SQLite: o branch acima apenas monta o DSN (não tem usuário/senha);
+            // a conexão é criada aqui. Corrige o modo SQLite de desenvolvimento.
+            if (self::$pdo === null && $driver === 'sqlite') {
+                self::$pdo = new PDO($dsn, null, null, $options);
+            }
         }
 
         return self::$pdo;
@@ -226,6 +232,27 @@ final class Database
 
         self::ensureTeamLocationsIndex($pdo, $driver);
 
+        // Mensagens do admin para as equipes (lidas pelo app no /api/team/state).
+        $pdo->exec(
+            'CREATE TABLE IF NOT EXISTS team_messages ('
+            . 'id ' . $autoIncrement . ', '
+            . 'team_id INT NOT NULL, '
+            . 'message TEXT NOT NULL, '
+            . 'read_at DATETIME NULL, '
+            . 'created_at DATETIME NOT NULL'
+            . ($driver === 'mysql' ? ', KEY idx_team_time (team_id, created_at)' : '')
+            . ')'
+        );
+
+        // SQLite não suporta KEY inline; o índice é criado em separado (o
+        // nome precisa ser distinto porque índices SQLite são globais).
+        if ($driver !== 'mysql') {
+            $pdo->exec(
+                'CREATE INDEX IF NOT EXISTS idx_team_messages_time '
+                . 'ON team_messages (team_id, created_at)'
+            );
+        }
+
         self::seedDefaultSettings($pdo, $driver);
     }
 
@@ -349,6 +376,11 @@ final class Database
             'finalAnswer'      => '',
             'gameActive'       => '0',
             'winnerTeamId'     => '',
+            // Regras do jogo (enforcement via ApiController::gameBlock)
+            'gameStatus'       => 'playing', // 'playing' | 'paused' | 'finished'
+            'gameStartDate'    => '',        // YYYY-MM-DD (vazio = sem restrição)
+            'gameStartTime'    => '08:00',
+            'gameEndTime'      => '17:00',
         ];
 
         $sql = $driver === 'mysql'

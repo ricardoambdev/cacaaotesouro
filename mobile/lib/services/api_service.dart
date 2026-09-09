@@ -611,6 +611,194 @@ class ApiService {
     throw ApiException(
         body['error'] as String? ?? 'Erro ao obter status do jogo.');
   }
+
+  // ════════════════════════════════════════════════════════════
+  //  ADMIN: GAME CONFIG
+  // ════════════════════════════════════════════════════════════
+
+  /// GET /api/admin/game → dados do jogo.
+  Future<Map<String, dynamic>> adminGame() async {
+    final response = await http.get(
+      Uri.parse('$baseUrl/admin/game'),
+      headers: _adminHeaders,
+    );
+
+    _extractCookie(response);
+    _checkUnauthorized(response);
+
+    final body = _parseBody(response);
+    if (response.statusCode == 200 && body['success'] == true) {
+      return body['game'] as Map<String, dynamic>;
+    }
+
+    throw ApiException(
+        body['error'] as String? ?? 'Erro ao obter dados do jogo.');
+  }
+
+  /// PUT /api/admin/game → atualiza dados do jogo.
+  Future<Map<String, dynamic>> adminUpdateGame({
+    String? status,
+    String? startDate,
+    String? startTime,
+    String? endTime,
+  }) async {
+    final payload = <String, dynamic>{};
+    if (status != null) payload['status'] = status;
+    if (startDate != null) payload['start_date'] = startDate;
+    if (startTime != null) payload['start_time'] = startTime;
+    if (endTime != null) payload['end_time'] = endTime;
+
+    final response = await http.put(
+      Uri.parse('$baseUrl/admin/game'),
+      headers: _adminHeaders,
+      body: json.encode(payload),
+    );
+
+    _extractCookie(response);
+    _checkUnauthorized(response);
+
+    final body = _parseBody(response);
+    if (response.statusCode == 200 && body['success'] == true) {
+      return body['game'] as Map<String, dynamic>;
+    }
+
+    throw ApiException(
+        body['error'] as String? ?? 'Erro ao atualizar jogo.');
+  }
+
+  // ════════════════════════════════════════════════════════════
+  //  ADMIN: TEAM POINTS
+  // ════════════════════════════════════════════════════════════
+
+  /// POST /api/admin/team-points → ajusta pontos de uma equipe.
+  Future<Map<String, dynamic>> adminTeamPoints(
+    int teamId,
+    int delta, {
+    String? reason,
+  }) async {
+    final payload = <String, dynamic>{
+      'team_id': teamId,
+      'delta': delta,
+    };
+    if (reason != null && reason.isNotEmpty) {
+      payload['reason'] = reason;
+    }
+
+    final response = await http.post(
+      Uri.parse('$baseUrl/admin/team-points'),
+      headers: _adminHeaders,
+      body: json.encode(payload),
+    );
+
+    _extractCookie(response);
+    _checkUnauthorized(response);
+
+    final body = _parseBody(response);
+    if (response.statusCode == 200 && body['success'] == true) {
+      return body['points'] as Map<String, dynamic>;
+    }
+
+    throw ApiException(
+        body['error'] as String? ?? 'Erro ao ajustar pontos.');
+  }
+
+  // ════════════════════════════════════════════════════════════
+  //  ADMIN: TEAM MESSAGE
+  // ════════════════════════════════════════════════════════════
+
+  /// POST /api/admin/team-message → envia mensagem para uma equipe.
+  Future<Map<String, dynamic>> adminTeamMessage(
+    int teamId,
+    String message,
+  ) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/admin/team-message'),
+      headers: _adminHeaders,
+      body: json.encode({
+        'team_id': teamId,
+        'message': message,
+      }),
+    );
+
+    _extractCookie(response);
+    _checkUnauthorized(response);
+
+    final body = _parseBody(response);
+    if (response.statusCode == 200 && body['success'] == true) {
+      return body['message'] as Map<String, dynamic>;
+    }
+
+    throw ApiException(
+        body['error'] as String? ?? 'Erro ao enviar mensagem.');
+  }
+
+  // ════════════════════════════════════════════════════════════
+  //  ADMIN: TREASURE DETAIL / UPDATE
+  // ════════════════════════════════════════════════════════════
+
+  /// GET /api/admin/treasures/{id} → dados detalhados do tesouro.
+  Future<Map<String, dynamic>> adminTreasure(int id) async {
+    final response = await http.get(
+      Uri.parse('$baseUrl/admin/treasures/$id'),
+      headers: _adminHeaders,
+    );
+
+    _extractCookie(response);
+    _checkUnauthorized(response);
+
+    final body = _parseBody(response);
+    if (response.statusCode == 200 && body['success'] == true) {
+      return body['treasure'] as Map<String, dynamic>;
+    }
+
+    throw ApiException(
+        body['error'] as String? ?? 'Erro ao carregar tesouro.');
+  }
+
+  /// PUT /api/admin/treasures/{id} → atualiza campos do tesouro.
+  Future<Map<String, dynamic>> adminUpdateTreasure(
+    int id,
+    Map<String, dynamic> fields,
+  ) async {
+    final response = await http.put(
+      Uri.parse('$baseUrl/admin/treasures/$id'),
+      headers: _adminHeaders,
+      body: json.encode(fields),
+    );
+
+    _extractCookie(response);
+    _checkUnauthorized(response);
+
+    final body = _parseBody(response);
+    if (response.statusCode == 200 && body['success'] == true) {
+      return body['treasure'] as Map<String, dynamic>;
+    }
+
+    throw ApiException(
+        body['error'] as String? ?? 'Erro ao atualizar tesouro.');
+  }
+
+  // ════════════════════════════════════════════════════════════
+  //  TEAM: MARK MESSAGES READ
+  // ════════════════════════════════════════════════════════════
+
+  /// POST /api/team/messages/read → marca mensagens como lidas.
+  Future<void> teamMarkMessagesRead(List<int> ids) async {
+    final headers = await _teamHeaders();
+    final response = await http.post(
+      Uri.parse('$baseUrl/team/messages/read'),
+      headers: headers,
+      body: json.encode({'ids': ids}),
+    );
+
+    _extractCookie(response);
+    // Silencioso — não precisa de feedback detalhado
+    if (response.statusCode != 200) {
+      final body = _parseBody(response);
+      throw ApiException(
+          body['error'] as String? ?? 'Erro ao marcar mensagens.');
+    }
+  }
 }
 
 /// Exceção lançada quando a API retorna erro.

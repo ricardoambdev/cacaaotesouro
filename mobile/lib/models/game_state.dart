@@ -1,6 +1,27 @@
 import 'team.dart';
 import 'treasure.dart';
 
+/// Mensagem enviada pelo admin para uma equipe.
+class TeamMessage {
+  final int id;
+  final String message;
+  final String createdAt;
+
+  const TeamMessage({
+    required this.id,
+    required this.message,
+    required this.createdAt,
+  });
+
+  factory TeamMessage.fromJson(Map<String, dynamic> json) {
+    return TeamMessage(
+      id: (json['id'] as num?)?.toInt() ?? 0,
+      message: (json['message'] as String?) ?? '',
+      createdAt: (json['created_at'] as String?) ?? '',
+    );
+  }
+}
+
 /// Estado completo do jogo retornado por GET /api/team/state.
 class GameState {
   final bool gameActive;
@@ -10,6 +31,11 @@ class GameState {
   final String finalClue;
   final List<LeaderboardEntry> leaderboard;
   final Team team;
+  final String? gameStatus;
+  final String? gameStartDate;
+  final String? gameStartTime;
+  final String? gameEndTime;
+  final List<TeamMessage> messages;
 
   const GameState({
     required this.gameActive,
@@ -19,6 +45,11 @@ class GameState {
     required this.finalClue,
     required this.leaderboard,
     required this.team,
+    this.gameStatus,
+    this.gameStartDate,
+    this.gameStartTime,
+    this.gameEndTime,
+    this.messages = const [],
   });
 
   factory GameState.fromJson(Map<String, dynamic> json) {
@@ -36,6 +67,12 @@ class GameState {
         gameActiveRaw == 1 ||
         gameActiveRaw == '1';
 
+    // Mensagens do admin
+    final messagesList = (json['messages'] as List<dynamic>?)
+            ?.map((e) => TeamMessage.fromJson(e as Map<String, dynamic>))
+            .toList() ??
+        [];
+
     return GameState(
       gameActive: gameActive,
       story: (json['story'] as String?) ?? '',
@@ -46,6 +83,11 @@ class GameState {
       finalClue: (json['final_clue'] as String?) ?? '',
       leaderboard: leaderboardList,
       team: Team.fromJson(teamData),
+      gameStatus: json['game_status'] as String?,
+      gameStartDate: json['game_start_date'] as String?,
+      gameStartTime: json['game_start_time'] as String?,
+      gameEndTime: json['game_end_time'] as String?,
+      messages: messagesList,
     );
   }
 }
@@ -197,6 +239,7 @@ class AdminStatus {
 
 /// Status de uma equipe no painel admin.
 class AdminTeamStatus {
+  final int id;
   final String name;
   final String color;
   final int points;
@@ -205,6 +248,7 @@ class AdminTeamStatus {
   final int foundCount;
 
   const AdminTeamStatus({
+    required this.id,
     required this.name,
     required this.color,
     required this.points,
@@ -215,6 +259,7 @@ class AdminTeamStatus {
 
   factory AdminTeamStatus.fromJson(Map<String, dynamic> json) {
     return AdminTeamStatus(
+      id: (json['id'] as num?)?.toInt() ?? 0,
       name: (json['name'] as String?) ?? '',
       color: (json['color'] as String?) ?? '#FFFFFF',
       points: (json['points'] as num?)?.toInt() ?? 0,

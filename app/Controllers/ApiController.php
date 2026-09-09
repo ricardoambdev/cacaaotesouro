@@ -10,6 +10,7 @@ use App\Repositories\SettingsRepository;
 use App\Repositories\TeamRepository;
 use App\Repositories\TreasureRepository;
 use App\Repositories\UserRepository;
+use DateTime;
 use PDO;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
@@ -201,10 +202,15 @@ final class ApiController
                 'current_step' => (int) $team['current_step'],
             ],
             'gameActive'      => (string) SettingsRepository::get('gameActive', '0'),
+            'game_status'     => (string) SettingsRepository::get('gameStatus', 'playing'),
+            'game_start_date' => (string) SettingsRepository::get('gameStartDate', ''),
+            'game_start_time' => (string) SettingsRepository::get('gameStartTime', '08:00'),
+            'game_end_time'   => (string) SettingsRepository::get('gameEndTime', '17:00'),
             'story'           => (string) SettingsRepository::get('historyContent', ''),
             'current_treasure'=> $currentTreasure,
             'final_available' => $finalAvailable,
             'leaderboard'     => $leaderboard,
+            'messages'        => self::teamMessages($teamId),
         ];
 
         if ($finalAvailable) {
@@ -226,6 +232,13 @@ final class ApiController
 
         if ($team === null) {
             return $this->unauthorized($response);
+        }
+
+        // Regras do jogo (status + horário + data de início).
+        $block = $this->gameBlock();
+
+        if ($block !== null) {
+            return $this->json($response, ['success' => false] + $block, 400);
         }
 
         $body = (array) $request->getParsedBody();
@@ -469,6 +482,13 @@ final class ApiController
             return $this->unauthorized($response);
         }
 
+        // Apenas status do jogo (horário/data não bloqueiam respostas).
+        $block = $this->gameBlock(false);
+
+        if ($block !== null) {
+            return $this->json($response, ['success' => false] + $block, 400);
+        }
+
         $body = (array) $request->getParsedBody();
         $teamId = (int) $team['id'];
         $treasureId = (int) ($body['treasure_id'] ?? 0);
@@ -634,6 +654,13 @@ final class ApiController
             return $this->unauthorized($response);
         }
 
+        // Apenas status do jogo (paused/finished bloqueiam o desafio final).
+        $block = $this->gameBlock(false);
+
+        if ($block !== null) {
+            return $this->json($response, ['success' => false] + $block, 400);
+        }
+
         if (!GameRepository::finalAvailable($team)) {
             return $this->json($response, [
                 'success' => false,
@@ -705,6 +732,56 @@ final class ApiController
             'points'  => (int) $team['points'],
             'status'  => (string) ($team['status'] ?? 'playing'),
         ]);
+    }
+
+    /**
+     * POST /api/team/messages/read
+     *
+     * Body: { ids: [int] }
+     * Marca como lidas (read_at = NOW()) as mensagens da equipe cujos ids
+     * foram informados. Só afeta mensagens ainda não lidas.
+     */
+    public function teamMessagesRead(Request $request, Response $response): Response
+    {
+        $team = $this->requireTeam($request);
+
+        if ($team === null) {
+            return $this->unauthorized($response);
+        }
+
+        $body = (array) $request->getParsedBody();
+        $ids = $body['ids'] ?? null;
+
+        if (!is_array($ids)) {
+            return $this->json($response, [
+                'success' => false,
+                'error'   => 'Lista de ids inválida.',
+            ], 400);
+        }
+
+        $ids = array_values(array_unique(array_filter(
+            $ids,
+            static fn ($id): bool => is_numeric($id) && (int) $id > 0
+        )));
+
+        if ($ids === []) {
+            return $this->json($response, [
+                'success' => false,
+                'error'   => 'Nenhuma mensagem informada.',
+            ], 400);
+        }
+
+        $placeholders = implode(',', array_fill(0, count($ids), '?'));
+        $stmt = Database::get()->prepare(
+            'UPDATE team_messages SET read_at = ? '
+            . 'WHERE team_id = ? AND read_at IS NULL AND id IN (' . $placeholders . ')'
+        );
+        $stmt->execute(array_merge(
+            [date('Y-m-d H:i:s'), (int) $team['id']],
+            array_map('intval', $ids)
+        ));
+
+        return $this->json($response, ['success' => true]);
     }
 
     /**
@@ -1081,6 +1158,318 @@ final class ApiController
         ]);
     }
 
+    /**
+     * GET /api/admin/game
+     *
+     * Estado geral do jogo (settings de controle do enforcement).
+     */
+    public function adminGame(Request $request, Response $response): Response
+    {
+        if ($this->requireAdmin() === null) {
+            return $this->unauthorized($response);
+        }
+
+        return $this->json($response, [
+            'success' => true,
+            'game'    => $this->gamePayload(),
+        ]);
+    }
+
+    /**
+     * PUT /api/admin/game
+     *
+     * Body (todos opcionais): { status?, start_date?, start_time?, end_time? }
+     * - status: 'playing' | 'paused' | 'finished'
+     * - start_date: '' ou AAAA-MM-DD válido (vazio = sem restrição)
+     * - start_time/end_time: '' ou HH:MM
+     */
+    public function adminGameUpdate(Request $request, Response $response): Response
+    {
+        if ($this->requireAdmin() === null) {
+            return $this->unauthorized($response);
+        }
+
+        $body = (array) $request->getParsedBody();
+        $updates = [];
+
+        if (array_key_exists('status', $body)) {
+            $status = (string) $body['status'];
+
+            if (!in_array($status, ['playing', 'paused', 'finished'], true)) {
+                return $this->json($response, [
+                    'success' => false,
+                    'error'   => 'Status inválido.',
+                ], 400);
+            }
+
+            $updates['gameStatus'] = $status;
+        }
+
+        if (array_key_exists('start_date', $body)) {
+            $startDate = trim((string) $body['start_date']);
+
+            if (!$this->isValidDate($startDate)) {
+                return $this->json($response, [
+                    'success' => false,
+                    'error'   => 'Data de início inválida (use AAAA-MM-DD ou vazio).',
+                ], 400);
+            }
+
+            $updates['gameStartDate'] = $startDate;
+        }
+
+        if (array_key_exists('start_time', $body)) {
+            $startTime = trim((string) $body['start_time']);
+
+            if (!$this->isValidTime($startTime)) {
+                return $this->json($response, [
+                    'success' => false,
+                    'error'   => 'Horário de início inválido (use HH:MM ou vazio).',
+                ], 400);
+            }
+
+            $updates['gameStartTime'] = $startTime;
+        }
+
+        if (array_key_exists('end_time', $body)) {
+            $endTime = trim((string) $body['end_time']);
+
+            if (!$this->isValidTime($endTime)) {
+                return $this->json($response, [
+                    'success' => false,
+                    'error'   => 'Horário de término inválido (use HH:MM ou vazio).',
+                ], 400);
+            }
+
+            $updates['gameEndTime'] = $endTime;
+        }
+
+        if ($updates !== []) {
+            SettingsRepository::update($updates);
+        }
+
+        return $this->json($response, [
+            'success' => true,
+            'game'    => $this->gamePayload(),
+        ]);
+    }
+
+    /**
+     * POST /api/admin/team-points
+     *
+     * Body: { team_id, delta, reason? }
+     * Ajusta manualmente os pontos da equipe (mínimo 0) e registra o
+     * histórico em points_log.
+     */
+    public function adminTeamPoints(Request $request, Response $response): Response
+    {
+        if ($this->requireAdmin() === null) {
+            return $this->unauthorized($response);
+        }
+
+        $body = (array) $request->getParsedBody();
+
+        $teamId = (int) ($body['team_id'] ?? 0);
+        $team = TeamRepository::find($teamId);
+
+        if ($team === null) {
+            return $this->json($response, [
+                'success' => false,
+                'error'   => 'Equipe não encontrada.',
+            ], 404);
+        }
+
+        $delta = $body['delta'] ?? null;
+
+        if (!is_numeric($delta) || (float) $delta != (int) $delta || (int) $delta === 0) {
+            return $this->json($response, [
+                'success' => false,
+                'error'   => 'Delta inválido.',
+            ], 400);
+        }
+
+        $delta = (int) $delta;
+        $reason = trim((string) ($body['reason'] ?? ''));
+
+        $points = max(0, (int) $team['points'] + $delta);
+
+        TeamRepository::updateGameState($teamId, ['points' => $points]);
+        GameRepository::logPoints($teamId, $delta, $reason !== '' ? $reason : 'ajuste do admin');
+
+        return $this->json($response, [
+            'success' => true,
+            'points'  => $points,
+        ]);
+    }
+
+    /**
+     * POST /api/admin/team-message
+     *
+     * Body: { team_id, message }
+     * Envia uma mensagem à equipe (fica pendente até o app marcá-la como
+     * lida em /api/team/messages/read).
+     */
+    public function adminTeamMessage(Request $request, Response $response): Response
+    {
+        if ($this->requireAdmin() === null) {
+            return $this->unauthorized($response);
+        }
+
+        $body = (array) $request->getParsedBody();
+
+        $teamId = (int) ($body['team_id'] ?? 0);
+        $team = TeamRepository::find($teamId);
+
+        if ($team === null) {
+            return $this->json($response, [
+                'success' => false,
+                'error'   => 'Equipe não encontrada.',
+            ], 404);
+        }
+
+        $message = trim((string) ($body['message'] ?? ''));
+
+        if ($message === '' || mb_strlen($message) > 500) {
+            return $this->json($response, [
+                'success' => false,
+                'error'   => 'A mensagem deve ter de 1 a 500 caracteres.',
+            ], 400);
+        }
+
+        $stmt = Database::get()->prepare(
+            'INSERT INTO team_messages (team_id, message, read_at, created_at) '
+            . 'VALUES (:team_id, :message, NULL, :created_at)'
+        );
+        $stmt->execute([
+            ':team_id'    => $teamId,
+            ':message'    => $message,
+            ':created_at' => date('Y-m-d H:i:s'),
+        ]);
+
+        return $this->json($response, [
+            'success' => true,
+            'message' => 'Mensagem enviada.',
+        ]);
+    }
+
+    /**
+     * GET /api/admin/treasures/{id}
+     *
+     * Detalhe completo de um tesouro (para edição).
+     */
+    public function adminTreasureShow(Request $request, Response $response, array $args): Response
+    {
+        if ($this->requireAdmin() === null) {
+            return $this->unauthorized($response);
+        }
+
+        $treasure = TreasureRepository::find((int) ($args['id'] ?? 0));
+
+        if ($treasure === null) {
+            return $this->json($response, [
+                'success' => false,
+                'error'   => 'Tesouro não encontrado.',
+            ], 404);
+        }
+
+        return $this->json($response, [
+            'success'  => true,
+            'treasure' => $this->treasurePayload($treasure),
+        ]);
+    }
+
+    /**
+     * PUT /api/admin/treasures/{id}
+     *
+     * Body: { name, description, clue, riddle1, answer1, riddle2, answer2 }
+     * Atualiza o conteúdo textual do tesouro. Mantém code, qr_content,
+     * qr_svg_path, lat/lng, active e sort_order.
+     */
+    public function adminTreasureUpdate(Request $request, Response $response, array $args): Response
+    {
+        if ($this->requireAdmin() === null) {
+            return $this->unauthorized($response);
+        }
+
+        $treasure = TreasureRepository::find((int) ($args['id'] ?? 0));
+
+        if ($treasure === null) {
+            return $this->json($response, [
+                'success' => false,
+                'error'   => 'Tesouro não encontrado.',
+            ], 404);
+        }
+
+        $body = (array) $request->getParsedBody();
+
+        $name = trim((string) ($body['name'] ?? ''));
+        $description = trim((string) ($body['description'] ?? ''));
+        $clue = trim((string) ($body['clue'] ?? ''));
+        $riddle1 = trim((string) ($body['riddle1'] ?? ''));
+        $riddle2 = trim((string) ($body['riddle2'] ?? ''));
+        $answer1 = trim((string) ($body['answer1'] ?? ''));
+        $answer2 = trim((string) ($body['answer2'] ?? ''));
+
+        if ($name === '') {
+            return $this->json($response, [
+                'success' => false,
+                'error'   => 'O nome do tesouro é obrigatório.',
+            ], 400);
+        }
+
+        if ($clue === '') {
+            return $this->json($response, [
+                'success' => false,
+                'error'   => 'A dica do tesouro é obrigatória.',
+            ], 400);
+        }
+
+        if ($riddle1 === '') {
+            return $this->json($response, [
+                'success' => false,
+                'error'   => 'A charada 1 é obrigatória.',
+            ], 400);
+        }
+
+        if ($riddle2 === '') {
+            return $this->json($response, [
+                'success' => false,
+                'error'   => 'A charada 2 é obrigatória.',
+            ], 400);
+        }
+
+        if (!preg_match('/^\d{4,8}$/', $answer1)) {
+            return $this->json($response, [
+                'success' => false,
+                'error'   => 'A resposta 1 deve conter de 4 a 8 dígitos.',
+            ], 400);
+        }
+
+        if (!preg_match('/^\d{4,8}$/', $answer2)) {
+            return $this->json($response, [
+                'success' => false,
+                'error'   => 'A resposta 2 deve conter de 4 a 8 dígitos.',
+            ], 400);
+        }
+
+        TreasureRepository::update((int) $treasure['id'], [
+            'name'        => $name,
+            'description' => $description,
+            'clue'        => $clue,
+            'riddle1'     => $riddle1,
+            'answer1'     => $answer1,
+            'riddle2'     => $riddle2,
+            'answer2'     => $answer2,
+        ]);
+
+        $updated = TreasureRepository::find((int) $treasure['id']);
+
+        return $this->json($response, [
+            'success'  => true,
+            'treasure' => $this->treasurePayload($updated),
+        ]);
+    }
+
     // ==================================================================
     // Endpoints legados (compatibilidade com o app antigo)
     // ==================================================================
@@ -1301,6 +1690,169 @@ final class ApiController
     // ==================================================================
     // Privados
     // ==================================================================
+
+    /**
+     * Verifica as regras de jogo (settings) e devolve o bloqueio, se
+     * houver, como array { code, error } — ou null quando o jogo está
+     * liberado.
+     *
+     * Ordem de checagem:
+     *  1. status 'paused'  -> game_paused
+     *  2. status 'finished'-> game_finished
+     *  3. data de início (gameStartDate) no futuro -> game_not_started
+     *  4. horário fora de [gameStartTime, gameEndTime] -> game_closed
+     *
+     * @param bool $checkTime Quando false, ignora data/horário (usado em
+     *                        teamAnswer e teamFinalAnswer: só status).
+     *
+     * @return array{code: string, error: string}|null
+     */
+    private function gameBlock(bool $checkTime = true): ?array
+    {
+        $status = (string) SettingsRepository::get('gameStatus', 'playing');
+
+        if ($status === 'paused') {
+            return ['code' => 'game_paused', 'error' => 'O jogo está pausado.'];
+        }
+
+        if ($status === 'finished') {
+            return ['code' => 'game_finished', 'error' => 'O jogo terminou.'];
+        }
+
+        if (!$checkTime) {
+            return null;
+        }
+
+        $startDate = trim((string) SettingsRepository::get('gameStartDate', ''));
+
+        if ($startDate !== '' && date('Y-m-d') < $startDate) {
+            $formatted = date('d/m/Y', strtotime($startDate));
+
+            return [
+                'code'  => 'game_not_started',
+                'error' => 'O jogo começa em ' . $formatted . '.',
+            ];
+        }
+
+        $startTime = trim((string) SettingsRepository::get('gameStartTime', ''));
+        $endTime = trim((string) SettingsRepository::get('gameEndTime', ''));
+
+        if ($startTime !== '' && $endTime !== '') {
+            $now = strtotime(date('H:i'));
+            $start = strtotime($startTime);
+            $end = strtotime($endTime);
+
+            // Intervalo que cruza a meia-noite (start > end) é tratado
+            // como faixa circular.
+            $inside = $start <= $end
+                ? ($now >= $start && $now <= $end)
+                : ($now >= $start || $now <= $end);
+
+            if (!$inside) {
+                return [
+                    'code'  => 'game_closed',
+                    'error' => 'Os tesouros podem ser encontrados entre '
+                        . $startTime . ' e ' . $endTime . '.',
+                ];
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Payload de estado do jogo (GET/PUT /api/admin/game).
+     *
+     * @return array<string, string>
+     */
+    private function gamePayload(): array
+    {
+        return [
+            'status'         => (string) SettingsRepository::get('gameStatus', 'playing'),
+            'start_date'     => (string) SettingsRepository::get('gameStartDate', ''),
+            'start_time'     => (string) SettingsRepository::get('gameStartTime', '08:00'),
+            'end_time'       => (string) SettingsRepository::get('gameEndTime', '17:00'),
+            'active'         => (string) SettingsRepository::get('gameActive', '0'),
+            'winner_team_id' => (string) SettingsRepository::get('winnerTeamId', ''),
+        ];
+    }
+
+    /**
+     * Payload completo de um tesouro (GET/PUT /api/admin/treasures/{id}).
+     *
+     * @param array<string, mixed> $treasure Linha da tabela treasures
+     *
+     * @return array<string, mixed>
+     */
+    private function treasurePayload(array $treasure): array
+    {
+        return [
+            'id'          => (int) $treasure['id'],
+            'code'        => (string) $treasure['code'],
+            'name'        => (string) $treasure['name'],
+            'description' => (string) $treasure['description'],
+            'clue'        => (string) $treasure['clue'],
+            'riddle1'     => (string) $treasure['riddle1'],
+            'answer1'     => (string) $treasure['answer1'],
+            'riddle2'     => (string) $treasure['riddle2'],
+            'answer2'     => (string) $treasure['answer2'],
+            'lat'         => self::latOrNull($treasure),
+            'lng'         => self::lngOrNull($treasure),
+            'active'      => (int) $treasure['active'],
+            'qr_svg_path' => (string) $treasure['qr_svg_path'],
+        ];
+    }
+
+    /**
+     * Mensagens NÃO lidas de uma equipe (read_at IS NULL), na ordem de
+     * criação, limitadas a $limit registros.
+     *
+     * @return array<int, array{id: int, message: string, created_at: string}>
+     */
+    private static function teamMessages(int $teamId, int $limit = 50): array
+    {
+        $stmt = Database::get()->prepare(
+            'SELECT id, message, created_at FROM team_messages '
+            . 'WHERE team_id = :team_id AND read_at IS NULL '
+            . 'ORDER BY created_at ASC, id ASC '
+            . 'LIMIT ' . (int) $limit
+        );
+        $stmt->execute([':team_id' => $teamId]);
+
+        return array_map(static function (array $row): array {
+            return [
+                'id'         => (int) $row['id'],
+                'message'    => (string) $row['message'],
+                'created_at' => (string) $row['created_at'],
+            ];
+        }, $stmt->fetchAll(PDO::FETCH_ASSOC));
+    }
+
+    /**
+     * Valida data no formato AAAA-MM-DD (ou vazio, aceito).
+     */
+    private function isValidDate(string $date): bool
+    {
+        if ($date === '') {
+            return true;
+        }
+
+        $parsed = DateTime::createFromFormat('Y-m-d', $date);
+
+        return $parsed !== false && $parsed->format('Y-m-d') === $date;
+    }
+
+    /**
+     * Valida horário no formato HH:MM (ou vazio, aceito).
+     */
+    private function isValidTime(string $time): bool
+    {
+        if ($time === '') {
+            return true;
+        }
+
+        return (bool) preg_match('/^([01]\d|2[0-3]):[0-5]\d$/', $time);
+    }
 
     /**
      * Última localização registrada de uma equipe (a mais recente), ou
