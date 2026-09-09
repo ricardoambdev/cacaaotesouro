@@ -362,12 +362,15 @@ final class GameController
     }
 
     /**
-     * POST /admin/mensagem — envia uma mensagem para TODAS as equipes
-     * (dispara notificação no app das equipes).
+     * POST /admin/mensagem — envia uma mensagem para 'todos' ou para uma
+     * equipe específica (pela cor: 'laranja'|'preta').
+     * Dispara notificação no app da equipe.
      */
     public function broadcastMessage(Request $request, Response $response): Response
     {
-        $message = trim((string) (($request->getParsedBody() ?? [])['message'] ?? ''));
+        $body = (array) $request->getParsedBody();
+        $message = trim((string) ($body['message'] ?? ''));
+        $target = strtolower(trim((string) ($body['target'] ?? 'todos')));
 
         if ($message === '' || mb_strlen($message) > 500) {
             flash_set('error', 'A mensagem deve ter de 1 a 500 caracteres.');
@@ -380,7 +383,16 @@ final class GameController
             . 'VALUES (:team_id, :message, NULL, :created_at)'
         );
 
-        foreach (TeamRepository::all() as $team) {
+        $teams = $target === 'todos'
+            ? TeamRepository::all()
+            : (($team = TeamRepository::byColor($target)) !== null ? [$team] : []);
+
+        if ($teams === []) {
+            flash_set('error', 'Equipe de destino não encontrada.');
+            redirect('/');
+        }
+
+        foreach ($teams as $team) {
             $stmt->execute([
                 ':team_id'    => (int) $team['id'],
                 ':message'    => $message,
@@ -388,8 +400,37 @@ final class GameController
             ]);
         }
 
-        flash_set('success', 'Mensagem enviada para todas as equipes (notificação disparada).');
+        flash_set('success', 'Mensagem enviada (notificação disparada no app).');
         redirect('/');
+    }
+
+    /**
+     * GET /admin/mensagens — histórico recente de mensagens (para o chat).
+     */
+    public function messageHistory(Request $request, Response $response): Response
+    {
+        $pdo = Database::get();
+        $rows = $pdo->query(
+            'SELECT tm.id, tm.team_id, tm.message, tm.created_at, t.name AS team_name '
+            . 'FROM team_messages tm '
+            . 'LEFT JOIN teams t ON t.id = tm.team_id '
+            . 'ORDER BY tm.id DESC LIMIT 30'
+        )->fetchAll(PDO::FETCH_ASSOC);
+
+        $response->getBody()->write(json_encode([
+            'success' => true,
+            'messages' => array_reverse(array_map(static function (array $row): array {
+                return [
+                    'id'         => (int) $row['id'],
+                    'team_id'    => (int) $row['team_id'],
+                    'team_name'  => (string) ($row['team_name'] ?? 'Todos'),
+                    'message'    => (string) $row['message'],
+                    'created_at' => (string) ($row['created_at'] ?? ''),
+                ];
+            }, $rows)),
+        ], JSON_UNESCAPED_UNICODE));
+
+        return $response->withHeader('Content-Type', 'application/json; charset=utf-8');
     }
 
     /**

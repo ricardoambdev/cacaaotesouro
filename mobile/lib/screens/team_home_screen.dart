@@ -43,10 +43,6 @@ class _TeamHomeScreenState extends State<TeamHomeScreen> {
   // ── Mensagens não lidas ────────────────────────────────
   List<TeamMessage> _unreadMessages = [];
 
-  // ── Novas mensagens (para notificação com som) ─────────
-  List<TeamMessage> _newMessages = [];
-  bool _showNewMessageBanner = false;
-
   @override
   void initState() {
     super.initState();
@@ -114,22 +110,19 @@ class _TeamHomeScreenState extends State<TeamHomeScreen> {
       if (newMsgs.isNotEmpty) {
         // Tocar som de notificação
         _soundService.playNotification();
-        // Atualizar banner com a mensagem mais recente
+        // Salvar o maior ID visto
         final newest = newMsgs.reduce(
           (a, b) => a.id > b.id ? a : b,
         );
-        setState(() {
-          _newMessages = newMsgs;
-          _showNewMessageBanner = true;
-        });
-        // Salvar o maior ID visto
         await _deviceService.setLastMessageId(newest.id);
-        // Auto-dismiss do banner após 6 segundos
-        Future.delayed(const Duration(seconds: 6), () {
-          if (mounted) {
-            setState(() => _showNewMessageBanner = false);
-          }
-        });
+        // Mostrar a mensagem em POPUP
+        if (mounted) {
+          showDialog(
+            context: context,
+            barrierDismissible: true,
+            builder: (ctx) => _buildMessagePopup(newMsgs),
+          );
+        }
       }
 
       // Marcar mensagens como lidas após exibir
@@ -687,9 +680,6 @@ class _TeamHomeScreenState extends State<TeamHomeScreen> {
     // Envolver com banner de mensagens se houver
     return Column(
       children: [
-        // Banner de nova mensagem (destacado + som)
-        if (_showNewMessageBanner && _newMessages.isNotEmpty)
-          _buildNewMessageBanner(),
         // Banner de mensagens existentes
         ..._unreadMessages.map((msg) => _buildMessageBanner(msg)),
         // Conteúdo principal
@@ -756,102 +746,70 @@ class _TeamHomeScreenState extends State<TeamHomeScreen> {
     );
   }
 
-  /// Banner destacado para mensagens NOVAS (com som + toque para dispensar).
-  Widget _buildNewMessageBanner() {
-    return GestureDetector(
-      onTap: () {
-        setState(() => _showNewMessageBanner = false);
-      },
-      child: Container(
-        width: double.infinity,
-        margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              AppColors.gold.withValues(alpha: 0.2),
-              AppColors.gold.withValues(alpha: 0.08),
-            ],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(
-            color: AppColors.gold.withValues(alpha: 0.6),
-            width: 1.5,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.gold.withValues(alpha: 0.15),
-              blurRadius: 12,
-              offset: const Offset(0, 4),
+  /// Popup com as novas mensagens (som + destaque).
+  Widget _buildMessagePopup(List<TeamMessage> msgs) {
+    return AlertDialog(
+      backgroundColor: AppColors.navyMedium,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      title: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: AppColors.gold.withValues(alpha: 0.2),
+              borderRadius: BorderRadius.circular(10),
             ),
-          ],
-        ),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: AppColors.gold.withValues(alpha: 0.25),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: const Icon(
-                Icons.notifications_active,
+            child: const Icon(
+              Icons.notifications_active,
+              color: AppColors.gold,
+              size: 22,
+            ),
+          ),
+          const SizedBox(width: 12),
+          const Expanded(
+            child: Text(
+              'Mensagem do organizador',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w800,
                 color: AppColors.gold,
-                size: 22,
               ),
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'NOVA MENSAGEM',
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w900,
-                      letterSpacing: 1.5,
-                      color: AppColors.gold,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  // Mostra a mensagem mais recente
-                  Text(
-                    _newMessages.last.message,
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      height: 1.4,
-                      color: AppColors.ivory,
-                    ),
-                  ),
-                  if (_newMessages.length > 1) ...[
-                    const SizedBox(height: 4),
-                    Text(
-                      '+${_newMessages.length - 1} outra(s) mensagem(ns)',
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: AppColors.gold.withValues(alpha: 0.7),
-                      ),
-                    ),
-                  ],
-                  const SizedBox(height: 6),
-                  Text(
-                    'Toque para dispensar',
-                    style: TextStyle(
-                      fontSize: 10,
-                      color: AppColors.ivoryMuted.withValues(alpha: 0.5),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: msgs
+            .map(
+              (m) => Padding(
+                padding: const EdgeInsets.only(bottom: 10),
+                child: Text(
+                  m.message,
+                  style: const TextStyle(
+                    fontSize: 15,
+                    height: 1.5,
+                    color: AppColors.ivory,
+                  ),
+                ),
+              ),
+            )
+            .toList(),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text(
+            'OK',
+            style: TextStyle(
+              color: AppColors.gold,
+              fontWeight: FontWeight.w700,
+              fontSize: 15,
+            ),
+          ),
+        ),
+      ],
     );
   }
 
