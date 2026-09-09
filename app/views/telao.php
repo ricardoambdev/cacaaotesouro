@@ -575,7 +575,7 @@ $siteName = $siteName ?? 'Caça ao Tesouro';
         async function loadTelao() {
             const errorEl = $('#telao-error');
             try {
-                const res = await fetch('/api/telao');
+                const res = await fetch('/api/telao?t=' + Date.now(), { cache: 'no-store' });
                 if (!res.ok) throw new Error('HTTP ' + res.status);
                 const data = await res.json();
                 if (!data.success) throw new Error('API returned success=false');
