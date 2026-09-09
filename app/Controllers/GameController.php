@@ -291,6 +291,76 @@ final class GameController
         );
     }
 
+    /**
+     * POST /limpar/tesouros — cria 5 tesouros de demonstração
+     * (úteis após a limpeza para o sistema não ficar vazio).
+     * Códigos já existentes não são duplicados.
+     */
+    public function createDemoTreasures(Request $request, Response $response): Response
+    {
+        $pdo = Database::get();
+
+        $demos = [
+            ['code' => 'T01', 'name' => 'Praça do Quico', 'description' => 'A praça onde o Quico brinca de bola com a Chiquinha.', 'clue' => 'Procure o banco onde o Quico senta para esperar a Chiquinha.', 'riddle1' => 'Quantas pernas tem o total de personagens da vila?', 'answer1' => '0412', 'riddle2' => 'Qual o número da casa da bruxa do 71?', 'answer2' => '0071'],
+            ['code' => 'T02', 'name' => 'Barril da Vila', 'description' => 'Um barril antigo na entrada da vila.', 'clue' => 'Atrás do barril com o buraco redondo.', 'riddle1' => 'Quantas rodas tem o carro do Sr. Madruga?', 'answer1' => '0004', 'riddle2' => 'Quantas letras tem CHAVES?', 'answer2' => '0006'],
+            ['code' => 'T03', 'name' => 'Portão do Colégio', 'description' => 'O portão da escola onde todos estudam.', 'clue' => 'No portão, do lado de fora, há um número pintado.', 'riddle1' => 'Qual o ano em que a série começou?', 'answer1' => '1972', 'riddle2' => 'Quantos dedos tem a mão do Professor Girafales?', 'answer2' => '0005'],
+            ['code' => 'T04', 'name' => 'Pipoca da Chiquinha', 'description' => 'A barraquinha de pipoca da Chiquinha.', 'clue' => 'Atrás da barraquinha há uma sacola de pipoca amarela.', 'riddle1' => 'Quantos grãos de milho tem uma espiga média?', 'answer1' => '0800', 'riddle2' => 'Quantos minutos tem uma hora?', 'answer2' => '0060'],
+            ['code' => 'T05', 'name' => 'Muralha do Pátio', 'description' => 'O muro onde as crianças se escondem.', 'clue' => 'Entre o muro e a árvore grande.', 'riddle1' => 'Quantos dias tem uma semana?', 'answer1' => '0007', 'riddle2' => 'Quantos lados tem um quadrado?', 'answer2' => '0004'],
+        ];
+
+        // Códigos já existentes (para não duplicar).
+        $existing = array_map('strval', $pdo->query('SELECT code FROM treasures')->fetchAll(PDO::FETCH_COLUMN));
+
+        $nextSort = (int) $pdo->query('SELECT COALESCE(MAX(sort_order), 0) FROM treasures')->fetchColumn();
+        $insert = $pdo->prepare(
+            'INSERT INTO treasures '
+            . '(code, name, description, clue, riddle1, answer1, riddle2, answer2, '
+            . 'qr_content, qr_svg_path, sort_order, active, created_at) '
+            . 'VALUES (:code, :name, :description, :clue, :riddle1, :answer1, '
+            . ':riddle2, :answer2, :qr_content, :qr_svg_path, :sort_order, 0, :created_at)'
+        );
+        $updateQr = $pdo->prepare('UPDATE treasures SET qr_content = :qr, qr_svg_path = :svg WHERE id = :id');
+
+        $created = 0;
+
+        foreach ($demos as $t) {
+            if (in_array($t['code'], $existing, true)) {
+                continue;
+            }
+
+            $code = random_alnum(20);
+            $nextSort++;
+
+            $insert->execute([
+                ':code' => $t['code'], ':name' => $t['name'], ':description' => $t['description'],
+                ':clue' => $t['clue'], ':riddle1' => $t['riddle1'], ':answer1' => $t['answer1'],
+                ':riddle2' => $t['riddle2'], ':answer2' => $t['answer2'],
+                ':qr_content' => $code, ':qr_svg_path' => '', ':sort_order' => $nextSort,
+                ':created_at' => date('Y-m-d H:i:s'),
+            ]);
+
+            $id = (int) $pdo->lastInsertId();
+            $svg = '';
+
+            try {
+                $svg = \App\Services\QrService::generateSvg($code, $id);
+            } catch (\Throwable $e) {
+                error_log('createDemoTreasures QR: ' . $e->getMessage());
+            }
+
+            $updateQr->execute([':qr' => $code, ':svg' => $svg, ':id' => $id]);
+            $created++;
+        }
+
+        if ($created > 0) {
+            flash_set('success', sprintf('%d tesouro(s) de demonstração criado(s). Confirme as coordenadas pelo app admin no local.', $created));
+        } else {
+            flash_set('error', 'Os 5 tesouros de demonstração já existem.');
+        }
+
+        redirect('/configuracoes');
+    }
+
     // ------------------------------------------------------------------
     // Privados
     // ------------------------------------------------------------------

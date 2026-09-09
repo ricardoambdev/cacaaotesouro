@@ -575,4 +575,32 @@ $teamBlackPassword  = (string) ($teams['preta']['password']  ?? '');
             </button>
         </form>
     </div>
+
+    <div class="settings-card" style="border:1px solid rgba(39,174,96,0.3); margin-top:24px;">
+        <h2 class="settings-card-title" style="color:#27ae60;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="12" y1="8" x2="12" y2="16"/>
+                <line x1="8" y1="12" x2="16" y2="12"/>
+            </svg>
+            Tesouros de demonstração
+        </h2>
+
+        <p style="color:rgba(247,236,212,0.7); font-size:0.9rem; line-height:1.7; margin-bottom:16px;">
+            Cria <strong style="color:#27ae60;">5 tesouros</strong> de demonstração (T01–T05) com charadas, QR codes e
+            ordenação automática. Útil logo após a limpeza. Depois, confirme as coordenadas de cada um pelo app admin.
+        </p>
+
+        <form method="post" action="/limpar/tesouros">
+            <?= csrf_field() ?>
+            <button type="submit" class="btn btn-primary" style="width:auto; background:linear-gradient(135deg,#27ae60,#1e8a4c);">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M20 12v10H4V12"/>
+                    <path d="M12 2v15"/>
+                    <path d="M8 6l4-4 4 4"/>
+                </svg>
+                Criar 5 tesouros de demonstração
+            </button>
+        </form>
+    </div>
 </div>
