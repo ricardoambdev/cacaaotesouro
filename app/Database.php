@@ -163,6 +163,7 @@ final class Database
         );
 
         self::ensureTeamPasswordColumn($pdo, $driver);
+        self::ensureDisqualifiedColumn($pdo, $driver);
 
         self::seedDefaultTeams($pdo, $driver);
 
@@ -353,6 +354,51 @@ final class Database
             $pdo->exec(
                 'CREATE INDEX idx_team_time ON team_locations (team_id, created_at)'
             );
+        }
+    }
+
+    /**
+     * Garante que a coluna `disqualified` exista em `team_treasure_progress`
+     * (migração idempotente para bancos criados por versões antigas — sem
+     * isso, o /api/telao e o painel quebram com 500 "Unknown column").
+     */
+    private static function ensureDisqualifiedColumn(PDO $pdo, string $driver): void
+    {
+        try {
+            if ($driver === 'sqlite') {
+                $found = false;
+
+                foreach ($pdo->query('PRAGMA table_info(team_treasure_progress)') as $column) {
+                    if (strtolower((string) $column['name']) === 'disqualified') {
+                        $found = true;
+                        break;
+                    }
+                }
+
+                if (!$found) {
+                    $pdo->exec(
+                        "ALTER TABLE team_treasure_progress ADD COLUMN disqualified TINYINT(1) NOT NULL DEFAULT 0"
+                    );
+                }
+
+                return;
+            }
+
+            $stmt = $pdo->prepare(
+                'SELECT COUNT(*) FROM information_schema.columns '
+                . 'WHERE table_schema = DATABASE() AND table_name = :table '
+                . 'AND column_name = :column'
+            );
+            $stmt->execute([':table' => 'team_treasure_progress', ':column' => 'disqualified']);
+
+            if ((int) $stmt->fetchColumn() === 0) {
+                $pdo->exec(
+                    'ALTER TABLE team_treasure_progress '
+                    . 'ADD COLUMN disqualified TINYINT(1) NOT NULL DEFAULT 0 AFTER points_awarded'
+                );
+            }
+        } catch (PDOException $e) {
+            error_log('Database::ensureDisqualifiedColumn: ' . $e->getMessage());
         }
     }
 
