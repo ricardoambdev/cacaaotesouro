@@ -1150,6 +1150,7 @@ final class ApiController
         return $this->json($response, [
             'success' => true,
             'game'    => [
+                'gameStatus'   => (string) SettingsRepository::get('gameStatus', 'playing'),
                 'gameActive'   => (string) SettingsRepository::get('gameActive', '0'),
                 'winnerTeamId' => (string) SettingsRepository::get('winnerTeamId', ''),
             ],

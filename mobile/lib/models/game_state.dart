@@ -185,12 +185,14 @@ class AnswerResult {
 /// Estado do admin retornado por GET /api/admin/status.
 class AdminStatus {
   final bool gameActive;
+  final String gameStatus;
   final int? winnerTeamId;
   final List<AdminTeamStatus> teams;
   final List<dynamic>? treasuresProgress;
 
   const AdminStatus({
     required this.gameActive,
+    this.gameStatus = 'playing',
     this.winnerTeamId,
     required this.teams,
     this.treasuresProgress,
@@ -208,6 +210,10 @@ class AdminStatus {
     final gameActive = gameActiveRaw == true ||
         gameActiveRaw == 1 ||
         gameActiveRaw == '1';
+
+    // gameStatus (novo) pode vir como 'playing' | 'paused' | 'finished'.
+    final gameStatus =
+        (gameData['gameStatus'] as String?) ?? (gameActive ? 'playing' : 'paused');
 
     // winnerTeamId pode vir como '' (vazio), '12' (string numérica),
     // 12 (num) ou null.
@@ -230,6 +236,7 @@ class AdminStatus {
 
     return AdminStatus(
       gameActive: gameActive,
+      gameStatus: gameStatus,
       winnerTeamId: winnerTeamId,
       teams: teamsList,
       treasuresProgress: treasuresProgress,

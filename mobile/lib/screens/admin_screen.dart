@@ -124,6 +124,40 @@ class _AdminScreenState extends State<AdminScreen> {
     );
   }
 
+  /// Rótulo do status do jogo (baseado no novo gameStatus).
+  String _gameStatusLabel(AdminStatus status) {
+    switch (status.gameStatus) {
+      case 'paused':
+        return 'Pausado';
+      case 'finished':
+        return 'Finalizado';
+      default:
+        return 'Em andamento';
+    }
+  }
+
+  IconData _gameStatusIcon(AdminStatus status) {
+    switch (status.gameStatus) {
+      case 'paused':
+        return Icons.pause_circle;
+      case 'finished':
+        return Icons.flag_circle;
+      default:
+        return Icons.play_circle;
+    }
+  }
+
+  Color _gameStatusColor(AdminStatus status) {
+    switch (status.gameStatus) {
+      case 'paused':
+        return Colors.orange;
+      case 'finished':
+        return Colors.redAccent;
+      default:
+        return Colors.greenAccent;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -265,14 +299,12 @@ class _AdminScreenState extends State<AdminScreen> {
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: status.gameActive
-                    ? Colors.green.withValues(alpha: 0.2)
-                    : Colors.orange.withValues(alpha: 0.2),
+                color: _gameStatusColor(status).withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Icon(
-                status.gameActive ? Icons.play_circle : Icons.pause_circle,
-                color: status.gameActive ? Colors.greenAccent : Colors.orange,
+                _gameStatusIcon(status),
+                color: _gameStatusColor(status),
                 size: 28,
               ),
             ),
@@ -282,13 +314,11 @@ class _AdminScreenState extends State<AdminScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    status.gameActive ? 'Jogo Ativo' : 'Jogo Pausado',
+                    _gameStatusLabel(status),
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w700,
-                      color: status.gameActive
-                          ? Colors.greenAccent
-                          : Colors.orange,
+                      color: _gameStatusColor(status),
                     ),
                   ),
                   if (status.winnerTeamId != null)
