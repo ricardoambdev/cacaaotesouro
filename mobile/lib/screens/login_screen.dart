@@ -338,7 +338,7 @@ class _LoginCard extends StatelessWidget {
                     child: TextFormField(
                       controller: senhaController,
                       style: const TextStyle(
-                          color: AppColors.ivory, fontSize: 14),
+                          color: AppColors.ivory, fontSize: 16),
                       obscureText: !senhaVisivel,
                       keyboardType: TextInputType.visiblePassword,
                       textInputAction: TextInputAction.done,
@@ -346,9 +346,9 @@ class _LoginCard extends StatelessWidget {
                       onFieldSubmitted: (_) => onEntrar(),
                       decoration: InputDecoration(
                         labelText: 'Senha',
-                        prefixIcon: const Icon(Icons.lock_outline, size: 20),
+                        prefixIcon: const Icon(Icons.lock_outline, size: 22),
                         suffixIcon: IconButton(
-                          iconSize: 20,
+                          iconSize: 22,
                           icon: Icon(
                             senhaVisivel
                                 ? Icons.visibility_off_outlined
@@ -358,7 +358,7 @@ class _LoginCard extends StatelessWidget {
                           onPressed: onToggleSenha,
                         ),
                         contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 14, vertical: 12),
+                            horizontal: 16, vertical: 18),
                       ),
                       validator: (value) {
                         if (value == null || value.isEmpty) {
@@ -374,8 +374,8 @@ class _LoginCard extends StatelessWidget {
                   Padding(
                     padding: const EdgeInsets.only(top: 0),
                     child: SizedBox(
-                      height: 48,
-                      width: 110,
+                      height: 44,
+                      width: 92,
                       child: DecoratedBox(
                         decoration: BoxDecoration(
                           gradient: LinearGradient(
@@ -410,9 +410,9 @@ class _LoginCard extends StatelessWidget {
                             disabledForegroundColor:
                                 AppColors.navyDark.withValues(alpha: 0.5),
                             textStyle: const TextStyle(
-                              fontSize: 15,
+                              fontSize: 13,
                               fontWeight: FontWeight.w700,
-                              letterSpacing: 0.3,
+                              letterSpacing: 0.2,
                             ),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
@@ -428,7 +428,15 @@ class _LoginCard extends StatelessWidget {
                                     color: AppColors.navyDark,
                                   ),
                                 )
-                              : const Text('Entrar'),
+                              : const Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(Icons.login, size: 16),
+                                    SizedBox(width: 4),
+                                    Text('Entrar'),
+                                  ],
+                                ),
                         ),
                       ),
                     ),
