@@ -36,7 +36,28 @@ final class SettingsController
 
         $devMode = (string) SettingsRepository::get('apiDevMode', '0') === '1' || $isDevEnv;
 
-        $hasApk = is_file(dirname(__DIR__, 2) . '/public/uploads/apk/cacaaotesouro.apk');
+        $hasApk = is_file(dirname(__DIR__, 2) . '/public/app.apk')
+        || is_file(dirname(__DIR__, 2) . '/public/uploads/apk/cacaaotesouro.apk');
+
+        // URL pública do APK (para baixar/instalar nos celulares).
+        $apkUrl = rtrim($systemUrl, '/') . '/app.apk';
+
+        // QR code SVG do link do APK (escaneável para baixar em outros
+        // celulares) — gerado inline, sem salvar arquivo.
+        $apkQrSvg = '';
+        if ($hasApk && $apkUrl !== '') {
+            try {
+                $qrOptions = new \chillerlan\QRCode\QROptions([
+                    'outputType'   => \chillerlan\QRCode\QRCode::OUTPUT_MARKUP_SVG,
+                    'eccLevel'     => \chillerlan\QRCode\QRCode::ECC_M,
+                    'scale'        => 6,
+                    'addQuietzone' => true,
+                ]);
+                $apkQrSvg = (new \chillerlan\QRCode\QRCode($qrOptions))->render($apkUrl);
+            } catch (\Throwable $e) {
+                error_log('QR do APK: ' . $e->getMessage());
+            }
+        }
 
         // Matriz de ambientes: detecta de onde o painel está sendo acessado
         // e monta as URLs da API a usar no aplicativo (servidor/rede/local).
@@ -92,6 +113,8 @@ final class SettingsController
             'systemUrl' => $systemUrl,
             'apiUrl'    => $apiUrl,
             'hasApk'    => $hasApk,
+            'apkUrl'    => $apkUrl,
+            'apkQrSvg'  => $apkQrSvg,
             'devMode'   => $devMode,
             'appUrl'    => $appUrl,
             'currentEnvironment' => $currentEnvironment,

@@ -303,12 +303,25 @@ $teamBlackPassword  = (string) ($teams['preta']['password']  ?? '');
             <?php endif; ?>
 
             <?php if ($hasApk): ?>
-            <div class="dev-info-line">
-                <span class="dev-info-label">Aplicativo Android:</span>
-                <a href="/uploads/apk/cacaaotesouro.apk" class="btn btn-secondary btn-auto btn-sm" style="background:rgba(247,236,212,0.1);color:#f7ecd4;border:1px solid rgba(247,236,212,0.2);">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                    Baixar APK
-                </a>
+            <div style="margin-top:18px; padding:18px; border:1px solid rgba(34,197,94,0.3); border-radius:14px; background:rgba(34,197,94,0.05);">
+                <div style="font-weight:700; color:#22C55E; margin-bottom:8px; font-size:.85rem; text-transform:uppercase; letter-spacing:.06em;">📱 Instalar o aplicativo</div>
+                <p style="font-size:.85rem; color:rgba(247,236,212,.75); margin-bottom:14px;">
+                    Link para baixar o APK:
+                    <a href="<?= e($apkUrl) ?>" target="_blank" rel="noopener" style="color:#22C55E; font-weight:600; word-break:break-all;"><?= e($apkUrl) ?></a>
+                </p>
+                <div style="display:flex; gap:16px; align-items:center; flex-wrap:wrap;">
+                    <div style="background:#fff; padding:10px; border-radius:10px; box-shadow:0 4px 14px rgba(0,0,0,.3); flex-shrink:0;">
+                        <?= $apkQrSvg ?>
+                    </div>
+                    <div style="flex:1; min-width:200px; font-size:.82rem; color:rgba(247,236,212,.7); line-height:1.7;">
+                        Aponte a câmera de outro celular para o <strong style="color:#22C55E;">QR code</strong> ao lado
+                        para baixar e instalar o aplicativo.
+                        <br><br>
+                        <a href="<?= e($apkUrl) ?>" class="btn btn-primary btn-auto btn-sm" style="background:linear-gradient(135deg,#22C55E,#168a3a);">
+                            Baixar APK
+                        </a>
+                    </div>
+                </div>
             </div>
             <?php endif; ?>
 
