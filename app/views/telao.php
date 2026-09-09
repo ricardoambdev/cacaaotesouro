@@ -378,72 +378,47 @@ $siteName = $siteName ?? 'Caça ao Tesouro';
             .sb-selfies { display: none; }
         }
 
-        /* ═══ PIN CARTUNESCO DAS EQUIPES ═══ */
-        .team-pin-wrap {
-            filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.5));
-        }
+        /* ═══ PIN CARTUNESCO DAS EQUIPES (flat) ═══ */
         .team-pin {
             position: relative;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            padding: 7px 18px 11px;
-            border-radius: 18px 18px 18px 6px;
+            padding: 6px 16px 9px;
+            border-radius: 12px;
             color: #fff;
             font-family: 'Comic Sans MS', 'Segoe UI', sans-serif;
             white-space: nowrap;
             line-height: 1;
-            box-shadow:
-                inset 0 3px 0 rgba(255, 255, 255, 0.3),
-                inset 0 -8px 14px rgba(0, 0, 0, 0.3);
-            animation: pin-bounce 1.4s ease-in-out infinite;
-        }
-        .team-pin-shine {
-            position: absolute;
-            top: 4px;
-            left: 14px;
-            right: 14px;
-            height: 9px;
-            border-radius: 50%;
-            background: rgba(255, 255, 255, 0.35);
-            filter: blur(1px);
-            pointer-events: none;
         }
         .team-pin-label {
             font-size: 9px;
-            font-weight: 800;
+            font-weight: 700;
             letter-spacing: 2px;
             text-transform: uppercase;
-            opacity: 0.85;
+            opacity: 0.8;
             margin-bottom: 4px;
         }
         .team-pin-name {
-            font-size: 18px;
-            font-weight: 900;
-            text-shadow: 0 2px 3px rgba(0, 0, 0, 0.35);
+            font-size: 17px;
+            font-weight: 800;
         }
         .team-pin-tail {
             position: absolute;
-            bottom: -13px;
+            bottom: -12px;
             left: 50%;
             transform: translateX(-50%);
             width: 0;
             height: 0;
-            border-left: 10px solid transparent;
-            border-right: 10px solid transparent;
-            border-top: 14px solid;
+            border-left: 9px solid transparent;
+            border-right: 9px solid transparent;
+            border-top: 12px solid;
         }
-        .team-pin-laranja {
-            background: linear-gradient(180deg, #fb923c 0%, #f97316 45%, #e05a0d 100%);
-            border: 2px solid #fff3;
-        }
-        .team-pin-laranja .team-pin-tail { border-top-color: #e05a0d; }
-        .team-pin-preta {
-            background: linear-gradient(180deg, #3f4a58 0%, #16181c 45%, #000 100%);
-            border: 2px solid #fff3;
-        }
-        .team-pin-preta .team-pin-tail { border-top-color: #000; }
+        .team-pin-laranja { background: #F97316; }
+        .team-pin-laranja .team-pin-tail { border-top-color: #F97316; }
+        .team-pin-preta { background: #111; }
+        .team-pin-preta .team-pin-tail { border-top-color: #111; }
         @keyframes pin-bounce {
             0%, 100% { transform: translateY(0); }
             50% { transform: translateY(-4px); }
@@ -663,14 +638,13 @@ $siteName = $siteName ?? 'Caça ao Tesouro';
                     const icon = L.divIcon({
                         className: 'team-pin-wrap',
                         html: '<div class="team-pin team-pin-' + colorKey + '">' +
-                            '<span class="team-pin-shine"></span>' +
                             '<span class="team-pin-label">Equipe</span>' +
                             '<span class="team-pin-name">' + colorName + '</span>' +
                             '<div class="team-pin-tail"></div>' +
                             '</div>',
-                        iconSize: [140, 56],
-                        iconAnchor: [70, 56],
-                        popupAnchor: [0, -52],
+                        iconSize: [130, 52],
+                        iconAnchor: [65, 52],
+                        popupAnchor: [0, -48],
                     });
 
                     if (teamMarkers[colorKey]) {
