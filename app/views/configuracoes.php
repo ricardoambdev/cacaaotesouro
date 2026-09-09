@@ -79,6 +79,9 @@ $teamBlackPassword  = (string) ($teams['preta']['password']  ?? '');
     <button type="button" class="tab-btn" data-tab="limpeza" role="tab" aria-selected="false" aria-controls="tab-limpeza">
         🧹 Limpeza
     </button>
+    <button type="button" class="tab-btn" data-tab="backup" role="tab" aria-selected="false" aria-controls="tab-backup">
+        💾 Backup
+    </button>
 </nav>
 
 <form method="post" action="/configuracoes" class="settings-form" data-validate>
@@ -649,5 +652,89 @@ $teamBlackPassword  = (string) ($teams['preta']['password']  ?? '');
                 Apagar tudo e recomeçar
             </button>
         </form>
+    </div>
+</div>
+
+<!-- ═══ Aba BACKUP (tesouros em JSON) ═══ -->
+<div class="tab-panel" id="tab-backup" role="tabpanel">
+    <div class="page-header">
+        <h1 class="page-title">Backup de Tesouros</h1>
+        <p class="page-subtitle">Exporte os tesouros em JSON ou importe de um backup para adicioná-los automaticamente.</p>
+    </div>
+
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+        <!-- Exportar -->
+        <div class="settings-card" style="margin:0;">
+            <h2 class="settings-card-title" style="color:#27ae60;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                    <polyline points="7 10 12 15 17 10"/>
+                    <line x1="12" y1="15" x2="12" y2="3"/>
+                </svg>
+                Baixar tesouros (JSON)
+            </h2>
+            <p style="color:rgba(247,236,212,0.6); font-size:0.85rem; line-height:1.6; margin-bottom:14px;">
+                Gera um arquivo <strong style="color:#27ae60;">.json</strong> com todos os tesouros cadastrados
+                (código, nome, descrição, dica, charadas e respostas). Use para guardar ou transferir para outro sistema.
+            </p>
+            <a href="/admin/backup" class="btn btn-primary btn-auto btn-sm" style="background:linear-gradient(135deg,#27ae60,#1e8a4c);">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                Baixar backup JSON
+            </a>
+        </div>
+
+        <!-- Importar -->
+        <div class="settings-card" style="margin:0;">
+            <h2 class="settings-card-title" style="color:#F97316;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                    <polyline points="17 8 12 3 7 8"/>
+                    <line x1="12" y1="3" x2="12" y2="15"/>
+                </svg>
+                Importar tesouros (JSON)
+            </h2>
+            <p style="color:rgba(247,236,212,0.6); font-size:0.85rem; line-height:1.6; margin-bottom:14px;">
+                Envie um arquivo <strong style="color:#F97316;">.json</strong> de backup. Os tesouros são
+                <strong>adicionados automaticamente</strong> (QR SVG gerado). Códigos já existentes são ignorados.
+            </p>
+            <form method="post" action="/admin/import" enctype="multipart/form-data">
+                <?= csrf_field() ?>
+                <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+                    <input type="file" name="file" accept=".json,application/json" required
+                           style="flex:1; min-width:160px; font-size:.8rem; color:#f7ecd4;
+                                  background:rgba(5,11,18,.6); border:1px solid rgba(249,115,22,.25);
+                                  border-radius:8px; padding:8px 10px;">
+                    <button type="submit" class="btn btn-primary btn-sm" style="background:linear-gradient(135deg,#F97316,#EA580C);">
+                        Importar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="settings-card" style="margin-top:20px; border:1px solid rgba(247,236,212,0.12);">
+        <h2 class="settings-card-title" style="color:rgba(247,236,212,0.8); font-size:1rem;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="12" y1="16" x2="12" y2="12"/>
+                <line x1="12" y1="8" x2="12.01" y2="8"/>
+            </svg>
+            Formato do JSON
+        </h2>
+        <pre style="background:rgba(5,11,18,.6); border:1px solid rgba(247,236,212,0.12); border-radius:8px; padding:14px; font-size:.78rem; color:rgba(247,236,212,.75); overflow-x:auto; margin:0;">
+{
+  "treasures": [
+    {
+      "code": "T01",
+      "name": "Praça do Quico",
+      "description": "A praça onde o Quico brinca.",
+      "clue": "Procure o banco onde o Quico senta.",
+      "riddle1": "Quantas pernas tem o total de personagens da vila?",
+      "answer1": "0412",
+      "riddle2": "Qual o número da casa da bruxa do 71?",
+      "answer2": "0071"
+    }
+  ]
+}</pre>
     </div>
 </div>
