@@ -40,6 +40,9 @@ class _TeamHomeScreenState extends State<TeamHomeScreen> {
   // ── Timer de envio de localização ──────────────────────
   Timer? _locationTimer;
 
+  // ── Timer de polling de mensagens ──────────────────────
+  Timer? _messagesTimer;
+
   // ── Mensagens não lidas ────────────────────────────────
   List<TeamMessage> _unreadMessages = [];
 
@@ -52,6 +55,7 @@ class _TeamHomeScreenState extends State<TeamHomeScreen> {
   @override
   void dispose() {
     _locationTimer?.cancel();
+    _messagesTimer?.cancel();
     _soundService.dispose();
     super.dispose();
   }
@@ -103,27 +107,10 @@ class _TeamHomeScreenState extends State<TeamHomeScreen> {
         _answerResult = null;
       });
       _startLocationTracking();
+      _startMessagesPolling();
 
       // ── Detectar mensagens NOVAS (id > última vista) ──────
-      final lastId = await _deviceService.getLastMessageId();
-      final newMsgs = state.messages.where((m) => m.id > lastId).toList();
-      if (newMsgs.isNotEmpty) {
-        // Tocar som de notificação
-        _soundService.playNotification();
-        // Salvar o maior ID visto
-        final newest = newMsgs.reduce(
-          (a, b) => a.id > b.id ? a : b,
-        );
-        await _deviceService.setLastMessageId(newest.id);
-        // Mostrar a mensagem em POPUP
-        if (mounted) {
-          showDialog(
-            context: context,
-            barrierDismissible: true,
-            builder: (ctx) => _buildMessagePopup(newMsgs),
-          );
-        }
-      }
+      await _handleNewTeamMessages(state.messages);
 
       // Marcar mensagens como lidas após exibir
       if (_unreadMessages.isNotEmpty) {
@@ -155,6 +142,56 @@ class _TeamHomeScreenState extends State<TeamHomeScreen> {
     } catch (_) {
       // Silencioso — não bloqueia o app
     }
+  }
+
+  /// Processa mensagens novas: toca som, salva lastId, mostra popup e marca
+  /// como lidas no servidor. Usado tanto no carregamento quanto no polling.
+  Future<void> _handleNewTeamMessages(List<TeamMessage> messages) async {
+    final lastId = await _deviceService.getLastMessageId();
+    final newMsgs = messages.where((m) => m.id > lastId).toList();
+    if (newMsgs.isEmpty) return;
+
+    // Tocar som de notificação
+    _soundService.playNotification();
+
+    // Salvar o maior ID visto
+    final newest = newMsgs.reduce((a, b) => a.id > b.id ? a : b);
+    await _deviceService.setLastMessageId(newest.id);
+
+    // Mostrar a mensagem em POPUP
+    if (mounted) {
+      showDialog(
+        context: context,
+        barrierDismissible: true,
+        builder: (_) => _buildMessagePopup(newMsgs),
+      );
+    }
+
+    // Marcar como lidas no servidor
+    try {
+      await _apiService.teamMarkMessagesRead(newMsgs.map((m) => m.id).toList());
+    } catch (_) {
+      // Silencioso — não bloqueia o app
+    }
+  }
+
+  /// Verifica mensagens novas via polling (chamado pelo timer).
+  Future<void> _checkMessages() async {
+    try {
+      final msgs = await _apiService.teamMessages();
+      await _handleNewTeamMessages(msgs);
+    } catch (_) {
+      // Silencioso — erros de rede não devem afetar o usuário
+    }
+  }
+
+  /// Inicia o polling de mensagens a cada 10 segundos.
+  void _startMessagesPolling() {
+    _messagesTimer?.cancel();
+    _messagesTimer = Timer.periodic(
+      const Duration(seconds: 10),
+      (_) => _checkMessages(),
+    );
   }
 
   // ════════════════════════════════════════════════════════════

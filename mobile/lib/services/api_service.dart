@@ -798,6 +798,39 @@ class ApiService {
   }
 
   // ════════════════════════════════════════════════════════════
+  //  TEAM: MESSAGES
+  // ════════════════════════════════════════════════════════════
+
+  /// GET /api/team/messages → lista de mensagens não lidas da equipe.
+  Future<List<TeamMessage>> teamMessages() async {
+    final headers = await _teamHeaders();
+    final response = await http.get(
+      Uri.parse('$baseUrl/team/messages'),
+      headers: headers,
+    );
+
+    _extractCookie(response);
+
+    if (response.statusCode == 401) {
+      final body = _parseBody(response);
+      throw ApiException(
+        body['error'] as String? ?? 'Sessão expirada. Faça login novamente.',
+      );
+    }
+
+    final body = _parseBody(response);
+    if (response.statusCode == 200 && body['success'] == true) {
+      final list = body['messages'] as List<dynamic>? ?? [];
+      return list
+          .map((m) => TeamMessage.fromJson(m as Map<String, dynamic>))
+          .toList();
+    }
+
+    throw ApiException(
+        body['error'] as String? ?? 'Erro ao buscar mensagens.');
+  }
+
+  // ════════════════════════════════════════════════════════════
   //  TEAM: MARK MESSAGES READ
   // ════════════════════════════════════════════════════════════
 
