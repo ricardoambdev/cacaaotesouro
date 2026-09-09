@@ -401,6 +401,51 @@ $colorMap = [
     border-color: #F97316;
 }
 
+/* ---- MODAL DA SELFIE ---- */
+.selfie-modal {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    z-index: 9999;
+    background: rgba(0, 0, 0, 0.88);
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    animation: selfieFade .15s ease;
+}
+@keyframes selfieFade { from { opacity: 0; } to { opacity: 1; } }
+.selfie-modal-card {
+    position: relative;
+    max-width: 620px;
+    width: 100%;
+    text-align: center;
+}
+.selfie-modal-card img {
+    max-width: 100%;
+    max-height: 82vh;
+    border-radius: 14px;
+    border: 2px solid rgba(249,115,22,0.5);
+    box-shadow: 0 20px 60px rgba(0,0,0,.6);
+}
+.selfie-modal-close {
+    position: absolute;
+    top: -18px;
+    right: -14px;
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    border: none;
+    background: linear-gradient(135deg, #F97316, #EA580C);
+    color: #fff;
+    font-size: 24px;
+    line-height: 1;
+    cursor: pointer;
+    box-shadow: 0 4px 14px rgba(0,0,0,.4);
+    transition: transform .15s;
+    z-index: 10;
+}
+.selfie-modal-close:hover { transform: scale(1.1); }
+
 /* ---- TEAM PIN (flat, copiado do telão) ---- */
 .team-pin {
     position: relative;
@@ -600,33 +645,7 @@ $colorMap = [
                     </div>
                 <?php endif; ?>
 
-            <!-- Modal da selfie -->
-            <div id="selfie-modal" style="display:none; position:fixed; inset:0; z-index:2000; background:rgba(0,0,0,0.85); align-items:center; justify-content:center; padding:20px;">
-                <div style="max-width:560px; width:100%; text-align:center;">
-                    <img id="selfie-modal-img" src="" alt="Selfie" style="max-width:100%; max-height:80vh; border-radius:12px; border:2px solid rgba(249,115,22,0.4);">
-                    <div style="margin-top:14px;">
-                        <button id="selfie-modal-close" class="db-btn-apply" style="background:linear-gradient(135deg,#F97316,#EA580C);">Fechar</button>
-                    </div>
-                </div>
-            </div>
-            <script>
-            (function () {
-                var modal = document.getElementById('selfie-modal');
-                var img = document.getElementById('selfie-modal-img');
-                var close = document.getElementById('selfie-modal-close');
-                if (!modal || !img || !close) return;
-                document.querySelectorAll('[data-selfie]').forEach(function (btn) {
-                    btn.addEventListener('click', function () {
-                        img.src = this.getAttribute('data-selfie');
-                        modal.style.display = 'flex';
-                    });
-                });
-                close.addEventListener('click', function () { modal.style.display = 'none'; img.src = ''; });
-                modal.addEventListener('click', function (e) {
-                    if (e.target === modal) { modal.style.display = 'none'; img.src = ''; }
-                });
-            })();
-            </script>
+            <!-- Modal da selfie removido (agora é único, fora do loop) -->
 
             </div>
             <?php endforeach; ?>
@@ -634,6 +653,46 @@ $colorMap = [
         </div>
     </div>
 </div>
+
+<!-- ═══ MODAL DA SELFIE (centralizado, fora do card/transform) ═══ -->
+<div id="selfie-modal" class="selfie-modal" aria-hidden="true">
+    <div class="selfie-modal-card">
+        <button type="button" id="selfie-modal-close" class="selfie-modal-close" aria-label="Fechar">&times;</button>
+        <img id="selfie-modal-img" src="" alt="Selfie da equipe">
+    </div>
+</div>
+<script>
+(function () {
+    var modal = document.getElementById('selfie-modal');
+    var img = document.getElementById('selfie-modal-img');
+    var close = document.getElementById('selfie-modal-close');
+    if (!modal || !img || !close) return;
+
+    function open(url) {
+        img.src = url;
+        modal.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+    }
+    function closeModal() {
+        modal.style.display = 'none';
+        img.src = '';
+        document.body.style.overflow = '';
+    }
+
+    document.querySelectorAll('[data-selfie]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            open(this.getAttribute('data-selfie'));
+        });
+    });
+    close.addEventListener('click', closeModal);
+    modal.addEventListener('click', function (e) {
+        if (e.target === modal) closeModal();
+    });
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') closeModal();
+    });
+})();
+</script>
 
 <!-- ============================================================
      MAP SCRIPT
