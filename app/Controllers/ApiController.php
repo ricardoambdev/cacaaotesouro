@@ -1392,6 +1392,45 @@ final class ApiController
     }
 
     /**
+     * POST /api/admin/team-message-all — envia uma mensagem para TODAS as
+     * equipes (dispara notificação no app das equipes).
+     */
+    public function adminTeamMessageAll(Request $request, Response $response): Response
+    {
+        if ($this->requireAdmin() === null) {
+            return $this->unauthorized($response);
+        }
+
+        $message = trim((string) (($request->getParsedBody() ?? [])['message'] ?? ''));
+
+        if ($message === '' || mb_strlen($message) > 500) {
+            return $this->json($response, [
+                'success' => false,
+                'error'   => 'A mensagem deve ter de 1 a 500 caracteres.',
+            ], 400);
+        }
+
+        $pdo = Database::get();
+        $stmt = $pdo->prepare(
+            'INSERT INTO team_messages (team_id, message, read_at, created_at) '
+            . 'VALUES (:team_id, :message, NULL, :created_at)'
+        );
+
+        foreach (TeamRepository::all() as $team) {
+            $stmt->execute([
+                ':team_id'    => (int) $team['id'],
+                ':message'    => $message,
+                ':created_at' => date('Y-m-d H:i:s'),
+            ]);
+        }
+
+        return $this->json($response, [
+            'success' => true,
+            'message' => 'Mensagem enviada para todas as equipes.',
+        ]);
+    }
+
+    /**
      * GET /api/admin/treasures/{id}
      *
      * Detalhe completo de um tesouro (para edição).

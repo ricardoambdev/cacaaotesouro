@@ -485,6 +485,26 @@ $colorMap = [
     <div class="db-sidebar">
         <div class="db-sidebar-scroll">
 
+            <!-- Mensagem para todas as equipes -->
+            <div class="db-card" style="border:1px solid rgba(34,197,94,0.25); margin-bottom:14px;">
+                <div class="db-card-header">
+                    <div class="db-card-dot" style="background:#22C55E;color:#22C55E"></div>
+                    <div class="db-card-info">
+                        <div class="db-card-name" style="color:#22C55E;">Enviar mensagem</div>
+                        <div class="db-card-status online">Notifica todas as equipes</div>
+                    </div>
+                </div>
+                <form method="post" action="/admin/mensagem">
+                    <?= csrf_field() ?>
+                    <div class="db-form-row" style="flex-direction:column; gap:8px;">
+                        <input type="text" name="message" class="db-input" placeholder="Mensagem para as equipes..." maxlength="500" required>
+                        <button type="submit" class="db-btn-apply" style="width:100%; background:linear-gradient(135deg,#22C55E,#168a3a);">
+                            📣 Enviar mensagem para as equipes
+                        </button>
+                    </div>
+                </form>
+            </div>
+
             <?php foreach ($teams as $team):
                 $colorKey   = (string) ($team['color'] ?? '');
                 $teamId     = (int)    ($team['id'] ?? 0);

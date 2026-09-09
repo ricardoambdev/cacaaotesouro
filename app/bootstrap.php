@@ -144,6 +144,8 @@ $app->post('/limpar/tesouros', [GameController::class, 'createDemoTreasures'])->
 $app->post('/limpar/historia', [GameController::class, 'resetStorySeen'])->add($mw['authRequired']);
 $app->post('/admin/pontos', [DashboardController::class, 'adjustPoints'])->add($mw['authRequired']);
 $app->post('/admin/desclassificar', [DashboardController::class, 'disqualifyTreasure'])->add($mw['authRequired']);
+$app->post('/admin/mensagem', [GameController::class, 'broadcastMessage'])->add($mw['authRequired']);
+$app->post('/api/admin/team-message-all', [ApiController::class, 'adminTeamMessageAll']);
 $app->get('/jogo', [GameController::class, 'status'])->add($mw['authRequired']);
 
 // Telão (PÚBLICO — sem authRequired). Página autônoma que consome

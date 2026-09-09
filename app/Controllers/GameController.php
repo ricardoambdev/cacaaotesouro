@@ -362,6 +362,37 @@ final class GameController
     }
 
     /**
+     * POST /admin/mensagem — envia uma mensagem para TODAS as equipes
+     * (dispara notificação no app das equipes).
+     */
+    public function broadcastMessage(Request $request, Response $response): Response
+    {
+        $message = trim((string) (($request->getParsedBody() ?? [])['message'] ?? ''));
+
+        if ($message === '' || mb_strlen($message) > 500) {
+            flash_set('error', 'A mensagem deve ter de 1 a 500 caracteres.');
+            redirect('/');
+        }
+
+        $pdo = Database::get();
+        $stmt = $pdo->prepare(
+            'INSERT INTO team_messages (team_id, message, read_at, created_at) '
+            . 'VALUES (:team_id, :message, NULL, :created_at)'
+        );
+
+        foreach (TeamRepository::all() as $team) {
+            $stmt->execute([
+                ':team_id'    => (int) $team['id'],
+                ':message'    => $message,
+                ':created_at' => date('Y-m-d H:i:s'),
+            ]);
+        }
+
+        flash_set('success', 'Mensagem enviada para todas as equipes (notificação disparada).');
+        redirect('/');
+    }
+
+    /**
      * POST /limpar/historia — reexibe a história para as equipes.
      *
      * Incrementa a "versão" da história: quando o app das equipes percebe
