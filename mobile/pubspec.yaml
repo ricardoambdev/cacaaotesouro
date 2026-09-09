@@ -42,3 +42,6 @@ flutter:
 
   assets:
     - assets/images/login_bg.png
+    - assets/images/olhando.gif
+    - assets/images/surpresa.gif
+    - assets/images/chorando.gif

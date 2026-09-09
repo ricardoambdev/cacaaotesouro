@@ -1037,7 +1037,6 @@ class _TeamHomeScreenState extends State<TeamHomeScreen> {
     if (result == null) return const SizedBox();
 
     return _RiddleInput(
-      riddleNumber: result.assignedRiddle,
       riddleText: result.riddle,
       onSubmit: _submitAnswer,
     );
@@ -1049,23 +1048,20 @@ class _TeamHomeScreenState extends State<TeamHomeScreen> {
 
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(32),
+        padding: const EdgeInsets.all(24),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: result.correct
-                    ? Colors.green.withValues(alpha: 0.15)
-                    : Colors.redAccent.withValues(alpha: 0.15),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                result.correct ? Icons.check : Icons.close,
-                color:
-                    result.correct ? Colors.greenAccent : Colors.redAccent,
-                size: 48,
+            // ── GIF do resultado (surpresa/chorando) ────
+            ClipRRect(
+              borderRadius: BorderRadius.circular(14),
+              child: Image.asset(
+                result.correct
+                    ? 'assets/images/surpresa.gif'
+                    : 'assets/images/chorando.gif',
+                width: double.infinity,
+                height: 240,
+                fit: BoxFit.contain,
               ),
             ),
             const SizedBox(height: 20),
@@ -1488,12 +1484,10 @@ enum TreasureFlowState {
 //  _RiddleInput — Input de resposta numérica em caixas
 // ═══════════════════════════════════════════════════════════════
 class _RiddleInput extends StatefulWidget {
-  final int riddleNumber;
   final String riddleText;
   final ValueChanged<String> onSubmit;
 
   const _RiddleInput({
-    required this.riddleNumber,
     required this.riddleText,
     required this.onSubmit,
   });
@@ -1568,27 +1562,17 @@ class _RiddleInputState extends State<_RiddleInput> {
       padding: const EdgeInsets.all(24),
       child: Column(
         children: [
-          // ── Título ───────────────────────────────────
-          Container(
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              color: AppColors.gold.withValues(alpha: 0.1),
-              shape: BoxShape.circle,
+          // ── GIF do Quico (largura total) ─────────────
+          ClipRRect(
+            borderRadius: BorderRadius.circular(14),
+            child: Image.asset(
+              'assets/images/olhando.gif',
+              width: double.infinity,
+              height: 220,
+              fit: BoxFit.contain,
             ),
-            child: const Icon(Icons.help_outline,
-                color: AppColors.gold, size: 32),
           ),
           const SizedBox(height: 16),
-          Text(
-            'CHARADA #${widget.riddleNumber}',
-            style: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 3,
-              color: AppColors.gold,
-            ),
-          ),
-          const SizedBox(height: 12),
 
           // ── Pergunta ─────────────────────────────────
           Container(
