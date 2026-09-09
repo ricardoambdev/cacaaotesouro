@@ -7,11 +7,13 @@ import 'team_home_screen.dart';
 class StoryScreen extends StatefulWidget {
   final String story;
   final Map<String, dynamic> teamData;
+  final int storyVersion;
 
   const StoryScreen({
     super.key,
     required this.story,
     required this.teamData,
+    this.storyVersion = 0,
   });
 
   @override
@@ -44,8 +46,8 @@ class _StoryScreenState extends State<StoryScreen>
   }
 
   Future<void> _startGame() async {
-    // Marcar história como exibida
-    await DeviceService().markStoryShown();
+    // Salvar versão da história exibida
+    await DeviceService().setStoryVersion(widget.storyVersion);
 
     if (!mounted) return;
 

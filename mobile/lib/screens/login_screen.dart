@@ -73,33 +73,27 @@ class _LoginScreenState extends State<LoginScreen> {
 
       if (!mounted) return;
 
-      // Verificar se a história já foi mostrada
+      // Obter estado do jogo (inclui storyVersion e story)
       final deviceService = DeviceService();
-      final storyShown = await deviceService.isStoryShown();
+      final state = await _apiService.teamState();
+      final storedVersion = await deviceService.getStoryVersion();
 
       if (!mounted) return;
 
-      if (!storyShown) {
-        // Buscar história e mostrar antes da home
-        String story = '';
-        try {
-          story = await _apiService.getStory();
-        } catch (_) {
-          // Se falhar, tenta pegar do state
-        }
-
-        if (!mounted) return;
-
+      if (state.storyVersion > storedVersion) {
+        // Versão nova → mostrar história antes da home
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
             builder: (_) => StoryScreen(
-              story: story,
+              story: state.story,
               teamData: teamData,
+              storyVersion: state.storyVersion,
             ),
           ),
         );
       } else {
+        // Mesma versão → ir direto para home
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(

@@ -41,6 +41,7 @@ INSERT INTO settings (`key`, `value`) VALUES
     ('adminUsername',    'admin'),
     ('adminPassword',    'admin1234'),
     ('historyContent',   ''),
+    ('storyVersion',     '0'),
     ('finalClue',        ''),
     ('finalAnswer',      ''),
     ('finalCorrectPoints','100'),

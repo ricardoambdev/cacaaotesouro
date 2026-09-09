@@ -232,6 +232,7 @@ final class ApiController
             'game_start_time' => (string) SettingsRepository::get('gameStartTime', '08:00'),
             'game_end_time'   => (string) SettingsRepository::get('gameEndTime', '17:00'),
             'story'           => (string) SettingsRepository::get('historyContent', ''),
+            'story_version'   => (int) SettingsRepository::get('storyVersion', '0'),
             'current_treasure'=> $currentTreasure,
             'final_available' => $finalAvailable,
             'leaderboard'     => $leaderboard,

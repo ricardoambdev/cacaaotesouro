@@ -7,7 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// Todas as chamadas de equipe enviam esse ID no header X-Device-Id.
 class DeviceService {
   static const String _keyDeviceId = 'device_id';
-  static const String _keyStoryShown = 'story_shown';
+  static const String _keyStoryVersion = 'story_version';
 
   // ── Singleton ──────────────────────────────────────────────
   static final DeviceService _instance = DeviceService._internal();
@@ -32,16 +32,16 @@ class DeviceService {
     return id;
   }
 
-  /// Indica se a história já foi exibida nesta设备.
-  Future<bool> isStoryShown() async {
+  /// Retorna a versão da história salva localmente (default 0).
+  Future<int> getStoryVersion() async {
     final prefs = await SharedPreferences.getInstance();
-    return prefs.getBool(_keyStoryShown) ?? false;
+    return prefs.getInt(_keyStoryVersion) ?? 0;
   }
 
-  /// Marca a história como exibida.
-  Future<void> markStoryShown() async {
+  /// Salva a versão da história exibida.
+  Future<void> setStoryVersion(int version) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(_keyStoryShown, true);
+    await prefs.setInt(_keyStoryVersion, version);
   }
 
   /// Gera um UUID v4 sem pacotes externos.

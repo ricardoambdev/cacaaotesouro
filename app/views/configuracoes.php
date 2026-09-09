@@ -603,4 +603,33 @@ $teamBlackPassword  = (string) ($teams['preta']['password']  ?? '');
             </button>
         </form>
     </div>
+
+    <div class="settings-card" style="border:1px solid rgba(245,197,66,0.25); margin-top:24px;">
+        <h2 class="settings-card-title" style="color:#F97316;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M4 19V5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v14"/>
+                <path d="M4 19l5-5"/>
+                <path d="M20 19l-5-5"/>
+                <line x1="9" y1="8" x2="15" y2="8"/>
+            </svg>
+            História para as equipes
+        </h2>
+
+        <p style="color:rgba(247,236,212,0.7); font-size:0.9rem; line-height:1.7; margin-bottom:16px;">
+            Quando uma equipe entra no aplicativo, a história é exibida apenas na primeira vez.
+            Este botão faz a história <strong style="color:#F97316;">aparecer novamente</strong> para as duas equipes
+            no próximo acesso (o conteúdo atual da história é mantido).
+        </p>
+
+        <form method="post" action="/limpar/historia">
+            <?= csrf_field() ?>
+            <button type="submit" class="btn btn-primary" style="width:auto; background:linear-gradient(135deg,#F97316,#EA580C);">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                    <circle cx="12" cy="12" r="3"/>
+                </svg>
+                Reexibir a história para as equipes
+            </button>
+        </form>
+    </div>
 </div>

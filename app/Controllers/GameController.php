@@ -361,6 +361,22 @@ final class GameController
         redirect('/configuracoes');
     }
 
+    /**
+     * POST /limpar/historia — reexibe a história para as equipes.
+     *
+     * Incrementa a "versão" da história: quando o app das equipes percebe
+     * a versão diferente da que já exibiu, mostra a história novamente no
+     * próximo acesso (mantém o conteúdo atual da história).
+     */
+    public function resetStorySeen(Request $request, Response $response): Response
+    {
+        $current = (int) SettingsRepository::get('storyVersion', '0');
+        SettingsRepository::set('storyVersion', (string) ($current + 1));
+
+        flash_set('success', 'A história será exibida novamente para as equipes no próximo acesso ao aplicativo.');
+        redirect('/configuracoes');
+    }
+
     // ------------------------------------------------------------------
     // Privados
     // ------------------------------------------------------------------

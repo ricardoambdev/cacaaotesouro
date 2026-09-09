@@ -26,6 +26,7 @@ class TeamMessage {
 class GameState {
   final bool gameActive;
   final String story;
+  final int storyVersion;
   final GameTreasure? currentTreasure;
   final bool finalAvailable;
   final String finalClue;
@@ -42,6 +43,7 @@ class GameState {
   const GameState({
     required this.gameActive,
     required this.story,
+    this.storyVersion = 0,
     this.currentTreasure,
     required this.finalAvailable,
     required this.finalClue,
@@ -80,6 +82,7 @@ class GameState {
     return GameState(
       gameActive: gameActive,
       story: (json['story'] as String?) ?? '',
+      storyVersion: (json['story_version'] as num?)?.toInt() ?? 0,
       currentTreasure: currentTreasureData != null
           ? GameTreasure.fromJson(currentTreasureData)
           : null,

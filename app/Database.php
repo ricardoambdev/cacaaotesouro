@@ -372,6 +372,7 @@ final class Database
             'adminUsername'    => 'admin',
             'adminPassword'    => 'admin1234',
             'historyContent'   => '',
+            'storyVersion'     => '0',
             'finalClue'        => '',
             'finalAnswer'      => '',
             'finalCorrectPoints'=> '100',
