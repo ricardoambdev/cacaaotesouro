@@ -310,29 +310,26 @@ class _ConnectionScreenState extends State<ConnectionScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.transparent,
+      backgroundColor: Colors.black,
       body: Stack(
         fit: StackFit.expand,
         children: [
-          // ── Fundo gradiente navy ──────────────────────
+          // ── Fundo: poster centralizado (preto ao redor) ─────
           Positioned.fill(
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    AppColors.navyDark,
-                    AppColors.navyMedium,
-                    AppColors.navyDark,
-                  ],
-                  stops: const [0.0, 0.5, 1.0],
-                ),
-              ),
+            child: ColoredBox(
+              color: Colors.black,
+            ),
+          ),
+          Center(
+            child: Image.asset(
+              'assets/images/poster.png',
+              fit: BoxFit.contain,
+              width: double.infinity,
+              height: double.infinity,
             ),
           ),
 
-          // ── Conteúdo ──────────────────────────────────
+          // ── Conteúdo (checks/loading/erro) sobreposto ────
           Positioned.fill(
             child: SafeArea(
               child: _allPassed
@@ -396,11 +393,11 @@ class _ConnectionScreenState extends State<ConnectionScreen> {
         children: [
           const Spacer(flex: 3),
 
-          // ── Card central ─────────────────────────────
+          // ── Card central (semi-transparente sobre o poster) ──
           Container(
             padding: const EdgeInsets.all(28),
             decoration: BoxDecoration(
-              color: AppColors.cardDark,
+              color: Colors.black.withValues(alpha: 0.75),
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
                 color: AppColors.ivoryMuted.withValues(alpha: 0.15),
@@ -690,11 +687,11 @@ class _ConnectionScreenState extends State<ConnectionScreen> {
         children: [
           const Spacer(flex: 3),
 
-          // ── Card central ─────────────────────────────
+          // ── Card central (semi-transparente sobre o poster) ──
           Container(
             padding: const EdgeInsets.all(28),
             decoration: BoxDecoration(
-              color: AppColors.cardDark,
+              color: Colors.black.withValues(alpha: 0.75),
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
                 color: AppColors.ivoryMuted.withValues(alpha: 0.15),

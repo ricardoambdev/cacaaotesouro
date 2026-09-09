@@ -31,6 +31,9 @@ dependencies:
   # Gerenciamento de permissões (câmera, GPS)
   permission_handler: ^11.3.0
 
+  # Sons (acerto/erro)
+  audioplayers: ^6.1.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -45,3 +48,6 @@ flutter:
     - assets/images/olhando.gif
     - assets/images/surpresa.gif
     - assets/images/chorando.gif
+    - assets/images/poster.png
+    - assets/sounds/acerto.mp3
+    - assets/sounds/choro.mp3

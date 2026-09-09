@@ -67,6 +67,8 @@ final class GameController
 
             $finalClue = trim((string) ($body['finalClue'] ?? ''));
             $finalAnswer = trim((string) ($body['finalAnswer'] ?? ''));
+            $finalCorrectPoints = trim((string) ($body['finalCorrectPoints'] ?? ''));
+            $finalWrongPenalty = trim((string) ($body['finalWrongPenalty'] ?? ''));
 
             $errors = [];
 
@@ -76,15 +78,32 @@ final class GameController
                 $errors[] = 'A resposta do desafio final deve ter no máximo 64 caracteres.';
             }
 
+            if ($finalCorrectPoints === '' || !ctype_digit($finalCorrectPoints)
+                || (int) $finalCorrectPoints < 1 || (int) $finalCorrectPoints > 1000) {
+                $errors[] = 'Os pontos ao acertar o desafio final devem ser um inteiro entre 1 e 1000.';
+            }
+
+            if ($finalWrongPenalty === '' || !ctype_digit($finalWrongPenalty)
+                || (int) $finalWrongPenalty < 0 || (int) $finalWrongPenalty > 1000) {
+                $errors[] = 'Os pontos perdidos por erro devem ser um inteiro entre 0 e 1000.';
+            }
+
             if ($errors !== []) {
                 flash_set('error', implode(' ', $errors));
-                $_SESSION['old'] = ['finalClue' => $finalClue, 'finalAnswer' => $finalAnswer];
+                $_SESSION['old'] = [
+                    'finalClue'          => $finalClue,
+                    'finalAnswer'        => $finalAnswer,
+                    'finalCorrectPoints' => $finalCorrectPoints,
+                    'finalWrongPenalty'  => $finalWrongPenalty,
+                ];
                 redirect('/desafio-final');
             }
 
             SettingsRepository::update([
-                'finalClue'   => $finalClue,
-                'finalAnswer' => $finalAnswer,
+                'finalClue'          => $finalClue,
+                'finalAnswer'        => $finalAnswer,
+                'finalCorrectPoints' => (string) (int) $finalCorrectPoints,
+                'finalWrongPenalty'  => (string) (int) $finalWrongPenalty,
             ]);
 
             flash_set('success', 'Desafio final salvo com sucesso.');
@@ -95,8 +114,10 @@ final class GameController
         unset($_SESSION['old']);
 
         $content = View::render('desafio_final', [
-            'finalClue'   => (string) ($old['finalClue'] ?? SettingsRepository::get('finalClue', '')),
-            'finalAnswer' => (string) ($old['finalAnswer'] ?? SettingsRepository::get('finalAnswer', '')),
+            'finalClue'          => (string) ($old['finalClue'] ?? SettingsRepository::get('finalClue', '')),
+            'finalAnswer'        => (string) ($old['finalAnswer'] ?? SettingsRepository::get('finalAnswer', '')),
+            'finalCorrectPoints' => (string) ($old['finalCorrectPoints'] ?? SettingsRepository::get('finalCorrectPoints', '100')),
+            'finalWrongPenalty'  => (string) ($old['finalWrongPenalty'] ?? SettingsRepository::get('finalWrongPenalty', '20')),
         ]);
 
         $response->getBody()->write($this->renderLayout($content, $user, 'desafio-final'));

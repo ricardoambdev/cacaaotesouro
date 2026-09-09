@@ -374,6 +374,8 @@ final class Database
             'historyContent'   => '',
             'finalClue'        => '',
             'finalAnswer'      => '',
+            'finalCorrectPoints'=> '100',
+            'finalWrongPenalty' => '20',
             'gameActive'       => '0',
             'winnerTeamId'     => '',
             // Regras do jogo (enforcement via ApiController::gameBlock)

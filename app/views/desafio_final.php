@@ -1,26 +1,26 @@
 <?php
 
 /**
- * Página Desafio Final — pista e senha finais.
+ * Página Desafio Final — pista, senha e pontuações finais.
  *
- * @var string $finalClue   Dica do desafio final
- * @var string $finalAnswer Senha final (valor atual salvo — NÃO exibido)
+ * @var string $finalClue          Dica do desafio final
+ * @var string $finalAnswer        Senha final (valor atual salvo — visível/legível)
+ * @var string $finalCorrectPoints Pontos ao acertar o desafio final
+ * @var string $finalWrongPenalty  Pontos perdidos por erro
  */
 
 $finalClue = $finalClue ?? '';
 $finalAnswer = $finalAnswer ?? '';
-$hasAnswer = $finalAnswer !== '';
+$finalCorrectPoints = $finalCorrectPoints ?? '100';
+$finalWrongPenalty = $finalWrongPenalty ?? '20';
 ?>
 <div class="page-header">
     <h1 class="page-title">Desafio Final</h1>
-    <p class="page-subtitle">A dica e a senha que encerram a caça ao tesouro (+100 pontos).</p>
+    <p class="page-subtitle">A dica, a senha e a pontuação que encerram a caça ao tesouro.</p>
 </div>
 
 <form method="post" action="/desafio-final" class="settings-form" id="finalChallengeForm">
     <?= csrf_field() ?>
-
-    <!-- Keep actual value hidden so backend can compare/update -->
-    <input type="hidden" id="finalAnswerHidden" name="_currentAnswer" value="<?= e($finalAnswer) ?>">
 
     <div class="settings-card">
         <h2 class="settings-card-title">
@@ -41,23 +41,27 @@ $hasAnswer = $finalAnswer !== '';
 
         <div class="form-group">
             <label for="finalAnswer">Resposta/senha final *</label>
-
-            <?php if ($hasAnswer): ?>
-                <!-- Show masked status when answer exists -->
-                <div class="final-answer-masked">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
-                        <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-                    </svg>
-                    Senha atual definida — digite abaixo para alterar
-                </div>
-            <?php endif; ?>
-
             <input type="text" id="finalAnswer" name="finalAnswer" class="form-input" maxlength="64"
-                   value="" placeholder="<?= $hasAnswer ? '•••• — deixe em branco para manter' : 'Ex.: 123ABC#' ?>" required
+                   value="<?= e($finalAnswer) ?>" placeholder="Ex.: 123ABC#"
                    style="margin-top: 8px;">
             <div class="error-inline"></div>
             <p class="form-help-text">Palavra, frase ou símbolos (máx. 64 caracteres). Comparação sem diferenciar maiúsculas/minúsculas.</p>
+        </div>
+
+        <div class="form-group">
+            <label for="finalCorrectPoints">Pontos ao acertar o desafio final</label>
+            <input type="number" id="finalCorrectPoints" name="finalCorrectPoints" class="form-input"
+                   min="1" max="1000" step="1" value="<?= e($finalCorrectPoints) ?>">
+            <div class="error-inline"></div>
+            <p class="form-help-text">Pontos ganhos pela equipe ao acertar o desafio final (1 a 1000).</p>
+        </div>
+
+        <div class="form-group">
+            <label for="finalWrongPenalty">Pontos perdidos por erro</label>
+            <input type="number" id="finalWrongPenalty" name="finalWrongPenalty" class="form-input"
+                   min="0" max="1000" step="1" value="<?= e($finalWrongPenalty) ?>">
+            <div class="error-inline"></div>
+            <p class="form-help-text">Pontos descontados da equipe a cada tentativa errada do desafio final (0 a 1000).</p>
         </div>
     </div>
 
@@ -65,19 +69,3 @@ $hasAnswer = $finalAnswer !== '';
         <button type="submit" class="btn btn-primary" style="width: auto;">Salvar desafio final</button>
     </div>
 </form>
-
-<script>
-(function () {
-    var form = document.getElementById('finalChallengeForm');
-    var visibleInput = document.getElementById('finalAnswer');
-    var hiddenInput = document.getElementById('finalAnswerHidden');
-    if (!form || !visibleInput || !hiddenInput) return;
-
-    form.addEventListener('submit', function () {
-        // If user left the visible field empty, send the current value back
-        if (!visibleInput.value.trim() && hiddenInput.value) {
-            visibleInput.value = hiddenInput.value;
-        }
-    });
-})();
-</script>

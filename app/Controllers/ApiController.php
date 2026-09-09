@@ -215,6 +215,8 @@ final class ApiController
 
         if ($finalAvailable) {
             $data['final_clue'] = (string) SettingsRepository::get('finalClue', '');
+            $data['final_correct_points'] = (int) SettingsRepository::get('finalCorrectPoints', '100');
+            $data['final_wrong_penalty'] = (int) SettingsRepository::get('finalWrongPenalty', '20');
         }
 
         return $this->json($response, $data);
@@ -323,7 +325,7 @@ final class ApiController
         if ($existing !== null && (int) $existing['gps_confirmed'] === 1) {
             return $this->json($response, [
                 'success'         => true,
-                'message'         => 'Você já fez check-in neste tesouro. A selfie no local é obrigatória antes de responder.',
+                'message'         => 'Você já fez check-in neste tesouro. Responda a charada e depois envie a selfie.',
                 'assigned_riddle' => (int) $existing['assigned_riddle'],
                 'riddle'          => (string) ((int) $existing['assigned_riddle'] === 1
                     ? $treasure['riddle1']
@@ -352,7 +354,7 @@ final class ApiController
 
         return $this->json($response, [
             'success'         => true,
-            'message'         => 'Check-in confirmado! Envie a selfie no local para liberar a charada.',
+            'message'         => 'Check-in confirmado! Responda a charada e depois envie a selfie.',
             'assigned_riddle' => $assignedRiddle,
             'riddle'          => $riddle,
             'answer_length'   => (int) strlen($answer),
@@ -388,17 +390,10 @@ final class ApiController
             ], 400);
         }
 
-        if ((int) $progress['riddle_correct'] === 1) {
-            return $this->json($response, [
-                'success' => false,
-                'error'   => 'Este tesouro já foi resolvido.',
-            ], 400);
-        }
-
         if ((int) $progress['selfie_points'] === 1) {
             return $this->json($response, [
                 'success' => false,
-                'error'   => 'Selfie já enviada para este tesouro.',
+                'error'   => 'Selfie já enviada.',
             ], 400);
         }
 
@@ -520,17 +515,8 @@ final class ApiController
             ], 400);
         }
 
-        // Selfie OBRIGATÓRIA: só é possível responder a charada depois de
-        // enviada a foto no local (selfie_points = 1). Nada de pontos é
-        // movimentado nem a resposta é avaliada enquanto não houver selfie.
-        if ((int) $progress['selfie_points'] !== 1) {
-            return $this->json($response, [
-                'success' => false,
-                'error'   => 'A selfie é obrigatória no local antes de responder a charada.',
-                'code'    => 'selfie_required',
-            ], 400);
-        }
-
+        // A selfie agora é tirada DEPOIS de acertar a charada, portanto a
+        // resposta pode ser avaliada sem exigir selfie prévia.
         if ((int) $progress['riddle_correct'] === 1) {
             return $this->json($response, [
                 'success' => false,
@@ -580,11 +566,12 @@ final class ApiController
             $finalAvailable = $newStep >= count($order);
 
             return $this->json($response, [
-                'success' => true,
-                'correct' => true,
-                'message' => 'Resposta correta! +20 pontos.',
-                'points'  => $points + 20,
-                'next'    => [
+                'success'         => true,
+                'correct'         => true,
+                'message'         => 'Resposta correta! +20 pontos.',
+                'points'          => $points + 20,
+                'selfie_required' => true,
+                'next'            => [
                     'treasure'        => $next,
                     'final_available' => $finalAvailable,
                 ],
@@ -651,8 +638,9 @@ final class ApiController
      * POST /api/team/final-answer
      *
      * Body: { answer }
-     * Senha final correta: +100 e encerra a partida (primeira equipe a
-     * terminar define a vencedora). Errada: -20.
+     * Senha final correta: +finalCorrectPoints (settings) e encerra a
+     * partida (primeira equipe a terminar define a vencedora).
+     * Errada: -finalWrongPenalty (settings), sem pontos negativos.
      */
     public function teamFinalAnswer(Request $request, Response $response): Response
     {
@@ -681,12 +669,15 @@ final class ApiController
         $answer = trim((string) ($body['answer'] ?? ''));
         $finalAnswer = trim((string) SettingsRepository::get('finalAnswer', ''));
 
+        $finalCorrectPoints = (int) SettingsRepository::get('finalCorrectPoints', '100');
+        $finalWrongPenalty = (int) SettingsRepository::get('finalWrongPenalty', '20');
+
         $points = (int) $team['points'];
 
         if (strcasecmp($answer, $finalAnswer) === 0) {
-            TeamRepository::addPoints($teamId, 100);
+            TeamRepository::addPoints($teamId, $finalCorrectPoints);
             TeamRepository::markFinished($teamId, date('Y-m-d H:i:s'));
-            GameRepository::logPoints($teamId, 100, 'desafio final');
+            GameRepository::logPoints($teamId, $finalCorrectPoints, 'desafio final');
 
             $winner = null;
 
@@ -707,20 +698,23 @@ final class ApiController
             return $this->json($response, [
                 'success' => true,
                 'correct' => true,
-                'message' => 'Parabéns! +100 pontos. A caça terminou!',
-                'points'  => $points + 100,
+                'message' => 'Parabéns! +' . $finalCorrectPoints . ' pontos. A caça terminou!',
+                'points'  => $points + $finalCorrectPoints,
                 'winner'  => $winner,
             ]);
         }
 
-        TeamRepository::addPoints($teamId, -20);
-        GameRepository::logPoints($teamId, -20, 'erro desafio final');
+        // Penalidade por erro (nunca deixa os pontos ficarem negativos).
+        $newPoints = max(0, $points - $finalWrongPenalty);
+
+        TeamRepository::updateGameState($teamId, ['points' => $newPoints]);
+        GameRepository::logPoints($teamId, -$finalWrongPenalty, 'erro desafio final');
 
         return $this->json($response, [
             'success' => false,
             'correct' => false,
-            'message' => 'Senha incorreta. -20 pontos.',
-            'points'  => $points - 20,
+            'message' => 'Senha incorreta. -' . $finalWrongPenalty . ' pontos.',
+            'points'  => $newPoints,
         ]);
     }
 

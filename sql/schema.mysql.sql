@@ -43,6 +43,8 @@ INSERT INTO settings (`key`, `value`) VALUES
     ('historyContent',   ''),
     ('finalClue',        ''),
     ('finalAnswer',      ''),
+    ('finalCorrectPoints','100'),
+    ('finalWrongPenalty', '20'),
     ('gameActive',       '0'),
     ('winnerTeamId',     ''),
     ('gameStatus',       'playing'),

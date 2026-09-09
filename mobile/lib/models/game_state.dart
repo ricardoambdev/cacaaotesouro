@@ -29,6 +29,8 @@ class GameState {
   final GameTreasure? currentTreasure;
   final bool finalAvailable;
   final String finalClue;
+  final int finalCorrectPoints;
+  final int finalWrongPenalty;
   final List<LeaderboardEntry> leaderboard;
   final Team team;
   final String? gameStatus;
@@ -43,6 +45,8 @@ class GameState {
     this.currentTreasure,
     required this.finalAvailable,
     required this.finalClue,
+    this.finalCorrectPoints = 100,
+    this.finalWrongPenalty = 20,
     required this.leaderboard,
     required this.team,
     this.gameStatus,
@@ -81,6 +85,8 @@ class GameState {
           : null,
       finalAvailable: json['final_available'] == true,
       finalClue: (json['final_clue'] as String?) ?? '',
+      finalCorrectPoints: (json['final_correct_points'] as num?)?.toInt() ?? 100,
+      finalWrongPenalty: (json['final_wrong_penalty'] as num?)?.toInt() ?? 20,
       leaderboard: leaderboardList,
       team: Team.fromJson(teamData),
       gameStatus: json['game_status'] as String?,

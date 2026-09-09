@@ -6,6 +6,7 @@ import 'package:image_picker/image_picker.dart';
 import '../theme.dart';
 import '../models/game_state.dart';
 import '../services/api_service.dart';
+import '../services/sound_service.dart';
 import 'login_screen.dart';
 import 'qr_scanner_screen.dart';
 
@@ -23,6 +24,7 @@ class TeamHomeScreen extends StatefulWidget {
 
 class _TeamHomeScreenState extends State<TeamHomeScreen> {
   final _apiService = ApiService();
+  final _soundService = SoundService();
   int _currentTab = 0;
   GameState? _gameState;
   bool _isLoading = true;
@@ -48,6 +50,7 @@ class _TeamHomeScreenState extends State<TeamHomeScreen> {
   @override
   void dispose() {
     _locationTimer?.cancel();
+    _soundService.dispose();
     super.dispose();
   }
 
@@ -254,7 +257,7 @@ class _TeamHomeScreenState extends State<TeamHomeScreen> {
     }
   }
 
-  Future<void> _takeSelfie() async {
+  Future<void> _takeSelfie({bool afterAnswer = false}) async {
     final picker = ImagePicker();
     try {
       final XFile? image = await picker.pickImage(
@@ -280,17 +283,30 @@ class _TeamHomeScreenState extends State<TeamHomeScreen> {
         final points = result['points'] ?? 0;
         _showSnackBar('Selfie enviada! +$points pontos', isError: false);
 
-        // Avançar direto para a charada
-        setState(() => _flowState = TreasureFlowState.showingRiddle);
+        if (afterAnswer) {
+          // Após selfie pós-resposta, recarregar estado para próximo tesouro
+          await _loadState();
+        } else {
+          // Fluxo antigo (fallback): avançar para charada
+          setState(() => _flowState = TreasureFlowState.showingRiddle);
+        }
       } on ApiException catch (e) {
         if (!mounted) return;
         _showSnackBar(e.message, isError: true);
-        // Mesmo com erro, continua para a charada
-        setState(() => _flowState = TreasureFlowState.showingRiddle);
+        if (afterAnswer) {
+          // Mesmo com erro, recarregar estado
+          await _loadState();
+        } else {
+          setState(() => _flowState = TreasureFlowState.showingRiddle);
+        }
       } catch (_) {
         if (!mounted) return;
         _showSnackBar('Erro ao enviar selfie.', isError: true);
-        setState(() => _flowState = TreasureFlowState.showingRiddle);
+        if (afterAnswer) {
+          await _loadState();
+        } else {
+          setState(() => _flowState = TreasureFlowState.showingRiddle);
+        }
       }
     } catch (_) {
       // Usuário pode ter negado câmera
@@ -311,18 +327,18 @@ class _TeamHomeScreenState extends State<TeamHomeScreen> {
       );
 
       if (!mounted) return;
+
+      // Tocar som de acordo com o resultado
+      if (result.correct) {
+        _soundService.playAcerto();
+      } else {
+        _soundService.playChoro();
+      }
+
       setState(() {
         _answerResult = result;
         _flowState = TreasureFlowState.answerResult;
       });
-
-      // Se correto e tem próximo tesouro, recarregar estado após 2s
-      if (result.correct) {
-        Future.delayed(const Duration(seconds: 2), () async {
-          if (!mounted) return;
-          await _loadState();
-        });
-      }
     } on ApiException catch (e) {
       if (!mounted) return;
       setState(() => _flowState = TreasureFlowState.showingRiddle);
@@ -340,6 +356,14 @@ class _TeamHomeScreenState extends State<TeamHomeScreen> {
       final result = await _apiService.finalAnswer(answer: answer);
 
       if (!mounted) return;
+
+      // Tocar som de acordo com o resultado
+      if (result.correct) {
+        _soundService.playAcerto();
+      } else {
+        _soundService.playChoro();
+      }
+
       setState(() {
         _answerResult = result;
         _flowState = TreasureFlowState.finalResult;
@@ -606,8 +630,11 @@ class _TeamHomeScreenState extends State<TeamHomeScreen> {
       case TreasureFlowState.answerResult:
         content = _buildAnswerResult();
         break;
+      case TreasureFlowState.selfieAfterCorrect:
+        content = _buildLoadingState('Enviando selfie...');
+        break;
       case TreasureFlowState.finalChallenge:
-        content = _buildFinalChallengeInput();
+        content = _buildFinalChallenge();
         break;
       case TreasureFlowState.finalResult:
         content = _buildFinalResult();
@@ -928,102 +955,36 @@ class _TeamHomeScreenState extends State<TeamHomeScreen> {
 
           const SizedBox(height: 20),
 
-          // ── Selfie obrigatória ──────────────────────────
-          if (result.selfieRequired || result.selfieQuestion) ...[
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: AppColors.navyMedium,
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(
-                  color: Colors.orangeAccent.withValues(alpha: 0.4),
+          // ── Ir direto para a charada (selfie agora é pós-acerto) ──
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: () =>
+                  setState(() => _flowState = TreasureFlowState.showingRiddle),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.gold,
+                foregroundColor: AppColors.navyDark,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
                 ),
+                padding: const EdgeInsets.symmetric(vertical: 14),
               ),
-              child: Column(
-                children: [
-                  const Icon(Icons.camera_alt_outlined,
-                      color: AppColors.gold, size: 28),
-                  const SizedBox(height: 10),
-                  const Text(
-                    'Selfie obrigatória',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.ivory,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: Colors.orangeAccent.withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(
-                        color: Colors.orangeAccent.withValues(alpha: 0.35),
-                      ),
-                    ),
-                    child: const Text(
-                      'Todos os integrantes devem aparecer na foto. '
-                      'Se os alunos não saírem na foto, os pontos podem ser CANCELADOS.',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 13,
-                        height: 1.4,
-                        color: Colors.orangeAccent,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    'Ganhe +5 pontos',
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: AppColors.gold.withValues(alpha: 0.8),
-                    ),
-                  ),
-                  const SizedBox(height: 14),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton.icon(
-                      onPressed: _takeSelfie,
-                      icon: const Icon(Icons.camera_alt, size: 18),
-                      label: const Text('Tirar selfie'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.gold,
-                        foregroundColor: AppColors.navyDark,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                      ),
-                    ),
-                  ),
-                ],
+              child: const Text(
+                'Ver Charada',
+                style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
               ),
             ),
-          ] else ...[
-            // Sem selfie, ir direto para charada
-            const SizedBox(height: 8),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () =>
-                    setState(() => _flowState = TreasureFlowState.showingRiddle),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.gold,
-                  foregroundColor: AppColors.navyDark,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                ),
-                child: const Text(
-                  'Ver Charada',
-                  style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
-                ),
+          ),
+
+          // ── Selfie opcional (fallback para backend antigo) ──
+          if (result.selfieRequired || result.selfieQuestion) ...[
+            const SizedBox(height: 12),
+            TextButton.icon(
+              onPressed: () => _takeSelfie(),
+              icon: const Icon(Icons.camera_alt_outlined, size: 18),
+              label: const Text('Tirar selfie agora (opcional)'),
+              style: TextButton.styleFrom(
+                foregroundColor: AppColors.ivoryMuted,
               ),
             ),
           ],
@@ -1101,6 +1062,76 @@ class _TeamHomeScreenState extends State<TeamHomeScreen> {
                 ),
               ),
             ),
+            if (result.correct) ...[
+              // ── Selfie obrigatória após acerto ──────────
+              const SizedBox(height: 20),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: AppColors.navyMedium,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(
+                    color: Colors.orangeAccent.withValues(alpha: 0.4),
+                  ),
+                ),
+                child: Column(
+                  children: [
+                    const Icon(Icons.camera_alt_outlined,
+                        color: AppColors.gold, size: 28),
+                    const SizedBox(height: 10),
+                    const Text(
+                      'Agora tire uma selfie!',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.ivory,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: Colors.orangeAccent.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: Colors.orangeAccent.withValues(alpha: 0.35),
+                        ),
+                      ),
+                      child: const Text(
+                        'Todos os integrantes devem aparecer na foto. '
+                        'Se os alunos não saírem na foto, os pontos podem ser CANCELADOS.',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 13,
+                          height: 1.4,
+                          color: Colors.orangeAccent,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        onPressed: () => _takeSelfie(afterAnswer: true),
+                        icon: const Icon(Icons.camera_alt, size: 18),
+                        label: const Text('Enviar selfie'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.gold,
+                          foregroundColor: AppColors.navyDark,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
             if (!result.correct) ...[
               const SizedBox(height: 16),
               Text(
@@ -1131,75 +1162,11 @@ class _TeamHomeScreenState extends State<TeamHomeScreen> {
   }
 
   Widget _buildFinalChallenge() {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: AppColors.gold.withValues(alpha: 0.15),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(Icons.emoji_events_outlined,
-                  color: AppColors.gold, size: 40),
-            ),
-            const SizedBox(height: 20),
-            const Text(
-              'DESAFIO FINAL',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w700,
-                letterSpacing: 3,
-                color: AppColors.gold,
-              ),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              _gameState!.finalClue.isNotEmpty
-                  ? _gameState!.finalClue
-                  : 'Resolva o último mistério para vencer!',
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontSize: 15,
-                color: AppColors.ivory,
-                height: 1.5,
-              ),
-            ),
-            const SizedBox(height: 24),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () => setState(
-                    () => _flowState = TreasureFlowState.finalChallenge),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.gold,
-                  foregroundColor: AppColors.navyDark,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                ),
-                child: const Text(
-                  'Iniciar Desafio',
-                  style: TextStyle(
-                    fontSize: 17,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildFinalChallengeInput() {
+    // O desafio abre automaticamente quando finalAvailable
     return _FinalAnswerInput(
       clue: _gameState?.finalClue ?? '',
+      correctPoints: _gameState?.finalCorrectPoints ?? 100,
+      wrongPenalty: _gameState?.finalWrongPenalty ?? 20,
       onSubmit: _submitFinalAnswer,
       onCancel: () =>
           setState(() => _flowState = TreasureFlowState.viewingClue),
@@ -1477,6 +1444,7 @@ enum TreasureFlowState {
   showingRiddle,
   submittingAnswer,
   answerResult,
+  selfieAfterCorrect,
   finalChallenge,
   finalResult,
 }
@@ -1731,11 +1699,15 @@ class _RiddleInputState extends State<_RiddleInput> {
 // ═══════════════════════════════════════════════════════════════
 class _FinalAnswerInput extends StatefulWidget {
   final String clue;
+  final int correctPoints;
+  final int wrongPenalty;
   final ValueChanged<String> onSubmit;
   final VoidCallback onCancel;
 
   const _FinalAnswerInput({
     required this.clue,
+    this.correctPoints = 100,
+    this.wrongPenalty = 20,
     required this.onSubmit,
     required this.onCancel,
   });
@@ -1804,7 +1776,39 @@ class _FinalAnswerInputState extends State<_FinalAnswerInput> {
               ),
             ),
 
-          const SizedBox(height: 24),
+          // ── Aviso de pontos ────────────────────────────
+          const SizedBox(height: 16),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: AppColors.navyMedium,
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(
+                color: AppColors.gold.withValues(alpha: 0.2),
+              ),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.info_outline,
+                    color: AppColors.gold.withValues(alpha: 0.8), size: 18),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    'Acertar vale +${widget.correctPoints} pontos. '
+                    'Errar custa -${widget.wrongPenalty} pontos.',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.gold.withValues(alpha: 0.9),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 20),
 
           // ── Campo de senha ──────────────────────────
           TextFormField(
@@ -1881,7 +1885,7 @@ class _FinalAnswerInputState extends State<_FinalAnswerInput> {
                     padding: const EdgeInsets.symmetric(vertical: 14),
                   ),
                   child: const Text(
-                    'Enviar',
+                    'Responder',
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w700,
