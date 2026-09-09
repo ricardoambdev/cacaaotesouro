@@ -642,8 +642,9 @@ $siteName = $siteName ?? 'Caça ao Tesouro';
                             '<span class="team-pin-dot"></span>' +
                             '<div class="team-pin-tail"></div>' +
                             '</div>',
-                        iconSize: [0, 0],
-                        iconAnchor: [0, 0],
+                        iconSize: [150, 48],
+                        iconAnchor: [75, 48],
+                        popupAnchor: [0, -44],
                     });
 
                     if (teamMarkers[colorKey]) {
