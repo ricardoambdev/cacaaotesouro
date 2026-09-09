@@ -656,13 +656,15 @@ $colorMap = [
         });
     }
 
-    /* ---- QUICK BUTTONS ---- */
+    /* ---- QUICK BUTTONS: aplicam os pontos imediatamente ---- */
     document.querySelectorAll('[data-delta-input]').forEach(function (form) {
         var deltaInput = form.querySelector('input[name="delta"]');
         form.querySelectorAll('[data-delta]').forEach(function (btn) {
             btn.addEventListener('click', function () {
-                deltaInput.value = this.getAttribute('data-delta');
-                deltaInput.focus();
+                var val = this.getAttribute('data-delta');
+                // Remove o '+' (o input type=number pode rejeitar o sinal)
+                deltaInput.value = val.charAt(0) === '+' ? val.slice(1) : val;
+                form.submit();
             });
         });
     });
