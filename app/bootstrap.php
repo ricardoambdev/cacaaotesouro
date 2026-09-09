@@ -139,6 +139,7 @@ $app->post('/historia', [GameController::class, 'history'])->add($mw['authRequir
 $app->get('/desafio-final', [GameController::class, 'finalChallenge'])->add($mw['authRequired']);
 $app->post('/desafio-final', [GameController::class, 'finalChallenge'])->add($mw['authRequired']);
 $app->post('/limpar', [GameController::class, 'resetGame'])->add($mw['authRequired']);
+$app->post('/limpar-jogo', [GameController::class, 'resetGameProgress'])->add($mw['authRequired']);
 $app->get('/jogo', [GameController::class, 'status'])->add($mw['authRequired']);
 
 // Telão (PÚBLICO — sem authRequired). Página autônoma que consome

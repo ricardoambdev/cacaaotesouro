@@ -542,4 +542,37 @@ $teamBlackPassword  = (string) ($teams['preta']['password']  ?? '');
             </button>
         </form>
     </div>
+
+    <div class="settings-card" style="border:1px solid rgba(245,197,66,0.25); margin-top:24px;">
+        <h2 class="settings-card-title" style="color:#F97316;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 6h18"/>
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+            </svg>
+            Resetar somente o jogo (manter configurações)
+        </h2>
+
+        <p style="color:rgba(247,236,212,0.7); font-size:0.9rem; line-height:1.7; margin-bottom:16px;">
+            Reseta o jogo das duas equipes, mas <strong style="color:#F97316;">mantém as configurações</strong>
+            (data/horários, desafio final, credenciais e ordem dos tesouros):
+        </p>
+        <ul style="color:rgba(247,236,212,0.65); font-size:0.88rem; line-height:1.8; margin:0 0 20px; padding-left:18px;">
+            <li>Equipes voltam a <strong>100 pontos</strong>, sem sessão e sem progresso</li>
+            <li><strong>Todas as selfies</strong> apagadas (registros e arquivos)</li>
+            <li><strong>Tesouros</strong> apagados (registros e QR codes)</li>
+            <li>Log de pontos, localizações e mensagens apagados</li>
+            <li>Jogo volta a "em andamento"</li>
+        </ul>
+
+        <form method="post" action="/limpar-jogo" onsubmit="return confirm('⚠️ Isso apagará o progresso das equipes, as selfies e os tesouros. As configurações serão mantidas. Continuar?');">
+            <?= csrf_field() ?>
+            <button type="submit" class="btn btn-danger" style="width:auto; background:linear-gradient(135deg,#F97316,#EA580C);">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M3 6h18"/>
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                </svg>
+                Resetar somente o jogo
+            </button>
+        </form>
+    </div>
 </div>

@@ -202,14 +202,53 @@ final class GameController
     // ------------------------------------------------------------------
 
     /**
-     * POST /limpar — apaga todo o progresso do jogo e deixa o sistema
-     * vazio, pronto para uma nova caçada.
-     *
-     * Remove: progresso dos tesouros, selfies (arquivos + registros),
-     * log de pontos, localizações, mensagens, tesouros (com seus QR SVG)
-     * e reseta as equipes e o estado do jogo.
+     * POST /limpar — apaga todo o progresso do jogo E restaura as
+     * configurações padrão (deixa o sistema completamente vazio).
      */
     public function resetGame(Request $request, Response $response): Response
+    {
+        self::clearGameData();
+
+        // ── Jogo (estado inicial completo) ───────────────────
+        SettingsRepository::update([
+            'gameStatus'    => 'playing',
+            'gameActive'    => '1',
+            'winnerTeamId'  => '',
+            'gameStartDate' => '',
+            'gameStartTime' => '08:00',
+            'gameEndTime'   => '17:00',
+        ]);
+
+        flash_set('success', 'Sistema limpo! Tudo foi apagado e está pronto para uma nova caçada ao tesouro.');
+        redirect('/configuracoes');
+    }
+
+    /**
+     * POST /limpar-jogo — reseta SOMENTE o jogo das equipes (pontos,
+     * progresso, selfies, tesouros, registros), MANTENDO as configurações
+     * do admin (data/horários, desafio final, credenciais, ordem).
+     */
+    public function resetGameProgress(Request $request, Response $response): Response
+    {
+        self::clearGameData();
+
+        // Só os flags de jogo voltam ao "pronto para começar";
+        // as demais configurações são mantidas.
+        SettingsRepository::update([
+            'gameStatus'   => 'playing',
+            'gameActive'   => '1',
+            'winnerTeamId' => '',
+        ]);
+
+        flash_set('success', 'Jogo resetado! Equipes com 100 pontos, selfies e tesouros apagados. Configurações mantidas.');
+        redirect('/configuracoes');
+    }
+
+    /**
+     * Apaga todos os dados de jogo (progresso, selfies, tesouros, pontos,
+     * localizações, mensagens) e reseta as equipes ao estado inicial.
+     */
+    private static function clearGameData(): void
     {
         $pdo = Database::get();
         $root = dirname(__DIR__);
@@ -250,19 +289,6 @@ final class GameController
             . "finished_at = NULL, current_step = 0, "
             . "session_token = NULL, order_sequence = NULL"
         );
-
-        // ── Jogo (estado inicial) ────────────────────────────
-        SettingsRepository::update([
-            'gameStatus'    => 'playing',
-            'gameActive'    => '1',
-            'winnerTeamId'  => '',
-            'gameStartDate' => '',
-            'gameStartTime' => '08:00',
-            'gameEndTime'   => '17:00',
-        ]);
-
-        flash_set('success', 'Sistema limpo! Tudo foi apagado e está pronto para uma nova caçada ao tesouro.');
-        redirect('/configuracoes');
     }
 
     // ------------------------------------------------------------------
