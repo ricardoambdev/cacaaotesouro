@@ -671,7 +671,8 @@ class ApiService {
   // ════════════════════════════════════════════════════════════
 
   /// POST /api/admin/team-points → ajusta pontos de uma equipe.
-  Future<Map<String, dynamic>> adminTeamPoints(
+  /// Retorna o novo total de pontos (int).
+  Future<int> adminTeamPoints(
     int teamId,
     int delta, {
     String? reason,
@@ -695,7 +696,7 @@ class ApiService {
 
     final body = _parseBody(response);
     if (response.statusCode == 200 && body['success'] == true) {
-      return body['points'] as Map<String, dynamic>;
+      return (body['points'] as num).toInt();
     }
 
     throw ApiException(
@@ -730,6 +731,24 @@ class ApiService {
 
     throw ApiException(
         body['error'] as String? ?? 'Erro ao enviar mensagem.');
+  }
+
+  /// POST /api/admin/team-message-all → envia mensagem para TODAS as equipes.
+  Future<void> adminTeamMessageAll(String message) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/admin/team-message-all'),
+      headers: _adminHeaders,
+      body: json.encode({'message': message}),
+    );
+
+    _extractCookie(response);
+    _checkUnauthorized(response);
+
+    final body = _parseBody(response);
+    if (response.statusCode != 200 || body['success'] != true) {
+      throw ApiException(
+          body['error'] as String? ?? 'Erro ao enviar mensagem para as equipes.');
+    }
   }
 
   // ════════════════════════════════════════════════════════════

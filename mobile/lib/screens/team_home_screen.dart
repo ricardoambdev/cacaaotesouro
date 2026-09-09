@@ -6,6 +6,7 @@ import 'package:image_picker/image_picker.dart';
 import '../theme.dart';
 import '../models/game_state.dart';
 import '../services/api_service.dart';
+import '../services/device_service.dart';
 import '../services/sound_service.dart';
 import 'login_screen.dart';
 import 'qr_scanner_screen.dart';
@@ -25,6 +26,7 @@ class TeamHomeScreen extends StatefulWidget {
 class _TeamHomeScreenState extends State<TeamHomeScreen> {
   final _apiService = ApiService();
   final _soundService = SoundService();
+  final _deviceService = DeviceService();
   int _currentTab = 0;
   GameState? _gameState;
   bool _isLoading = true;
@@ -40,6 +42,10 @@ class _TeamHomeScreenState extends State<TeamHomeScreen> {
 
   // ── Mensagens não lidas ────────────────────────────────
   List<TeamMessage> _unreadMessages = [];
+
+  // ── Novas mensagens (para notificação com som) ─────────
+  List<TeamMessage> _newMessages = [];
+  bool _showNewMessageBanner = false;
 
   @override
   void initState() {
@@ -101,6 +107,31 @@ class _TeamHomeScreenState extends State<TeamHomeScreen> {
         _answerResult = null;
       });
       _startLocationTracking();
+
+      // ── Detectar mensagens NOVAS (id > última vista) ──────
+      final lastId = await _deviceService.getLastMessageId();
+      final newMsgs = state.messages.where((m) => m.id > lastId).toList();
+      if (newMsgs.isNotEmpty) {
+        // Tocar som de notificação
+        _soundService.playNotification();
+        // Atualizar banner com a mensagem mais recente
+        final newest = newMsgs.reduce(
+          (a, b) => a.id > b.id ? a : b,
+        );
+        setState(() {
+          _newMessages = newMsgs;
+          _showNewMessageBanner = true;
+        });
+        // Salvar o maior ID visto
+        await _deviceService.setLastMessageId(newest.id);
+        // Auto-dismiss do banner após 6 segundos
+        Future.delayed(const Duration(seconds: 6), () {
+          if (mounted) {
+            setState(() => _showNewMessageBanner = false);
+          }
+        });
+      }
+
       // Marcar mensagens como lidas após exibir
       if (_unreadMessages.isNotEmpty) {
         _markMessagesRead();
@@ -656,7 +687,10 @@ class _TeamHomeScreenState extends State<TeamHomeScreen> {
     // Envolver com banner de mensagens se houver
     return Column(
       children: [
-        // Banner de mensagens
+        // Banner de nova mensagem (destacado + som)
+        if (_showNewMessageBanner && _newMessages.isNotEmpty)
+          _buildNewMessageBanner(),
+        // Banner de mensagens existentes
         ..._unreadMessages.map((msg) => _buildMessageBanner(msg)),
         // Conteúdo principal
         Expanded(child: content),
@@ -718,6 +752,105 @@ class _TeamHomeScreenState extends State<TeamHomeScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  /// Banner destacado para mensagens NOVAS (com som + toque para dispensar).
+  Widget _buildNewMessageBanner() {
+    return GestureDetector(
+      onTap: () {
+        setState(() => _showNewMessageBanner = false);
+      },
+      child: Container(
+        width: double.infinity,
+        margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              AppColors.gold.withValues(alpha: 0.2),
+              AppColors.gold.withValues(alpha: 0.08),
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: AppColors.gold.withValues(alpha: 0.6),
+            width: 1.5,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.gold.withValues(alpha: 0.15),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: AppColors.gold.withValues(alpha: 0.25),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Icon(
+                Icons.notifications_active,
+                color: AppColors.gold,
+                size: 22,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'NOVA MENSAGEM',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 1.5,
+                      color: AppColors.gold,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  // Mostra a mensagem mais recente
+                  Text(
+                    _newMessages.last.message,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      height: 1.4,
+                      color: AppColors.ivory,
+                    ),
+                  ),
+                  if (_newMessages.length > 1) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      '+${_newMessages.length - 1} outra(s) mensagem(ns)',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: AppColors.gold.withValues(alpha: 0.7),
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: 6),
+                  Text(
+                    'Toque para dispensar',
+                    style: TextStyle(
+                      fontSize: 10,
+                      color: AppColors.ivoryMuted.withValues(alpha: 0.5),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

@@ -230,6 +230,11 @@ class _AdminScreenState extends State<AdminScreen> {
 
           const SizedBox(height: 16),
 
+          // ── Enviar mensagem para todas as equipes ────
+          _buildBroadcastMessageButton(),
+
+          const SizedBox(height: 16),
+
           // ── Equipes ───────────────────────────────────
           if (_status != null && _status!.teams.isNotEmpty) _buildTeams(),
 
@@ -341,6 +346,174 @@ class _AdminScreenState extends State<AdminScreen> {
         ),
       ),
     );
+  }
+
+  /// Botão para enviar mensagem para TODAS as equipes.
+  Widget _buildBroadcastMessageButton() {
+    return SizedBox(
+      width: double.infinity,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [AppColors.gold, AppColors.goldDark],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(14),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.gold.withValues(alpha: 0.25),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: ElevatedButton.icon(
+          onPressed: _showBroadcastMessageDialog,
+          icon: const Icon(Icons.campaign, size: 20),
+          label: const Text(
+            'Enviar mensagem para as equipes',
+            style: TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.transparent,
+            shadowColor: Colors.transparent,
+            foregroundColor: AppColors.navyDark,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(14),
+            ),
+            padding: const EdgeInsets.symmetric(vertical: 16),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Dialog para enviar mensagem para todas as equipes.
+  Future<void> _showBroadcastMessageDialog() async {
+    final controller = TextEditingController();
+    bool isSending = false;
+
+    final sent = await showDialog<bool>(
+      context: context,
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (ctx, setDialogState) {
+            return AlertDialog(
+              backgroundColor: AppColors.navyMedium,
+              title: const Row(
+                children: [
+                  Icon(Icons.campaign, color: AppColors.gold, size: 22),
+                  SizedBox(width: 10),
+                  Text(
+                    'Mensagem para todas as equipes',
+                    style: TextStyle(
+                      color: AppColors.gold,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
+              ),
+              content: TextField(
+                controller: controller,
+                style: const TextStyle(color: AppColors.ivory),
+                maxLines: 3,
+                maxLength: 500,
+                autofocus: true,
+                decoration: const InputDecoration(
+                  hintText: 'Ex: Parabéns a todas as equipes!',
+                  hintStyle: TextStyle(color: AppColors.ivoryMuted),
+                  alignLabelWithHint: true,
+                  contentPadding:
+                      EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: isSending
+                      ? null
+                      : () => Navigator.pop(ctx, false),
+                  child: const Text('Cancelar',
+                      style: TextStyle(color: AppColors.ivoryMuted)),
+                ),
+                ElevatedButton(
+                  onPressed: isSending
+                      ? null
+                      : () async {
+                          final msg = controller.text.trim();
+                          if (msg.isEmpty) {
+                            ScaffoldMessenger.of(ctx).showSnackBar(
+                              SnackBar(
+                                content: const Text('Digite uma mensagem.'),
+                                backgroundColor:
+                                    Colors.redAccent.withValues(alpha: 0.85),
+                                behavior: SnackBarBehavior.floating,
+                              ),
+                            );
+                            return;
+                          }
+                          setDialogState(() => isSending = true);
+                          try {
+                            await _apiService.adminTeamMessageAll(msg);
+                            if (ctx.mounted) Navigator.pop(ctx, true);
+                          } on ApiException catch (e) {
+                            if (ctx.mounted) {
+                              ScaffoldMessenger.of(ctx).showSnackBar(
+                                SnackBar(
+                                  content: Text(e.message),
+                                  backgroundColor:
+                                      Colors.redAccent.withValues(alpha: 0.85),
+                                  behavior: SnackBarBehavior.floating,
+                                ),
+                              );
+                            }
+                            setDialogState(() => isSending = false);
+                          } catch (_) {
+                            if (ctx.mounted) {
+                              ScaffoldMessenger.of(ctx).showSnackBar(
+                                SnackBar(
+                                  content: const Text(
+                                      'Erro ao enviar mensagem.'),
+                                  backgroundColor:
+                                      Colors.redAccent.withValues(alpha: 0.85),
+                                  behavior: SnackBarBehavior.floating,
+                                ),
+                              );
+                            }
+                            setDialogState(() => isSending = false);
+                          }
+                        },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.gold,
+                    foregroundColor: AppColors.navyDark,
+                  ),
+                  child: isSending
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: AppColors.navyDark,
+                          ),
+                        )
+                      : const Text('Enviar'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+
+    controller.dispose();
+
+    if (sent == true && mounted) {
+      _showSnackBar('Mensagem enviada para todas as equipes!', isError: false);
+    }
   }
 
   Widget _buildTeams() {

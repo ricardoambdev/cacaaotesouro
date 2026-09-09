@@ -24,6 +24,9 @@ class SoundService {
   /// Toca o som de erro.
   Future<void> playChoro() => play('sounds/choro.mp3');
 
+  /// Toca o som de notificação (mensagem do admin).
+  Future<void> playNotification() => play('sounds/notificacao.mp3');
+
   /// Libera recursos.
   void dispose() {
     _player.dispose();

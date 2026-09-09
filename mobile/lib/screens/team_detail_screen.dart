@@ -97,16 +97,12 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> {
     setState(() => _isApplying = true);
 
     try {
-      final result = await _apiService.adminTeamPoints(
+      final newPoints = await _apiService.adminTeamPoints(
         widget.teamId,
         effectiveDelta,
         reason: reason.isNotEmpty ? reason : null,
       );
-
-      final newPoints = (result['points'] as num?)?.toInt();
-      if (newPoints != null) {
-        setState(() => _currentPoints = newPoints);
-      }
+      setState(() => _currentPoints = newPoints);
 
       _deltaController.clear();
       _reasonController.clear();

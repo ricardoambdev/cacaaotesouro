@@ -8,6 +8,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 class DeviceService {
   static const String _keyDeviceId = 'device_id';
   static const String _keyStoryVersion = 'story_version';
+  static const String _keyLastMessageId = 'last_message_id';
 
   // ── Singleton ──────────────────────────────────────────────
   static final DeviceService _instance = DeviceService._internal();
@@ -42,6 +43,18 @@ class DeviceService {
   Future<void> setStoryVersion(int version) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setInt(_keyStoryVersion, version);
+  }
+
+  /// Retorna o ID da última mensagem vista (default 0).
+  Future<int> getLastMessageId() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getInt(_keyLastMessageId) ?? 0;
+  }
+
+  /// Salva o ID da última mensagem vista.
+  Future<void> setLastMessageId(int id) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt(_keyLastMessageId, id);
   }
 
   /// Gera um UUID v4 sem pacotes externos.
