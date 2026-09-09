@@ -76,6 +76,9 @@ $teamBlackPassword  = (string) ($teams['preta']['password']  ?? '');
     <button type="button" class="tab-btn" data-tab="jogo" role="tab" aria-selected="false" aria-controls="tab-jogo">
         🎮 Jogo
     </button>
+    <button type="button" class="tab-btn" data-tab="limpeza" role="tab" aria-selected="false" aria-controls="tab-limpeza">
+        🧹 Limpeza
+    </button>
 </nav>
 
 <form method="post" action="/configuracoes" class="settings-form" data-validate>
@@ -499,3 +502,44 @@ $teamBlackPassword  = (string) ($teams['preta']['password']  ?? '');
         <a href="/tesouros" class="btn btn-ghost btn-auto" style="margin-left:12px;">Cancelar</a>
     </div>
 </form>
+
+<!-- ═══ Aba LIMPEZA (fora do form principal — form próprio) ═══ -->
+<div class="tab-panel" id="tab-limpeza" role="tabpanel">
+    <div class="page-header">
+        <h1 class="page-title">Limpeza</h1>
+        <p class="page-subtitle">Apaga todo o progresso e deixa o sistema pronto para uma nova caçada.</p>
+    </div>
+
+    <div class="settings-card" style="border:1px solid rgba(192,57,43,0.4); background:rgba(192,57,43,0.06);">
+        <h2 class="settings-card-title" style="color:#ef5350;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 6h18"/>
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+            </svg>
+            Resetar o jogo
+        </h2>
+
+        <p style="color:rgba(247,236,212,0.7); font-size:0.9rem; line-height:1.7; margin-bottom:16px;">
+            Esta ação <strong style="color:#ef5350;">apaga tudo</strong> e deixa o sistema vazio, pronto para começar:
+        </p>
+        <ul style="color:rgba(247,236,212,0.65); font-size:0.88rem; line-height:1.8; margin:0 0 20px; padding-left:18px;">
+            <li>Progresso dos tesouros (charadas respondidas, selfies e GPS confirmado)</li>
+            <li><strong>Todas as selfies</strong> enviadas (arquivos e registros)</li>
+            <li>Tesouros cadastrados e seus QR codes</li>
+            <li>Log de pontos, localizações e mensagens das equipes</li>
+            <li>Equipes voltam a 100 pontos, sem sessão e sem progresso</li>
+            <li>Jogo volta ao estado inicial (em andamento, janela 08:00–17:00)</li>
+        </ul>
+
+        <form method="post" action="/limpar" onsubmit="return confirm('⚠️ ATENÇÃO: isso apagará TODO o progresso, todas as selfies e todos os tesouros cadastrados. O sistema ficará vazio. Tem certeza?');">
+            <?= csrf_field() ?>
+            <button type="submit" class="btn btn-danger" style="width:auto;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M3 6h18"/>
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                </svg>
+                Apagar tudo e recomeçar
+            </button>
+        </form>
+    </div>
+</div>

@@ -7,6 +7,14 @@ class GameTreasure {
   final String? clue;
   final bool hasLocation;
 
+  // Campos do estado (retornados em current_treasure)
+  final bool checkedIn;
+  final bool selfieSent;
+  final bool riddleAnswered;
+  final int? assignedRiddle;
+  final String? riddle;
+  final int? answerLength;
+
   // Campos do admin
   final String? code;
   final double? lat;
@@ -20,6 +28,12 @@ class GameTreasure {
     required this.name,
     this.clue,
     this.hasLocation = false,
+    this.checkedIn = false,
+    this.selfieSent = false,
+    this.riddleAnswered = false,
+    this.assignedRiddle,
+    this.riddle,
+    this.answerLength,
     this.code,
     this.lat,
     this.lng,
@@ -34,6 +48,12 @@ class GameTreasure {
       name: (json['name'] as String?) ?? '',
       clue: json['clue'] as String?,
       hasLocation: json['has_location'] == true,
+      checkedIn: json['checked_in'] == true,
+      selfieSent: json['selfie_sent'] == true,
+      riddleAnswered: json['riddle_answered'] == true,
+      assignedRiddle: (json['assigned_riddle'] as num?)?.toInt(),
+      riddle: json['riddle'] as String?,
+      answerLength: (json['answer_length'] as num?)?.toInt(),
       code: json['code'] as String?,
       lat: (json['lat'] != null) ? (json['lat'] as num).toDouble() : null,
       lng: (json['lng'] != null) ? (json['lng'] as num).toDouble() : null,

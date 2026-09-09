@@ -7,7 +7,9 @@ namespace App\Controllers;
 use App\Repositories\GameRepository;
 use App\Repositories\SettingsRepository;
 use App\Repositories\TeamRepository;
+use App\Database;
 use App\View;
+use PDO;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 
@@ -193,6 +195,74 @@ final class GameController
         $response->getBody()->write($html);
 
         return $response;
+    }
+
+    // ------------------------------------------------------------------
+    // LIMPEZA / RESET DO JOGO
+    // ------------------------------------------------------------------
+
+    /**
+     * POST /limpar — apaga todo o progresso do jogo e deixa o sistema
+     * vazio, pronto para uma nova caçada.
+     *
+     * Remove: progresso dos tesouros, selfies (arquivos + registros),
+     * log de pontos, localizações, mensagens, tesouros (com seus QR SVG)
+     * e reseta as equipes e o estado do jogo.
+     */
+    public function resetGame(Request $request, Response $response): Response
+    {
+        $pdo = Database::get();
+        $root = dirname(__DIR__);
+
+        // ── Selfies (arquivos) ──────────────────────────────
+        $selfiesDir = $root . '/public/uploads/selfies';
+
+        if (is_dir($selfiesDir)) {
+            foreach (glob($selfiesDir . '/*') ?: [] as $file) {
+                if (is_file($file)) {
+                    @unlink($file);
+                }
+            }
+        }
+
+        // ── QR codes dos tesouros (arquivos) ────────────────
+        foreach ($pdo->query('SELECT qr_svg_path FROM treasures') as $row) {
+            $path = (string) ($row['qr_svg_path'] ?? '');
+
+            if ($path !== '') {
+                $file = $root . '/public' . $path;
+                if (is_file($file)) {
+                    @unlink($file);
+                }
+            }
+        }
+
+        // ── Registros ────────────────────────────────────────
+        $pdo->exec('DELETE FROM team_treasure_progress');
+        $pdo->exec('DELETE FROM points_log');
+        $pdo->exec('DELETE FROM team_locations');
+        $pdo->exec('DELETE FROM team_messages');
+        $pdo->exec('DELETE FROM treasures');
+
+        // ── Equipes (estado inicial) ─────────────────────────
+        $pdo->exec(
+            "UPDATE teams SET points = 100, status = 'playing', "
+            . "finished_at = NULL, current_step = 0, "
+            . "session_token = NULL, order_sequence = NULL"
+        );
+
+        // ── Jogo (estado inicial) ────────────────────────────
+        SettingsRepository::update([
+            'gameStatus'    => 'playing',
+            'gameActive'    => '1',
+            'winnerTeamId'  => '',
+            'gameStartDate' => '',
+            'gameStartTime' => '08:00',
+            'gameEndTime'   => '17:00',
+        ]);
+
+        flash_set('success', 'Sistema limpo! Tudo foi apagado e está pronto para uma nova caçada ao tesouro.');
+        redirect('/configuracoes');
     }
 
     // ------------------------------------------------------------------

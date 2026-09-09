@@ -174,7 +174,32 @@ final class ApiController
                     'name'         => (string) $treasure['name'],
                     'clue'         => (string) $treasure['clue'],
                     'has_location' => $this->hasLocation($treasure),
+                    'checked_in'    => false,
+                    'selfie_sent'   => false,
+                    'riddle_answered' => false,
                 ];
+
+                // Estado do time NESTE tesouro: permite ao app retomar a
+                // charada depois (check-in + selfie já feitos, charada pendente).
+                $progress = GameRepository::progress($teamId, $currentTreasureId);
+
+                if ($progress !== null && (int) $progress['gps_confirmed'] === 1) {
+                    $assignedRiddle = (int) ($progress['assigned_riddle'] ?? 0);
+
+                    $currentTreasure['checked_in']    = true;
+                    $currentTreasure['selfie_sent']   = (int) $progress['selfie_points'] === 1;
+                    $currentTreasure['riddle_answered'] = (int) $progress['riddle_correct'] === 1;
+
+                    if (in_array($assignedRiddle, [1, 2], true)) {
+                        $currentTreasure['assigned_riddle'] = $assignedRiddle;
+                        $currentTreasure['riddle'] = (string) ($assignedRiddle === 1
+                            ? $treasure['riddle1']
+                            : $treasure['riddle2']);
+                        $currentTreasure['answer_length'] = (int) strlen((string) ($assignedRiddle === 1
+                            ? $treasure['answer1']
+                            : $treasure['answer2']));
+                    }
+                }
             }
         }
 
@@ -325,7 +350,7 @@ final class ApiController
         if ($existing !== null && (int) $existing['gps_confirmed'] === 1) {
             return $this->json($response, [
                 'success'         => true,
-                'message'         => 'Você já fez check-in neste tesouro. Responda a charada e depois envie a selfie.',
+                'message'         => 'Você já fez check-in neste tesouro. Envie a selfie no local para liberar a charada.',
                 'assigned_riddle' => (int) $existing['assigned_riddle'],
                 'riddle'          => (string) ((int) $existing['assigned_riddle'] === 1
                     ? $treasure['riddle1']
@@ -354,7 +379,7 @@ final class ApiController
 
         return $this->json($response, [
             'success'         => true,
-            'message'         => 'Check-in confirmado! Responda a charada e depois envie a selfie.',
+            'message'         => 'Check-in confirmado! Envie a selfie no local para liberar a charada.',
             'assigned_riddle' => $assignedRiddle,
             'riddle'          => $riddle,
             'answer_length'   => (int) strlen($answer),
@@ -515,8 +540,17 @@ final class ApiController
             ], 400);
         }
 
-        // A selfie agora é tirada DEPOIS de acertar a charada, portanto a
-        // resposta pode ser avaliada sem exigir selfie prévia.
+        // Selfie OBRIGATÓRIA no local: só é possível responder a charada
+        // depois de enviada a foto (selfie_points = 1). Nada de pontos é
+        // movimentado nem a resposta é avaliada enquanto não houver selfie.
+        if ((int) $progress['selfie_points'] !== 1) {
+            return $this->json($response, [
+                'success' => false,
+                'error'   => 'A selfie no local é obrigatória antes de responder a charada.',
+                'code'    => 'selfie_required',
+            ], 400);
+        }
+
         if ((int) $progress['riddle_correct'] === 1) {
             return $this->json($response, [
                 'success' => false,

@@ -63,12 +63,41 @@ class _TeamHomeScreenState extends State<TeamHomeScreen> {
     try {
       final state = await _apiService.teamState();
       if (!mounted) return;
+
+      // ── Retomada: restaurar flow a partir do estado do tesouro ──
+      CheckinResult? restoredCheckin;
+      TreasureFlowState restoredFlow = TreasureFlowState.viewingClue;
+
+      if (state.currentTreasure != null) {
+        final t = state.currentTreasure!;
+        if (t.checkedIn) {
+          // Montar _checkinResult a partir dos campos do current_treasure
+          restoredCheckin = CheckinResult(
+            message: 'Checkin já realizado.',
+            assignedRiddle: t.assignedRiddle ?? 1,
+            riddle: t.riddle ?? '',
+            selfieQuestion: false,
+            selfieRequired: !t.selfieSent,
+            answerLength: t.answerLength ?? 6,
+          );
+          if (!t.selfieSent) {
+            // Checkin feito mas selfie pendente → card de selfie
+            restoredFlow = TreasureFlowState.checkinSuccess;
+          } else if (!t.riddleAnswered) {
+            // Selfie feita, charada pendente → mostrar charada
+            restoredFlow = TreasureFlowState.showingRiddle;
+          }
+          // Se riddleAnswered == true → fica em viewingClue (próximo tesouro
+          // ou aguardando)
+        }
+      }
+
       setState(() {
         _gameState = state;
         _unreadMessages = List<TeamMessage>.from(state.messages);
         _isLoading = false;
-        _flowState = TreasureFlowState.viewingClue;
-        _checkinResult = null;
+        _flowState = restoredFlow;
+        _checkinResult = restoredCheckin;
         _answerResult = null;
       });
       _startLocationTracking();
@@ -257,7 +286,7 @@ class _TeamHomeScreenState extends State<TeamHomeScreen> {
     }
   }
 
-  Future<void> _takeSelfie({bool afterAnswer = false}) async {
+  Future<void> _takeSelfie() async {
     final picker = ImagePicker();
     try {
       final XFile? image = await picker.pickImage(
@@ -274,39 +303,25 @@ class _TeamHomeScreenState extends State<TeamHomeScreen> {
       if (treasure == null) return;
 
       try {
-        final result = await _apiService.uploadSelfie(
+        await _apiService.uploadSelfie(
           treasureId: treasure.id,
           filePath: image.path,
         );
 
         if (!mounted) return;
-        final points = result['points'] ?? 0;
-        _showSnackBar('Selfie enviada! +$points pontos', isError: false);
+        _showSnackBar('Selfie enviada! +5 pontos', isError: false);
 
-        if (afterAnswer) {
-          // Após selfie pós-resposta, recarregar estado para próximo tesouro
-          await _loadState();
-        } else {
-          // Fluxo antigo (fallback): avançar para charada
-          setState(() => _flowState = TreasureFlowState.showingRiddle);
-        }
+        // Selfie OK → ir para a charada
+        setState(() => _flowState = TreasureFlowState.showingRiddle);
       } on ApiException catch (e) {
         if (!mounted) return;
         _showSnackBar(e.message, isError: true);
-        if (afterAnswer) {
-          // Mesmo com erro, recarregar estado
-          await _loadState();
-        } else {
-          setState(() => _flowState = TreasureFlowState.showingRiddle);
-        }
+        // Voltar ao card de selfie para tentar novamente
+        setState(() => _flowState = TreasureFlowState.checkinSuccess);
       } catch (_) {
         if (!mounted) return;
         _showSnackBar('Erro ao enviar selfie.', isError: true);
-        if (afterAnswer) {
-          await _loadState();
-        } else {
-          setState(() => _flowState = TreasureFlowState.showingRiddle);
-        }
+        setState(() => _flowState = TreasureFlowState.checkinSuccess);
       }
     } catch (_) {
       // Usuário pode ter negado câmera
@@ -630,9 +645,6 @@ class _TeamHomeScreenState extends State<TeamHomeScreen> {
       case TreasureFlowState.answerResult:
         content = _buildAnswerResult();
         break;
-      case TreasureFlowState.selfieAfterCorrect:
-        content = _buildLoadingState('Enviando selfie...');
-        break;
       case TreasureFlowState.finalChallenge:
         content = _buildFinalChallenge();
         break;
@@ -902,14 +914,11 @@ class _TeamHomeScreenState extends State<TeamHomeScreen> {
   }
 
   Widget _buildCheckinSuccess() {
-    final result = _checkinResult;
-    if (result == null) return const SizedBox();
-
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
       child: Column(
         children: [
-          // ── Checkin OK ───────────────────────────────
+          // ── Card: Selfie obrigatória no local ──────────
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(20),
@@ -917,7 +926,7 @@ class _TeamHomeScreenState extends State<TeamHomeScreen> {
               color: AppColors.navyMedium,
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
-                color: Colors.green.withValues(alpha: 0.3),
+                color: AppColors.gold.withValues(alpha: 0.3),
               ),
             ),
             child: Column(
@@ -925,69 +934,91 @@ class _TeamHomeScreenState extends State<TeamHomeScreen> {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Colors.green.withValues(alpha: 0.15),
+                    color: AppColors.gold.withValues(alpha: 0.15),
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(Icons.check_circle_outline,
-                      color: Colors.greenAccent, size: 36),
+                  child: const Icon(Icons.camera_alt_outlined,
+                      color: AppColors.gold, size: 36),
                 ),
                 const SizedBox(height: 14),
                 const Text(
-                  'Checkin Realizado!',
+                  'Selfie Obrigatória no Local',
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w700,
                     color: AppColors.ivory,
                   ),
                 ),
-                const SizedBox(height: 8),
-                Text(
-                  result.message,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    color: AppColors.ivoryMuted,
+                const SizedBox(height: 12),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: AppColors.gold.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                      color: AppColors.gold.withValues(alpha: 0.3),
+                    ),
+                  ),
+                  child: const Text(
+                    'A foto deve mostrar o local e os alunos na foto.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 14,
+                      height: 1.5,
+                      color: AppColors.ivory,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: Colors.orangeAccent.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: Colors.orangeAccent.withValues(alpha: 0.35),
+                    ),
+                  ),
+                  child: const Text(
+                    'Se os alunos não saírem na foto, '
+                    'os pontos podem ser CANCELADOS.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 13,
+                      height: 1.4,
+                      color: Colors.orangeAccent,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 18),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: _takeSelfie,
+                    icon: const Icon(Icons.camera_alt, size: 20),
+                    label: const Text(
+                      'Tirar selfie',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.gold,
+                      foregroundColor: AppColors.navyDark,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                    ),
                   ),
                 ),
               ],
             ),
           ),
-
-          const SizedBox(height: 20),
-
-          // ── Ir direto para a charada (selfie agora é pós-acerto) ──
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: () =>
-                  setState(() => _flowState = TreasureFlowState.showingRiddle),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.gold,
-                foregroundColor: AppColors.navyDark,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                padding: const EdgeInsets.symmetric(vertical: 14),
-              ),
-              child: const Text(
-                'Ver Charada',
-                style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
-              ),
-            ),
-          ),
-
-          // ── Selfie opcional (fallback para backend antigo) ──
-          if (result.selfieRequired || result.selfieQuestion) ...[
-            const SizedBox(height: 12),
-            TextButton.icon(
-              onPressed: () => _takeSelfie(),
-              icon: const Icon(Icons.camera_alt_outlined, size: 18),
-              label: const Text('Tirar selfie agora (opcional)'),
-              style: TextButton.styleFrom(
-                foregroundColor: AppColors.ivoryMuted,
-              ),
-            ),
-          ],
         ],
       ),
     );
@@ -1062,76 +1093,6 @@ class _TeamHomeScreenState extends State<TeamHomeScreen> {
                 ),
               ),
             ),
-            if (result.correct) ...[
-              // ── Selfie obrigatória após acerto ──────────
-              const SizedBox(height: 20),
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: AppColors.navyMedium,
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(
-                    color: Colors.orangeAccent.withValues(alpha: 0.4),
-                  ),
-                ),
-                child: Column(
-                  children: [
-                    const Icon(Icons.camera_alt_outlined,
-                        color: AppColors.gold, size: 28),
-                    const SizedBox(height: 10),
-                    const Text(
-                      'Agora tire uma selfie!',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.ivory,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: Colors.orangeAccent.withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(
-                          color: Colors.orangeAccent.withValues(alpha: 0.35),
-                        ),
-                      ),
-                      child: const Text(
-                        'Todos os integrantes devem aparecer na foto. '
-                        'Se os alunos não saírem na foto, os pontos podem ser CANCELADOS.',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 13,
-                          height: 1.4,
-                          color: Colors.orangeAccent,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 14),
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton.icon(
-                        onPressed: () => _takeSelfie(afterAnswer: true),
-                        icon: const Icon(Icons.camera_alt, size: 18),
-                        label: const Text('Enviar selfie'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.gold,
-                          foregroundColor: AppColors.navyDark,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
             if (!result.correct) ...[
               const SizedBox(height: 16),
               Text(
@@ -1168,8 +1129,6 @@ class _TeamHomeScreenState extends State<TeamHomeScreen> {
       correctPoints: _gameState?.finalCorrectPoints ?? 100,
       wrongPenalty: _gameState?.finalWrongPenalty ?? 20,
       onSubmit: _submitFinalAnswer,
-      onCancel: () =>
-          setState(() => _flowState = TreasureFlowState.viewingClue),
     );
   }
 
@@ -1444,7 +1403,6 @@ enum TreasureFlowState {
   showingRiddle,
   submittingAnswer,
   answerResult,
-  selfieAfterCorrect,
   finalChallenge,
   finalResult,
 }
@@ -1702,14 +1660,12 @@ class _FinalAnswerInput extends StatefulWidget {
   final int correctPoints;
   final int wrongPenalty;
   final ValueChanged<String> onSubmit;
-  final VoidCallback onCancel;
 
   const _FinalAnswerInput({
     required this.clue,
     this.correctPoints = 100,
     this.wrongPenalty = 20,
     required this.onSubmit,
-    required this.onCancel,
   });
 
   @override
@@ -1847,53 +1803,41 @@ class _FinalAnswerInputState extends State<_FinalAnswerInput> {
 
           const SizedBox(height: 20),
 
-          // ── Botões ───────────────────────────────────
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton(
-                  onPressed: widget.onCancel,
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: AppColors.ivoryMuted,
-                    side: BorderSide(
-                      color: AppColors.ivoryMuted.withValues(alpha: 0.3),
+          // ── Botão Responder (sempre habilitado, valida ao tocar) ──
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: () {
+                final answer = _controller.text.trim();
+                if (answer.isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: const Text('Digite a resposta antes de enviar.'),
+                      backgroundColor:
+                          Colors.redAccent.withValues(alpha: 0.85),
+                      behavior: SnackBarBehavior.floating,
                     ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                  ),
-                  child: const Text('Voltar'),
+                  );
+                  return;
+                }
+                widget.onSubmit(answer);
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.gold,
+                foregroundColor: AppColors.navyDark,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                padding: const EdgeInsets.symmetric(vertical: 14),
+              ),
+              child: const Text(
+                'Responder',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
                 ),
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                flex: 2,
-                child: ElevatedButton(
-                  onPressed: _controller.text.trim().isNotEmpty
-                      ? () =>
-                          widget.onSubmit(_controller.text.trim())
-                      : null,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.gold,
-                    foregroundColor: AppColors.navyDark,
-                    disabledBackgroundColor:
-                        AppColors.ivoryMuted.withValues(alpha: 0.3),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                  ),
-                  child: const Text(
-                    'Responder',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ),
-              ),
-            ],
+            ),
           ),
         ],
       ),
