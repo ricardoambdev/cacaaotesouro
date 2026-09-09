@@ -215,7 +215,7 @@ final class GameController
         $selfiesDir = $root . '/public/uploads/selfies';
 
         if (is_dir($selfiesDir)) {
-            foreach (glob($selfiesDir . '/*') ?: [] as $file) {
+            foreach (glob(str_replace('\\', '/', $selfiesDir) . '/*') ?: [] as $file) {
                 if (is_file($file)) {
                     // Retry curto: evita bloqueio transitório do Windows.
                     for ($i = 0; $i < 3; $i++) {
@@ -308,7 +308,7 @@ final class GameController
         $selfiesDir = $root . '/public/uploads/selfies';
 
         if (is_dir($selfiesDir)) {
-            foreach (glob($selfiesDir . '/*') ?: [] as $file) {
+            foreach (glob(str_replace('\\', '/', $selfiesDir) . '/*') ?: [] as $file) {
                 if (is_file($file)) {
                     @unlink($file);
                 }
@@ -320,7 +320,7 @@ final class GameController
             $path = (string) ($row['qr_svg_path'] ?? '');
 
             if ($path !== '') {
-                $file = $root . '/public' . $path;
+                $file = str_replace('\\', '/', $root . '/public' . $path);
                 if (is_file($file)) {
                     @unlink($file);
                 }
