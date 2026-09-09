@@ -507,128 +507,127 @@ $teamBlackPassword  = (string) ($teams['preta']['password']  ?? '');
 <div class="tab-panel" id="tab-limpeza" role="tabpanel">
     <div class="page-header">
         <h1 class="page-title">Limpeza</h1>
-        <p class="page-subtitle">Apaga todo o progresso e deixa o sistema pronto para uma nova caçada.</p>
+        <p class="page-subtitle">Escolha o que deseja limpar. As ações mantêm o que você indica.</p>
     </div>
 
-    <div class="settings-card" style="border:1px solid rgba(192,57,43,0.4); background:rgba(192,57,43,0.06);">
-        <h2 class="settings-card-title" style="color:#ef5350;">
+    <!-- ── 1. LIMPEZA LEVE (recomendada) ──────────────────── -->
+    <div class="settings-card" style="border:1px solid rgba(34,197,94,0.4); background:rgba(34,197,94,0.05);">
+        <h2 class="settings-card-title" style="color:#22C55E;">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M3 6h18"/>
-                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                <polyline points="22 4 12 14.01 9 11.01"/>
             </svg>
-            Resetar o jogo
+            Limpar o jogo (recomendado)
         </h2>
-
         <p style="color:rgba(247,236,212,0.7); font-size:0.9rem; line-height:1.7; margin-bottom:16px;">
-            Esta ação <strong style="color:#ef5350;">apaga tudo</strong> e deixa o sistema vazio, pronto para começar:
+            Apaga os <strong style="color:#22C55E;">tesouros completados</strong> e as selfies, e reseta as equipes.
+            <strong>Mantém</strong> os tesouros cadastrados, a história e o desafio final.
         </p>
         <ul style="color:rgba(247,236,212,0.65); font-size:0.88rem; line-height:1.8; margin:0 0 20px; padding-left:18px;">
-            <li>Progresso dos tesouros (charadas respondidas, selfies e GPS confirmado)</li>
-            <li><strong>Todas as selfies</strong> enviadas (arquivos e registros)</li>
-            <li>Tesouros cadastrados e seus QR codes</li>
-            <li>Log de pontos, localizações e mensagens das equipes</li>
-            <li>Equipes voltam a 100 pontos, sem sessão e sem progresso</li>
-            <li>Jogo volta ao estado inicial (em andamento, janela 08:00–17:00)</li>
+            <li>✅ Tesouros cadastrados e QR codes <strong>mantidos</strong></li>
+            <li>✅ História e desafio final <strong>mantidos</strong></li>
+            <li>🗑️ Tesouros completados e selfies apagados</li>
+            <li>🗑️ Pontos, localizações e mensagens apagados</li>
+            <li>↩️ Equipes voltam a 100 pontos, sem progresso</li>
         </ul>
-
-        <form method="post" action="/limpar" onsubmit="return confirm('⚠️ ATENÇÃO: isso apagará TODO o progresso, todas as selfies e todos os tesouros cadastrados. O sistema ficará vazio. Tem certeza?');">
+        <form method="post" action="/limpar/leve" onsubmit="return confirm('Limpar o jogo? Os tesouros completados e selfies serão apagados. Tesouros, história e desafio final serão mantidos.');">
             <?= csrf_field() ?>
-            <button type="submit" class="btn btn-danger" style="width:auto;">
+            <button type="submit" class="btn btn-primary" style="width:auto; background:linear-gradient(135deg,#22C55E,#168a3a);">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M3 6h18"/>
-                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                    <polyline points="22 4 12 14.01 9 11.01"/>
                 </svg>
-                Apagar tudo e recomeçar
+                Limpar o jogo
             </button>
         </form>
     </div>
 
-    <div class="settings-card" style="border:1px solid rgba(245,197,66,0.25); margin-top:24px;">
-        <h2 class="settings-card-title" style="color:#F97316;">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M3 6h18"/>
-                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
-            </svg>
-            Resetar somente o jogo (manter configurações)
-        </h2>
-
-        <p style="color:rgba(247,236,212,0.7); font-size:0.9rem; line-height:1.7; margin-bottom:16px;">
-            Reseta o jogo das duas equipes, mas <strong style="color:#F97316;">mantém as configurações</strong>
-            (data/horários, desafio final, credenciais e ordem dos tesouros):
-        </p>
-        <ul style="color:rgba(247,236,212,0.65); font-size:0.88rem; line-height:1.8; margin:0 0 20px; padding-left:18px;">
-            <li>Equipes voltam a <strong>100 pontos</strong>, sem sessão e sem progresso</li>
-            <li><strong>Todas as selfies</strong> apagadas (registros e arquivos)</li>
-            <li><strong>Tesouros</strong> apagados (registros e QR codes)</li>
-            <li>Log de pontos, localizações e mensagens apagados</li>
-            <li>Jogo volta a "em andamento"</li>
-        </ul>
-
-        <form method="post" action="/limpar-jogo" onsubmit="return confirm('⚠️ Isso apagará o progresso das equipes, as selfies e os tesouros. As configurações serão mantidas. Continuar?');">
-            <?= csrf_field() ?>
-            <button type="submit" class="btn btn-danger" style="width:auto; background:linear-gradient(135deg,#F97316,#EA580C);">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M3 6h18"/>
-                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
-                </svg>
-                Resetar somente o jogo
-            </button>
-        </form>
+    <!-- ── 2. FERRAMENTAS ─────────────────────────────────── -->
+    <div style="margin:28px 0 10px; font-size:0.72rem; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; color:rgba(247,236,212,0.4);">
+        Ferramentas
     </div>
 
-    <div class="settings-card" style="border:1px solid rgba(39,174,96,0.3); margin-top:24px;">
-        <h2 class="settings-card-title" style="color:#27ae60;">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="12" cy="12" r="10"/>
-                <line x1="12" y1="8" x2="12" y2="16"/>
-                <line x1="8" y1="12" x2="16" y2="12"/>
-            </svg>
-            Tesouros de demonstração
-        </h2>
-
-        <p style="color:rgba(247,236,212,0.7); font-size:0.9rem; line-height:1.7; margin-bottom:16px;">
-            Cria <strong style="color:#27ae60;">5 tesouros</strong> de demonstração (T01–T05) com charadas, QR codes e
-            ordenação automática. Útil logo após a limpeza. Depois, confirme as coordenadas de cada um pelo app admin.
-        </p>
-
-        <form method="post" action="/limpar/tesouros">
-            <?= csrf_field() ?>
-            <button type="submit" class="btn btn-primary" style="width:auto; background:linear-gradient(135deg,#27ae60,#1e8a4c);">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M20 12v10H4V12"/>
-                    <path d="M12 2v15"/>
-                    <path d="M8 6l4-4 4 4"/>
-                </svg>
-                Criar 5 tesouros de demonstração
-            </button>
-        </form>
-    </div>
-
-    <div class="settings-card" style="border:1px solid rgba(245,197,66,0.25); margin-top:24px;">
-        <h2 class="settings-card-title" style="color:#F97316;">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M4 19V5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v14"/>
-                <path d="M4 19l5-5"/>
-                <path d="M20 19l-5-5"/>
-                <line x1="9" y1="8" x2="15" y2="8"/>
-            </svg>
-            História para as equipes
-        </h2>
-
-        <p style="color:rgba(247,236,212,0.7); font-size:0.9rem; line-height:1.7; margin-bottom:16px;">
-            Quando uma equipe entra no aplicativo, a história é exibida apenas na primeira vez.
-            Este botão faz a história <strong style="color:#F97316;">aparecer novamente</strong> para as duas equipes
-            no próximo acesso (o conteúdo atual da história é mantido).
-        </p>
-
-        <form method="post" action="/limpar/historia">
-            <?= csrf_field() ?>
-            <button type="submit" class="btn btn-primary" style="width:auto; background:linear-gradient(135deg,#F97316,#EA580C);">
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+        <div class="settings-card" style="margin:0;">
+            <h2 class="settings-card-title" style="color:#F97316; font-size:1rem;">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
                     <circle cx="12" cy="12" r="3"/>
                 </svg>
-                Reexibir a história para as equipes
+                Reexibir história
+            </h2>
+            <p style="color:rgba(247,236,212,0.6); font-size:0.82rem; line-height:1.6; margin-bottom:14px;">
+                A história aparece novamente no próximo acesso das equipes.
+            </p>
+            <form method="post" action="/limpar/historia">
+                <?= csrf_field() ?>
+                <button type="submit" class="btn btn-primary btn-sm" style="background:linear-gradient(135deg,#F97316,#EA580C);">
+                    Reexibir às equipes
+                </button>
+            </form>
+        </div>
+
+        <div class="settings-card" style="margin:0;">
+            <h2 class="settings-card-title" style="color:#27ae60; font-size:1rem;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"/>
+                    <line x1="12" y1="8" x2="12" y2="16"/>
+                    <line x1="8" y1="12" x2="16" y2="12"/>
+                </svg>
+                Criar 5 tesouros
+            </h2>
+            <p style="color:rgba(247,236,212,0.6); font-size:0.82rem; line-height:1.6; margin-bottom:14px;">
+                Cria 5 tesouros de demonstração (T01–T05) com charadas e QR.
+            </p>
+            <form method="post" action="/limpar/tesouros">
+                <?= csrf_field() ?>
+                <button type="submit" class="btn btn-primary btn-sm" style="background:linear-gradient(135deg,#27ae60,#1e8a4c);">
+                    Criar tesouros
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- ── 3. ZONA DE PERIGO ──────────────────────────────── -->
+    <div style="margin:28px 0 10px; font-size:0.72rem; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; color:#ef5350;">
+        Zona de perigo
+    </div>
+
+    <div class="settings-card" style="border:1px solid rgba(239,68,68,0.35); background:rgba(239,68,68,0.05);">
+        <h2 class="settings-card-title" style="color:#ef5350; font-size:1.05rem;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 6h18"/>
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+            </svg>
+            Resetar somente o jogo
+        </h2>
+        <p style="color:rgba(247,236,212,0.7); font-size:0.85rem; line-height:1.6; margin-bottom:14px;">
+            Como a limpeza leve, mas <strong style="color:#ef5350;">também apaga os tesouros cadastrados</strong>
+            (mantém data/horários, desafio final e credenciais).
+        </p>
+        <form method="post" action="/limpar-jogo" onsubmit="return confirm('⚠️ Isso apagará o progresso, as selfies E os tesouros cadastrados. Continuar?');">
+            <?= csrf_field() ?>
+            <button type="submit" class="btn btn-danger btn-sm" style="width:auto;">
+                Resetar o jogo (apaga tesouros)
+            </button>
+        </form>
+    </div>
+
+    <div class="settings-card" style="border:1px solid rgba(239,68,68,0.5); background:rgba(239,68,68,0.08); margin-top:16px;">
+        <h2 class="settings-card-title" style="color:#ef5350; font-size:1.05rem;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 6h18"/>
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+            </svg>
+            Apagar tudo e recomeçar
+        </h2>
+        <p style="color:rgba(247,236,212,0.7); font-size:0.85rem; line-height:1.6; margin-bottom:14px;">
+            Apaga <strong style="color:#ef5350;">tudo</strong> e restaura as configurações padrão — o sistema fica vazio.
+        </p>
+        <form method="post" action="/limpar" onsubmit="return confirm('⚠️ ATENÇÃO: apagará TODO o progresso, selfies, tesouros e restaurará as configurações padrão. Tem certeza?');">
+            <?= csrf_field() ?>
+            <button type="submit" class="btn btn-danger btn-sm" style="width:auto;">
+                Apagar tudo e recomeçar
             </button>
         </form>
     </div>

@@ -202,6 +202,57 @@ final class GameController
     // ------------------------------------------------------------------
 
     /**
+     * POST /limpar/leve — limpa o progresso do jogo (tesouros completados,
+     * selfies, pontos, localizações, mensagens) e reseta as equipes,
+     * mas MANTÉM os tesouros cadastrados, a história e o desafio final.
+     */
+    public function cleanGameLight(Request $request, Response $response): Response
+    {
+        $pdo = Database::get();
+        $root = dirname(__DIR__);
+
+        // ── Selfies (arquivos) ──────────────────────────────
+        $selfiesDir = $root . '/public/uploads/selfies';
+
+        if (is_dir($selfiesDir)) {
+            foreach (glob($selfiesDir . '/*') ?: [] as $file) {
+                if (is_file($file)) {
+                    // Retry curto: evita bloqueio transitório do Windows.
+                    for ($i = 0; $i < 3; $i++) {
+                        if (@unlink($file) || !is_file($file)) {
+                            break;
+                        }
+                        usleep(100000);
+                    }
+                }
+            }
+        }
+
+        // ── Registros de progresso (tesouros completados) ──
+        $pdo->exec('DELETE FROM team_treasure_progress');
+        $pdo->exec('DELETE FROM points_log');
+        $pdo->exec('DELETE FROM team_locations');
+        $pdo->exec('DELETE FROM team_messages');
+
+        // ── Equipes (estado inicial) ─────────────────────────
+        $pdo->exec(
+            "UPDATE teams SET points = 100, status = 'playing', "
+            . "finished_at = NULL, current_step = 0, "
+            . "session_token = NULL, order_sequence = NULL"
+        );
+
+        // ── Jogo pronto para começar (mantém tesouros/história/desafio) ──
+        SettingsRepository::update([
+            'gameStatus'   => 'playing',
+            'gameActive'   => '1',
+            'winnerTeamId' => '',
+        ]);
+
+        flash_set('success', 'Jogo limpo! Tesouros completados, selfies e pontos apagados. Tesouros, história e desafio final mantidos.');
+        redirect('/configuracoes');
+    }
+
+    /**
      * POST /limpar — apaga todo o progresso do jogo E restaura as
      * configurações padrão (deixa o sistema completamente vazio).
      */
