@@ -314,7 +314,7 @@ class _ConnectionScreenState extends State<ConnectionScreen> {
       body: Stack(
         fit: StackFit.expand,
         children: [
-          // ── Fundo: poster centralizado (preto ao redor) ─────
+          // ── Fundo: preto + poster centralizado (50% da largura) ──
           Positioned.fill(
             child: ColoredBox(
               color: Colors.black,
@@ -323,22 +323,19 @@ class _ConnectionScreenState extends State<ConnectionScreen> {
           Center(
             child: Image.asset(
               'assets/images/poster.png',
+              width: MediaQuery.of(context).size.width * 0.5,
               fit: BoxFit.contain,
-              width: double.infinity,
-              height: double.infinity,
             ),
           ),
 
-          // ── Conteúdo (checks/loading/erro) sobreposto ────
+          // ── Conteúdo: só aparece em caso de ERRO ────────
           Positioned.fill(
             child: SafeArea(
-              child: _allPassed
-                  ? _buildSuccess()
-                  : _showForm
-                      ? _buildForm()
-                      : _isRunning || (!_allPassed && !_showForm)
-                          ? _buildCheckList()
-                          : _buildCheckList(),
+              child: _showForm
+                  ? _buildForm()
+                  : (!_isRunning && !_allPassed)
+                      ? _buildCheckList()
+                      : const SizedBox.shrink(),
             ),
           ),
         ],
@@ -346,40 +343,7 @@ class _ConnectionScreenState extends State<ConnectionScreen> {
     );
   }
 
-  /// Tela de sucesso (todos os checks passaram).
-  Widget _buildSuccess() {
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            Icons.check_circle_rounded,
-            size: 64,
-            color: Colors.greenAccent.withValues(alpha: 0.9),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            'Tudo pronto!',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w700,
-              color: AppColors.ivory,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Iniciando o jogo...',
-            style: TextStyle(
-              fontSize: 14,
-              color: AppColors.ivoryMuted,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// Lista dos 4 checks com progresso.
+  /// Lista dos 4 checks com progresso (exibida apenas em caso de erro).
   Widget _buildCheckList() {
     final padding = MediaQuery.paddingOf(context);
     final hasFailed = _internetCheck.failed ||
