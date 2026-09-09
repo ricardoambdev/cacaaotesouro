@@ -377,6 +377,54 @@ $siteName = $siteName ?? 'Caça ao Tesouro';
             .sb-points { font-size: 1.8rem; }
             .sb-selfies { display: none; }
         }
+
+        /* ═══ PIN CARTUNESCO DAS EQUIPES ═══ */
+        .team-pin-wrap {
+            filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.5));
+        }
+        .team-pin {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            padding: 5px 12px;
+            background: #fdf6e3;
+            border: 3px solid;
+            border-radius: 22px;
+            box-shadow: inset 0 -3px 0 rgba(0, 0, 0, 0.12);
+            font-family: 'Comic Sans MS', 'Segoe UI', sans-serif;
+            white-space: nowrap;
+            animation: pin-bounce 1.4s ease-in-out infinite;
+        }
+        .team-pin-name {
+            font-size: 12px;
+            font-weight: 800;
+            letter-spacing: 0.3px;
+        }
+        .team-pin-dot {
+            width: 9px;
+            height: 9px;
+            border-radius: 50%;
+            background: currentColor;
+        }
+        .team-pin-tail {
+            position: absolute;
+            bottom: -11px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 9px solid transparent;
+            border-right: 9px solid transparent;
+            border-top: 12px solid currentColor;
+        }
+        .team-pin-preta { color: #000; border-color: #000; }
+        .team-pin-laranja { color: #F97316; border-color: #F97316; }
+        @keyframes pin-bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-4px); }
+        }
+        .leaflet-popup-content { color: #0a1724; }
     </style>
 </head>
 <body>
@@ -580,39 +628,39 @@ $siteName = $siteName ?? 'Caça ao Tesouro';
                 $(prefix + '-status').className = 'sb-status ' + (team.online ? 'sb-online' : 'sb-offline');
                 $(prefix + '-game-status').textContent = statusText;
 
-                /* ---- Map marker ---- */
-                if (team.last_location) {
+                /* ---- Map marker: somente se ONLINE (logada no app) ---- */
+                if (team.online && team.last_location) {
                     const lat = team.last_location.lat;
                     const lng = team.last_location.lng;
-                    const isOnline = !!team.online;
-                    const markerColor = !isOnline
-                        ? '#6b7280' /* offline: cinza */
-                        : ((colorKey === 'laranja') ? COLORS.laranja : COLORS.preta);
-                    const borderColor = (colorKey === 'laranja') ? '#FDBA74' : COLORS.pretaBorder;
+                    const teamColor = (colorKey === 'laranja') ? COLORS.laranja : COLORS.preta;
+
+                    /* Pin cartunesco com o nome da equipe */
+                    const icon = L.divIcon({
+                        className: 'team-pin-wrap',
+                        html: '<div class="team-pin team-pin-' + colorKey + '">' +
+                            '<span class="team-pin-name">' + team.name + '</span>' +
+                            '<span class="team-pin-dot"></span>' +
+                            '<div class="team-pin-tail"></div>' +
+                            '</div>',
+                        iconSize: [0, 0],
+                        iconAnchor: [0, 0],
+                    });
 
                     if (teamMarkers[colorKey]) {
                         /* Update existing */
                         teamMarkers[colorKey].setLatLng([lat, lng]);
-                        teamMarkers[colorKey].setStyle({ fillColor: markerColor });
                     } else {
                         /* Create new */
-                        teamMarkers[colorKey] = L.circleMarker([lat, lng], {
-                            radius: 14,
-                            fillColor: markerColor,
-                            color: borderColor,
-                            weight: 3,
-                            opacity: 1,
-                            fillOpacity: 0.85,
-                        }).addTo(map);
+                        teamMarkers[colorKey] = L.marker([lat, lng], { icon }).addTo(map);
                     }
 
                     teamMarkers[colorKey].bindPopup(
                         '<strong>' + (team.name || side) + '</strong><br>Pontos: ' + (team.points || 0) +
-                            '<br>' + (isOnline ? '● ONLINE' : '○ OFFLINE'),
+                            '<br>● ONLINE',
                         { className: 'telao-popup' }
                     );
                 } else if (teamMarkers[colorKey]) {
-                    /* Sem localização (offline) — remove o marcador */
+                    /* Offline ou sem localização — NÃO mostra no mapa */
                     map.removeLayer(teamMarkers[colorKey]);
                     delete teamMarkers[colorKey];
                 }
