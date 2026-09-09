@@ -102,7 +102,7 @@ $colorMap = [
 
 /* ---- SIDEBAR ---- */
 .db-sidebar {
-    width: 380px;
+    width: 440px;
     flex-shrink: 0;
     background: #0A1724;
     border-left: 1px solid rgba(249,115,22,0.1);
@@ -211,11 +211,22 @@ $colorMap = [
     font-weight: 600;
 }
 
-.db-quick-btns {
+.db-quick-row {
     display: flex;
+    align-items: center;
     gap: 6px;
     margin-bottom: 8px;
-    flex-wrap: wrap;
+}
+
+.db-quick-row .db-delta-input {
+    flex: 0 0 84px;
+    min-width: 0;
+}
+
+.db-quick-row .db-btn-quick {
+    flex: 1;
+    min-width: 0;
+    padding: 8px 2px;
 }
 
 .db-btn-quick {
@@ -239,15 +250,21 @@ $colorMap = [
 }
 .db-btn-quick.neg {
     color: #ef4444;
-    border-color: rgba(239,68,68,0.2);
-    background: rgba(239,68,68,0.06);
+    border-color: rgba(239,68,68,0.35);
+    background: rgba(239,68,68,0.12);
 }
 .db-btn-quick.neg:hover {
-    background: rgba(239,68,68,0.15);
-    border-color: rgba(239,68,68,0.4);
+    background: rgba(239,68,68,0.25);
+    border-color: rgba(239,68,68,0.6);
 }
-.db-btn-quick.pos, .db-quick-btns .db-btn-quick:not(.neg) {
+.db-btn-quick.pos {
     color: #22C55E;
+    border-color: rgba(34,197,94,0.35);
+    background: rgba(34,197,94,0.12);
+}
+.db-btn-quick.pos:hover {
+    background: rgba(34,197,94,0.25);
+    border-color: rgba(34,197,94,0.6);
 }
 
 .db-form-row {
@@ -499,15 +516,15 @@ $colorMap = [
 
                     <div class="db-form-label">Ajustar Pontos</div>
 
-                    <div class="db-quick-btns">
-                        <button type="button" class="db-btn-quick" data-delta="-20">-20</button>
-                        <button type="button" class="db-btn-quick" data-delta="-10">-10</button>
-                        <button type="button" class="db-btn-quick" data-delta="+10">+10</button>
-                        <button type="button" class="db-btn-quick" data-delta="+20">+20</button>
+                    <div class="db-quick-row">
+                        <input type="number" name="delta" class="db-input db-delta-input" placeholder="Pontos" required>
+                        <button type="button" class="db-btn-quick neg" data-delta="-20">-20</button>
+                        <button type="button" class="db-btn-quick neg" data-delta="-10">-10</button>
+                        <button type="button" class="db-btn-quick pos" data-delta="+10">+10</button>
+                        <button type="button" class="db-btn-quick pos" data-delta="+20">+20</button>
                     </div>
 
                     <div class="db-form-row">
-                        <input type="number" name="delta" class="db-input" placeholder="Pontos (+/-)" required>
                         <input type="text" name="reason" class="db-input" placeholder="Motivo (opcional)">
                         <button type="submit" class="db-btn-apply">Aplicar</button>
                     </div>

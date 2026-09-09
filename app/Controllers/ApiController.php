@@ -1148,6 +1148,7 @@ final class ApiController
                 'status'      => (string) ($team['status'] ?? 'playing'),
                 'finished_at' => $team['finished_at'] ?? null,
                 'found_count' => GameRepository::foundCount((int) $team['id']),
+                'id'          => (int) $team['id'],
             ];
         }
 
