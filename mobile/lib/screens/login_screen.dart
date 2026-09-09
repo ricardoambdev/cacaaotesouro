@@ -181,24 +181,21 @@ class _LoginScreenState extends State<LoginScreen> {
               child: Column(
                 children: [
                   const Spacer(flex: 3),
-                  Flexible(
-                    flex: 1,
-                    child: _LoginCard(
-                      formKey: _formKey,
-                      usuarioController: _usuarioController,
-                      senhaController: _senhaController,
-                      senhaVisivel: _senhaVisivel,
-                      isLoading: _isLoading,
-                      errorMessage: _errorMessage,
-                      onToggleSenha: () {
-                        setState(() {
-                          _senhaVisivel = !_senhaVisivel;
-                        });
-                      },
-                      onEntrar: _onEntrar,
-                    ),
+                  _LoginCard(
+                    formKey: _formKey,
+                    usuarioController: _usuarioController,
+                    senhaController: _senhaController,
+                    senhaVisivel: _senhaVisivel,
+                    isLoading: _isLoading,
+                    errorMessage: _errorMessage,
+                    onToggleSenha: () {
+                      setState(() {
+                        _senhaVisivel = !_senhaVisivel;
+                      });
+                    },
+                    onEntrar: _onEntrar,
                   ),
-SizedBox(height: padding.bottom + 12),
+                  SizedBox(height: padding.bottom + 12),
                 ],
               ),
             ),
