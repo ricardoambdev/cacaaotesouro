@@ -522,6 +522,7 @@ $teamBlackPassword  = (string) ($teams['preta']['password']  ?? '');
         <p style="color:rgba(247,236,212,0.7); font-size:0.9rem; line-height:1.7; margin-bottom:16px;">
             Apaga os <strong style="color:#22C55E;">tesouros completados</strong> e as selfies, e reseta as equipes.
             <strong>Mantém</strong> os tesouros cadastrados, a história e o desafio final.
+            Após limpar, os tesouros <strong style="color:#22C55E;">precisarão ter as coordenadas confirmadas novamente</strong> pelo app admin.
         </p>
         <ul style="color:rgba(247,236,212,0.65); font-size:0.88rem; line-height:1.8; margin:0 0 20px; padding-left:18px;">
             <li>✅ Tesouros cadastrados e QR codes <strong>mantidos</strong></li>
@@ -529,6 +530,7 @@ $teamBlackPassword  = (string) ($teams['preta']['password']  ?? '');
             <li>🗑️ Tesouros completados e selfies apagados</li>
             <li>🗑️ Pontos, localizações e mensagens apagados</li>
             <li>↩️ Equipes voltam a 100 pontos, sem progresso</li>
+            <li>📍 Tesouros ficam <strong>inativos</strong> — confirme as coordenadas no local pelo app admin</li>
         </ul>
         <form method="post" action="/limpar/leve" onsubmit="return confirm('Limpar o jogo? Os tesouros completados e selfies serão apagados. Tesouros, história e desafio final serão mantidos.');">
             <?= csrf_field() ?>

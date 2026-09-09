@@ -241,6 +241,13 @@ final class GameController
             . "session_token = NULL, order_sequence = NULL"
         );
 
+        // ── Tesouros: precisam confirmar as coordenadas de novo ──
+        // Mantém o cadastro (charadas, QR), mas volta a active=0 e
+        // limpa lat/lng — o admin deve confirmar cada local no app.
+        $pdo->exec(
+            'UPDATE treasures SET active = 0, lat = NULL, lng = NULL'
+        );
+
         // ── Jogo pronto para começar (mantém tesouros/história/desafio) ──
         SettingsRepository::update([
             'gameStatus'   => 'playing',
@@ -248,7 +255,7 @@ final class GameController
             'winnerTeamId' => '',
         ]);
 
-        flash_set('success', 'Jogo limpo! Tesouros completados, selfies e pontos apagados. Tesouros, história e desafio final mantidos.');
+        flash_set('success', 'Jogo limpo! Tesouros completados, selfies e pontos apagados. Os tesouros continuam cadastrados, mas precisam ter as coordenadas confirmadas novamente pelo app admin.');
         redirect('/configuracoes');
     }
 
