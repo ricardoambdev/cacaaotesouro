@@ -31,9 +31,14 @@ final class GameRepository
      * Retorna os ids dos tesouros NA ORDEM de jogo da equipe.
      *
      * - 'estabelecida': ids de activeOrdered() (sort_order).
-     * - 'aleatorio': permutação aleatória FIXA por equipe. A primeira vez
-     *   que é chamada, gera a permutação e persiste em teams.order_sequence
-     *   (JSON). Nas chamadas seguintes, decodifica o valor salvo.
+     * - 'aleatorio': UMA permutação aleatória COMPARTILHADA por todas as
+     *   equipes (as duas equipes seguem a MESMA sequência — assim ambas
+     *   podem encontrar os mesmos tesouros; o que muda é a charada
+     *   assinalada a cada equipe).
+     *
+     * A sequência aleatória é persistida na setting `treasureOrderSequence`
+     * (JSON) e regenerada automaticamente quando o conjunto de tesouros
+     * ativos muda.
      *
      * @param array<string, mixed> $team Linha da tabela teams
      *
@@ -58,26 +63,33 @@ final class GameRepository
             return self::$orderCache[$teamId] = $activeIds;
         }
 
-        $sequence = $team['order_sequence'] ?? null;
+        // ── Aleatório: sequência ÚNICA e compartilhada ──────
+        $decoded = json_decode((string) SettingsRepository::get('treasureOrderSequence', ''), true);
 
-        if ($sequence === null || trim((string) $sequence) === '') {
+        if (!is_array($decoded)) {
+            $decoded = [];
+        }
+
+        $decoded = array_map('intval', $decoded);
+        sort($decoded);
+        $current = $activeIds;
+        sort($current);
+
+        // Regenera quando vazio ou quando os tesouros ativos mudaram.
+        if ($decoded === [] || $decoded !== $current) {
             $ids = $activeIds;
             shuffle($ids);
 
-            TeamRepository::updateGameState($teamId, [
-                'order_sequence' => json_encode($ids),
-            ]);
+            SettingsRepository::set('treasureOrderSequence', json_encode($ids));
 
             return self::$orderCache[$teamId] = $ids;
         }
 
-        $decoded = json_decode((string) $sequence, true);
-
-        if (!is_array($decoded)) {
-            return self::$orderCache[$teamId] = $activeIds;
-        }
-
-        return self::$orderCache[$teamId] = array_map('intval', $decoded);
+        // Mantém a ordem salva, mas apenas com os tesouros ainda ativos.
+        return self::$orderCache[$teamId] = array_values(array_filter(
+            array_map('intval', json_decode((string) SettingsRepository::get('treasureOrderSequence', ''), true) ?: []),
+            static fn (int $id): bool => in_array($id, $activeIds, true)
+        ));
     }
 
     /**

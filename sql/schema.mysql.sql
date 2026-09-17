@@ -38,6 +38,7 @@ INSERT INTO settings (`key`, `value`) VALUES
     ('apiBaseUrl',       ''),
     ('apiDevMode',       '1'),
     ('treasureOrder',    'estabelecida'),
+    ('treasureOrderSequence', ''),
     ('adminUsername',    'admin'),
     ('adminPassword',    'admin1234'),
     ('historyContent',   ''),

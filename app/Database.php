@@ -416,6 +416,7 @@ final class Database
             'apiDevMode'       => '1',
             // Jogo
             'treasureOrder'    => 'estabelecida',
+            'treasureOrderSequence' => '',
             'adminUsername'    => 'admin',
             'adminPassword'    => 'admin1234',
             'historyContent'   => '',
