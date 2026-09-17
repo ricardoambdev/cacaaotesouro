@@ -30,6 +30,18 @@ class ApiService {
 
   static const String _keyBaseUrl = 'api_base_url';
 
+  /// Timeout padrão das requisições (JSON).
+  ///
+  /// Sem timeout, uma conexão que "congela" deixa a tela presa para sempre
+  /// (ex.: "Enviando selfie..."). Todas as chamadas devem respeitar isso.
+  static const Duration requestTimeout = Duration(seconds: 25);
+
+  /// Timeout do upload de selfie — payload bem maior que o JSON.
+  ///
+  /// Com a foto reduzida (~200-400KB) o envio leva poucos segundos; os 60s
+  /// são só uma rede de segurança para redes muito ruins.
+  static const Duration uploadTimeout = Duration(seconds: 60);
+
   // ── Singleton ──────────────────────────────────────────────
   static final ApiService _instance = ApiService._internal();
   factory ApiService() => _instance;
@@ -298,10 +310,12 @@ class ApiService {
   /// GET /api/team/state
   Future<GameState> teamState() async {
     final headers = await _teamHeaders();
-    final response = await http.get(
-      Uri.parse('$baseUrl/team/state'),
-      headers: headers,
-    );
+    final response = await http
+        .get(
+          Uri.parse('$baseUrl/team/state'),
+          headers: headers,
+        )
+        .timeout(requestTimeout);
 
     _extractCookie(response);
 
@@ -343,16 +357,18 @@ class ApiService {
     required String qrCode,
   }) async {
     final headers = await _teamHeaders();
-    final response = await http.post(
-      Uri.parse('$baseUrl/team/checkin'),
-      headers: headers,
-      body: json.encode({
-        'treasure_id': treasureId,
-        'lat': lat,
-        'lng': lng,
-        'qr_code': qrCode,
-      }),
-    );
+    final response = await http
+        .post(
+          Uri.parse('$baseUrl/team/checkin'),
+          headers: headers,
+          body: json.encode({
+            'treasure_id': treasureId,
+            'lat': lat,
+            'lng': lng,
+            'qr_code': qrCode,
+          }),
+        )
+        .timeout(requestTimeout);
 
     _extractCookie(response);
     _checkBadRequest(response);
@@ -366,6 +382,9 @@ class ApiService {
   }
 
   /// POST /api/team/selfie (multipart)
+  ///
+  /// O upload é a requisição mais pesada do app: sem timeout, uma conexão
+  /// que "congela" deixava a tela presa em "Enviando selfie..." para sempre.
   Future<Map<String, dynamic>> uploadSelfie({
     required int treasureId,
     required String filePath,
@@ -373,26 +392,37 @@ class ApiService {
     final deviceId = await DeviceService().getDeviceId();
     final uri = Uri.parse('$baseUrl/team/selfie');
 
-    final request = http.MultipartRequest('POST', uri);
-    request.headers['Accept'] = 'application/json';
-    request.headers['X-Device-Id'] = deviceId;
-    if (_sessionCookie != null) {
-      request.headers['Cookie'] = _sessionCookie!;
+    try {
+      final request = http.MultipartRequest('POST', uri);
+      request.headers['Accept'] = 'application/json';
+      request.headers['X-Device-Id'] = deviceId;
+      if (_sessionCookie != null) {
+        request.headers['Cookie'] = _sessionCookie!;
+      }
+      request.fields['treasure_id'] = treasureId.toString();
+      request.files.add(await http.MultipartFile.fromPath('image', filePath));
+
+      final streamedResponse = await request.send().timeout(uploadTimeout);
+      _extractCookieFromStream(streamedResponse);
+
+      final response = await http.Response.fromStream(streamedResponse)
+          .timeout(uploadTimeout);
+      final body = _parseBody(response);
+
+      if (response.statusCode == 200 && body['success'] == true) {
+        return body;
+      }
+
+      throw ApiException(body['error'] as String? ?? 'Erro ao enviar selfie.');
+    } on TimeoutException {
+      throw ApiException(
+        'O envio da selfie demorou demais. Verifique a conexão e tente novamente.',
+      );
+    } on SocketException {
+      throw ApiException(
+        'Sem conexão com o servidor. Verifique a internet e tente novamente.',
+      );
     }
-    request.fields['treasure_id'] = treasureId.toString();
-    request.files.add(await http.MultipartFile.fromPath('image', filePath));
-
-    final streamedResponse = await request.send();
-    _extractCookieFromStream(streamedResponse);
-
-    final response = await http.Response.fromStream(streamedResponse);
-    final body = _parseBody(response);
-
-    if (response.statusCode == 200 && body['success'] == true) {
-      return body;
-    }
-
-    throw ApiException(body['error'] as String? ?? 'Erro ao enviar selfie.');
   }
 
   /// POST /api/team/answer
@@ -409,11 +439,13 @@ class ApiService {
       if (lat != null) 'lat': lat,
       if (lng != null) 'lng': lng,
     };
-    final response = await http.post(
-      Uri.parse('$baseUrl/team/answer'),
-      headers: headers,
-      body: json.encode(payload),
-    );
+    final response = await http
+        .post(
+          Uri.parse('$baseUrl/team/answer'),
+          headers: headers,
+          body: json.encode(payload),
+        )
+        .timeout(requestTimeout);
 
     _extractCookie(response);
     _checkBadRequest(response);
@@ -429,11 +461,13 @@ class ApiService {
   /// POST /api/team/final-answer
   Future<AnswerResult> finalAnswer({required String answer}) async {
     final headers = await _teamHeaders();
-    final response = await http.post(
-      Uri.parse('$baseUrl/team/final-answer'),
-      headers: headers,
-      body: json.encode({'answer': answer}),
-    );
+    final response = await http
+        .post(
+          Uri.parse('$baseUrl/team/final-answer'),
+          headers: headers,
+          body: json.encode({'answer': answer}),
+        )
+        .timeout(requestTimeout);
 
     _extractCookie(response);
     _checkBadRequest(response);

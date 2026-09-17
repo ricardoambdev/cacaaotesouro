@@ -405,15 +405,26 @@ class _TeamHomeScreenState extends State<TeamHomeScreen> {
       final XFile? image = await picker.pickImage(
         source: ImageSource.camera,
         preferredCameraDevice: CameraDevice.front,
-        imageQuality: 80,
+        // Reduz a foto antes de enviar: uma câmera de celular gera 3-5MB,
+        // o que deixava o upload lento/frágil. Assim fica ~200-400KB.
+        maxWidth: 1280,
+        maxHeight: 1280,
+        imageQuality: 70,
       );
 
       if (image == null || !mounted) return;
 
-      // Enviar selfie
-      setState(() => _flowState = TreasureFlowState.uploadingSelfie);
       final treasure = _gameState?.currentTreasure;
-      if (treasure == null) return;
+
+      // Sem tesouro atual não há o que enviar (e o fluxo não pode ficar
+      // preso em "Enviando selfie...").
+      if (treasure == null) {
+        _showSnackBar('Tesouro atual não encontrado. Recarregue a tela.',
+            isError: true);
+        return;
+      }
+
+      setState(() => _flowState = TreasureFlowState.uploadingSelfie);
 
       try {
         await _apiService.uploadSelfie(
