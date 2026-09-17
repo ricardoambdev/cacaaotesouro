@@ -435,6 +435,9 @@ class _TeamHomeScreenState extends State<TeamHomeScreen> {
         _answerResult = result;
         _flowState = TreasureFlowState.answerResult;
       });
+
+      // Atualizar estado (pontos/placar) sem alterar o fluxo da tela
+      _refreshStateKeepFlow();
     } on ApiException catch (e) {
       if (!mounted) return;
       setState(() => _flowState = TreasureFlowState.showingRiddle);
@@ -464,6 +467,9 @@ class _TeamHomeScreenState extends State<TeamHomeScreen> {
         _answerResult = result;
         _flowState = TreasureFlowState.finalResult;
       });
+
+      // Atualizar estado (pontos/placar) sem alterar o fluxo da tela
+      _refreshStateKeepFlow();
     } on ApiException catch (e) {
       if (!mounted) return;
       setState(() => _flowState = TreasureFlowState.finalChallenge);
@@ -529,6 +535,22 @@ class _TeamHomeScreenState extends State<TeamHomeScreen> {
         behavior: SnackBarBehavior.floating,
       ),
     );
+  }
+
+  /// Atualiza o estado do jogo (pontos, leaderboard, etc.) SEM alterar
+  /// o fluxo da tela de resultado. Chamado após _submitAnswer.
+  Future<void> _refreshStateKeepFlow() async {
+    try {
+      final state = await _apiService.teamState();
+      if (!mounted) return;
+      setState(() {
+        _gameState = state;
+        _unreadMessages = List<TeamMessage>.from(state.messages);
+        // NÃO altera _flowState
+      });
+    } catch (_) {
+      // Silencioso — falha de rede não deve bloquear a UI
+    }
   }
 
   // ════════════════════════════════════════════════════════════
@@ -1223,45 +1245,114 @@ class _TeamHomeScreenState extends State<TeamHomeScreen> {
                 color: AppColors.ivory,
               ),
             ),
+
+            // ── Delta (ganho ou penalização) ──────────────
             const SizedBox(height: 12),
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
               decoration: BoxDecoration(
-                color: AppColors.navyMedium,
-                borderRadius: BorderRadius.circular(10),
+                color: result.correct
+                    ? Colors.greenAccent.withValues(alpha: 0.12)
+                    : Colors.redAccent.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: result.correct
+                      ? Colors.greenAccent.withValues(alpha: 0.4)
+                      : Colors.redAccent.withValues(alpha: 0.4),
+                ),
               ),
               child: Text(
-                '${result.points >= 0 ? '+' : ''}${result.points} pontos',
+                '${result.delta >= 0 ? '+' : ''}${result.delta} pontos',
                 style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700,
-                  color: result.points >= 0
-                      ? AppColors.gold
+                  fontSize: 20,
+                  fontWeight: FontWeight.w800,
+                  color: result.correct
+                      ? Colors.greenAccent
                       : Colors.redAccent,
                 ),
               ),
             ),
-            if (!result.correct) ...[
-              const SizedBox(height: 16),
-              Text(
-                'Tentativa ${result.attempts}',
-                style: const TextStyle(
-                  fontSize: 13,
-                  color: AppColors.ivoryMuted,
-                ),
+
+            // ── Total atualizado ─────────────────────────
+            const SizedBox(height: 6),
+            Text(
+              'Total: ${result.points} pontos',
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: AppColors.ivoryMuted,
               ),
-              const SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: () =>
-                    setState(() => _flowState = TreasureFlowState.showingRiddle),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.gold,
-                  foregroundColor: AppColors.navyDark,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+            ),
+
+            if (result.correct) ...[
+              // ── Botão "Próximo tesouro" ──────────────────
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                height: 52,
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [AppColors.gold, AppColors.goldDark],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(14),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.gold.withValues(alpha: 0.3),
+                        blurRadius: 12,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: ElevatedButton.icon(
+                    onPressed: _loadState,
+                    icon: const Icon(Icons.arrow_forward, size: 20),
+                    label: const Text(
+                      'Próximo tesouro',
+                      style: TextStyle(
+                        fontSize: 17,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.transparent,
+                      shadowColor: Colors.transparent,
+                      foregroundColor: AppColors.navyDark,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                    ),
                   ),
                 ),
-                child: const Text('Tentar Novamente'),
+              ),
+            ],
+            if (!result.correct) ...[
+              // ── Botão "Tentar Novamente" ─────────────────
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () => setState(
+                      () => _flowState = TreasureFlowState.showingRiddle),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.gold,
+                    foregroundColor: AppColors.navyDark,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                  ),
+                  child: const Text(
+                    'Tentar Novamente',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
               ),
             ],
           ],

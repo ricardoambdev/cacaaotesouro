@@ -167,6 +167,7 @@ class AnswerResult {
   final bool correct;
   final String message;
   final int points;
+  final int delta;
   final GameTreasure? nextTreasure;
   final bool finalAvailable;
   final int attempts;
@@ -175,6 +176,7 @@ class AnswerResult {
     required this.correct,
     required this.message,
     required this.points,
+    this.delta = 0,
     this.nextTreasure,
     required this.finalAvailable,
     required this.attempts,
@@ -188,6 +190,7 @@ class AnswerResult {
       correct: json['correct'] == true,
       message: (json['message'] as String?) ?? '',
       points: (json['points'] as num?)?.toInt() ?? 0,
+      delta: (json['delta'] as num?)?.toInt() ?? 0,
       nextTreasure: treasureData != null ? GameTreasure.fromJson(treasureData) : null,
       finalAvailable: nextData?['final_available'] == true,
       attempts: (json['attempts'] as num?)?.toInt() ?? 1,
