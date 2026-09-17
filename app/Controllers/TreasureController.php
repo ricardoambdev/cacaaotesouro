@@ -32,27 +32,7 @@ final class TreasureController
 
         $treasures = array_map(static function (array $treasure) use ($teams): array {
             // found_at por equipe (via progressForTreasure).
-            $progress = GameRepository::progressForTreasure((int) $treasure['id']);
-
-            $foundByTeam = [];
-
-            foreach ($progress as $row) {
-                $teamId = (int) $row['team_id'];
-
-                $color = $teams[$teamId]['color'] ?? null;
-
-                if ($color === null) {
-                    continue;
-                }
-
-                $foundByTeam[$color] = [
-                    'found_at'       => $row['found_at'] ?? null,
-                    'riddle_correct' => (int) ($row['riddle_correct'] ?? 0),
-                    'assigned_riddle'=> $row['assigned_riddle'] ?? null,
-                ];
-            }
-
-            $treasure['progress'] = $foundByTeam;
+            $treasure['progress'] = self::teamProgressForTreasure((int) $treasure['id'], $teams);
 
             return $treasure;
         }, TreasureRepository::all());
@@ -129,6 +109,8 @@ final class TreasureController
         $old = $_SESSION['old'] ?? [];
         unset($_SESSION['old']);
 
+        $teams = TeamRepository::all();
+
         $response->getBody()->write($this->renderLayout(
             $this->renderForm([
                 'title'    => 'Editar tesouro',
@@ -136,6 +118,8 @@ final class TreasureController
                 'treasure' => $treasure,
                 'old'      => $old,
                 'errors'   => [],
+                'teams'    => $teams,
+                'progress' => self::teamProgressForTreasure($id, $teams),
             ]),
             $user
         ));
@@ -462,6 +446,35 @@ final class TreasureController
     private function renderForm(array $data): string
     {
         return View::render('tesouros_form', $data);
+    }
+
+    /**
+     * Progresso das equipes em um tesouro, indexado pela cor da equipe.
+     *
+     * @param array<int, array<string, mixed>> $teams Equipes indexadas por id.
+     * @return array<string, array{found_at: mixed, riddle_correct: int, assigned_riddle: mixed}>
+     */
+    private static function teamProgressForTreasure(int $treasureId, array $teams): array
+    {
+        $foundByTeam = [];
+
+        foreach (GameRepository::progressForTreasure($treasureId) as $row) {
+            $teamId = (int) $row['team_id'];
+
+            $color = $teams[$teamId]['color'] ?? null;
+
+            if ($color === null) {
+                continue;
+            }
+
+            $foundByTeam[(string) $color] = [
+                'found_at'        => $row['found_at'] ?? null,
+                'riddle_correct'  => (int) ($row['riddle_correct'] ?? 0),
+                'assigned_riddle' => $row['assigned_riddle'] ?? null,
+            ];
+        }
+
+        return $foundByTeam;
     }
 
     /**
