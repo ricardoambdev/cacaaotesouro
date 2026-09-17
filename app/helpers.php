@@ -263,3 +263,38 @@ function haversine_meters(float $lat1, float $lng1, float $lat2, float $lng2): f
 
     return $earthRadius * $c;
 }
+/**
+ * Status atual da partida, para a tag exibida no header do sistema.
+ *
+ * Considera a configuração `gameStatus` ('playing' | 'paused' | 'finished')
+ * e a presença de uma equipe vencedora.
+ *
+ * @return array{label: string, class: string, icon: string}
+ */
+function game_status_tag(): array
+{
+    $status = (string) \App\Repositories\SettingsRepository::get('gameStatus', 'playing');
+    $winner = (string) \App\Repositories\SettingsRepository::get('winnerTeamId', '');
+
+    if ($status === 'finished' || $winner !== '') {
+        return [
+            'label' => 'Partida encerrada',
+            'class' => 'badge-info',
+            'icon'  => '🏆',
+        ];
+    }
+
+    if ($status === 'paused') {
+        return [
+            'label' => 'Partida pausada',
+            'class' => 'badge-warning',
+            'icon'  => '⏸',
+        ];
+    }
+
+    return [
+        'label' => 'Partida ativa',
+        'class' => 'badge-success',
+        'icon'  => '▶',
+    ];
+}
