@@ -1236,42 +1236,56 @@ class _TeamHomeScreenState extends State<TeamHomeScreen> {
                 color: result.correct ? Colors.greenAccent : Colors.redAccent,
               ),
             ),
-            const SizedBox(height: 8),
-            Text(
-              result.message,
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontSize: 15,
-                color: AppColors.ivory,
+            if (result.correct) ...[
+              const SizedBox(height: 8),
+              Text(
+                result.message,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 15,
+                  color: AppColors.ivory,
+                ),
               ),
-            ),
+            ],
 
             // ── Delta (ganho ou penalização) ──────────────
             const SizedBox(height: 12),
-            Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-              decoration: BoxDecoration(
-                color: result.correct
-                    ? Colors.greenAccent.withValues(alpha: 0.12)
-                    : Colors.redAccent.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: result.correct
-                      ? Colors.greenAccent.withValues(alpha: 0.4)
-                      : Colors.redAccent.withValues(alpha: 0.4),
-                ),
-              ),
-              child: Text(
-                '${result.delta >= 0 ? '+' : ''}${result.delta} pontos',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w800,
-                  color: result.correct
-                      ? Colors.greenAccent
-                      : Colors.redAccent,
-                ),
-              ),
+            Builder(
+              builder: (context) {
+                final String deltaText;
+                if (result.correct) {
+                  final ganhou = result.delta != 0 ? result.delta : 20;
+                  deltaText = '+$ganhou pontos';
+                } else {
+                  final perdeu = result.delta != 0 ? result.delta.abs() : 5;
+                  deltaText = 'perdeu $perdeu pontos';
+                }
+                return Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: result.correct
+                        ? Colors.greenAccent.withValues(alpha: 0.12)
+                        : Colors.redAccent.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: result.correct
+                          ? Colors.greenAccent.withValues(alpha: 0.4)
+                          : Colors.redAccent.withValues(alpha: 0.4),
+                    ),
+                  ),
+                  child: Text(
+                    deltaText,
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w800,
+                      color: result.correct
+                          ? Colors.greenAccent
+                          : Colors.redAccent,
+                    ),
+                  ),
+                );
+              },
             ),
 
             // ── Total atualizado ─────────────────────────
