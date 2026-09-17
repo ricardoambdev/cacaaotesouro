@@ -233,9 +233,9 @@ $hasQr = $qrPath !== '';
 
                 <?php if ($hasGps): ?>
                     <button type="submit" form="clearCoordsForm"
+                            data-confirm-modal="Zerar a coordenada deste tesouro?&#10;Ele será DESATIVADO e precisará ser confirmado novamente pelo app admin no local."
                             class="btn btn-sm btn-auto"
-                            style="width:auto; background:linear-gradient(135deg,#c0392b,#8e2a20); color:#fff; padding:6px 12px; font-size:.78rem;"
-                            onclick="return confirm('Zerar a coordenada deste tesouro? Ele será DESATIVADO e precisará ser confirmado novamente pelo app admin no local.');">
+                            style="width:auto; background:linear-gradient(135deg,#c0392b,#8e2a20); color:#fff; padding:6px 12px; font-size:.78rem;">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/>
                             <line x1="9" y1="6" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="18"/>

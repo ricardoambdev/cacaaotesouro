@@ -18,6 +18,23 @@ Suas responsabilidades:
 Trabalhe apenas na camada de apresentação. Se a tarefa envolver lógica de
 negócio, backend ou manipulação de dados, encaminhe-a para o agente `backend`.
 
+## REGRA OBRIGATÓRIA — NUNCA USE alert()/confirm() DO NAVEGADOR
+
+É TERMINANTEMENTE PROIBIDO usar `alert()`, `confirm()` ou `prompt()` nativos
+do navegador em qualquer tela do sistema. Sempre use os componentes do
+sistema:
+
+- **Confirmação** (substitui `confirm()`):
+  - Em formulários: `<form ... data-confirm="Mensagem de confirmação?">`
+  - Em botões/links: `data-confirm-modal="Mensagem?"` (se o botão aciona um
+    form separado, use o atributo `form="idDoForm"`).
+  - O JS (common.js → `initSystemConfirm`) intercepta e exibe o modal
+    estilizado (`#sysmodal`, definido em `app/views/layout.php`).
+- **Mensagem/toast** (substitui `alert()`): `showSystemMessage('texto', 'error'|'success'|'info')`
+  (função global disponível em common.js).
+
+Nunca crie modais/alerts próprios com `alert` — reaproveite o `#sysmodal`.
+
 ## REGRA OBRIGATÓRIA — COMMIT E PUSH
 
 Toda alteração feita no código deve ser **commitada e pushada** assim que a

@@ -634,7 +634,7 @@ $colorMap = [
                                     title="Abrir selfie">📷</button>
                             <?php endif; ?>
                             <form method="post" action="/admin/desclassificar"
-                                  onsubmit="return confirm('Desclassificar este tesouro da <?= e($teamName) ?>? Os pontos serão revertidos e o tesouro não poderá ser refeito.')">
+                                  data-confirm="Desclassificar este tesouro da <?= e($teamName) ?>? Os pontos serão revertidos e o tesouro não poderá ser refeito.">
                                 <?= csrf_field() ?>
                                 <input type="hidden" name="team_id" value="<?= $teamId ?>">
                                 <input type="hidden" name="treasure_id" value="<?= (int)($treasure['id'] ?? 0) ?>">

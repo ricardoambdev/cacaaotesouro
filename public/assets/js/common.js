@@ -255,18 +255,131 @@
   }
 
   /* -------------------------------------------------------
-     CONFIRM DELETE (data-confirm)
+     CONFIRMAÇÃO DO SISTEMA (substitui o confirm() nativo)
+     Uso:
+       - <form data-confirm="mensagem"> ... </form>
+       - <button data-confirm-modal="mensagem" form="idDoForm">
+       - <a data-confirm-modal="mensagem" href="...">
+     NUNCA use window.confirm()/alert() — use este modal.
      ------------------------------------------------------- */
-  function initConfirmDelete() {
-    var forms = document.querySelectorAll('form[data-confirm]');
-    if (!forms.length) return;
+  var _sysConfirmCallback = null;
 
-    forms.forEach(function (form) {
+  /* -------------------------------------------------------
+     MENSAGEM DO SISTEMA (toast) — substitui o alert() nativo.
+     Uso: showSystemMessage('texto', 'error' | 'success' | 'info')
+     ------------------------------------------------------- */
+  function showSystemMessage(message, type) {
+    var el = document.createElement('div');
+    el.textContent = message;
+    var isError = type === 'error';
+    var isSuccess = type === 'success';
+
+    el.style.cssText =
+      'position:fixed;top:20px;left:50%;transform:translateX(-50%);z-index:10060;' +
+      'padding:12px 22px;border-radius:10px;font-size:.88rem;font-family:Inter,sans-serif;' +
+      'color:#f7ecd4;max-width:90vw;text-align:center;line-height:1.5;' +
+      'box-shadow:0 8px 24px rgba(0,0,0,.5);opacity:0;transition:opacity .2s;' +
+      'background:' + (isError ? 'rgba(192,57,43,.96)' : (isSuccess ? 'rgba(22,138,58,.96)' : 'rgba(10,23,36,.97)')) + ';' +
+      'border:1px solid ' + (isError ? 'rgba(239,68,68,.6)' : (isSuccess ? 'rgba(34,197,94,.55)' : 'rgba(249,115,22,.4)')) + ';';
+
+    document.body.appendChild(el);
+    requestAnimationFrame(function () { el.style.opacity = '1'; });
+    setTimeout(function () {
+      el.style.opacity = '0';
+      setTimeout(function () { el.remove(); }, 250);
+    }, 3500);
+  }
+
+  // Exposto para scripts inline (ex.: chat do layout).
+  window.showSystemMessage = showSystemMessage;
+
+  function closeSystemConfirm() {
+    var modal = document.getElementById('sysmodal');
+    if (modal) modal.classList.remove('open');
+    _sysConfirmCallback = null;
+  }
+
+  function showSystemConfirm(message, onConfirm, options) {
+    var modal = document.getElementById('sysmodal');
+    var msgEl = document.getElementById('sysmodal-msg');
+    var confirmBtn = document.getElementById('sysmodal-confirm');
+    var iconEl = document.getElementById('sysmodal-icon');
+    if (!modal || !msgEl || !confirmBtn) {
+      // Fallback extremo (não deve ocorrer em páginas com o layout)
+      if (typeof onConfirm === 'function') onConfirm();
+      return;
+    }
+
+    options = options || {};
+    msgEl.textContent = message || 'Tem certeza?';
+    confirmBtn.textContent = options.confirmText || 'Confirmar';
+    confirmBtn.className = 'sysmodal-btn confirm' + (options.danger === false ? '' : ' danger');
+    if (iconEl) iconEl.textContent = options.icon || (options.danger === false ? '❓' : '⚠️');
+
+    _sysConfirmCallback = onConfirm || null;
+    modal.classList.add('open');
+  }
+
+  function initSystemConfirm() {
+    var modal = document.getElementById('sysmodal');
+    if (!modal) return;
+
+    var cancelBtn = document.getElementById('sysmodal-cancel');
+    var confirmBtn = document.getElementById('sysmodal-confirm');
+
+    if (cancelBtn) {
+      cancelBtn.addEventListener('click', closeSystemConfirm);
+    }
+
+    if (confirmBtn) {
+      confirmBtn.addEventListener('click', function () {
+        var cb = _sysConfirmCallback;
+        closeSystemConfirm();
+        if (typeof cb === 'function') cb();
+      });
+    }
+
+    modal.addEventListener('click', function (e) {
+      if (e.target === modal) closeSystemConfirm();
+    });
+
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && modal.classList.contains('open')) {
+        closeSystemConfirm();
+      }
+    });
+
+    // Forms com data-confirm
+    document.querySelectorAll('form[data-confirm]').forEach(function (form) {
       form.addEventListener('submit', function (e) {
-        var message = form.getAttribute('data-confirm');
-        if (message && !confirm(message)) {
-          e.preventDefault();
-        }
+        if (form.getAttribute('data-confirmed') === '1') return;
+        e.preventDefault();
+        showSystemConfirm(form.getAttribute('data-confirm'), function () {
+          form.setAttribute('data-confirmed', '1');
+          if (typeof form.submit === 'function') {
+            form.submit();
+          } else {
+            form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+          }
+        });
+      });
+    });
+
+    // Botões/links com data-confirm-modal (podem apontar para um form via form=)
+    document.querySelectorAll('[data-confirm-modal]').forEach(function (el) {
+      el.addEventListener('click', function (e) {
+        e.preventDefault();
+        var msg = el.getAttribute('data-confirm-modal');
+        showSystemConfirm(msg, function () {
+          var formId = el.getAttribute('form');
+          var form = formId ? document.getElementById(formId) : null;
+          if (form) {
+            form.setAttribute('data-confirmed', '1');
+            form.submit();
+          } else if (el.tagName === 'A' && el.getAttribute('href')) {
+            window.location.href = el.getAttribute('href');
+          }
+        }, { danger: el.getAttribute('data-confirm-danger') !== '0' });
       });
     });
   }
@@ -566,12 +679,12 @@
               btn.disabled = false;
             }, 2000);
           } else {
-            alert(data.error || 'Falha ao salvar a ordem.');
+            showSystemMessage(data.error || 'Falha ao salvar a ordem.', 'error');
             btn.disabled = false;
           }
         })
         .catch(function () {
-          alert('Falha ao salvar a ordem.');
+          showSystemMessage('Falha ao salvar a ordem.', 'error');
           btn.disabled = false;
         });
     });
@@ -588,7 +701,7 @@
     initMobileMenu();
     initDigitInput();
     initValidation();
-    initConfirmDelete();
+    initSystemConfirm();
     initTabs();
     initClipboardCopy();
     initPasswordToggle();

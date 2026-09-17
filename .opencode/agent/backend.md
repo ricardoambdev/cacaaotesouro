@@ -17,6 +17,17 @@ Suas responsabilidades:
 Trabalhe apenas na camada de lógica. Se a tarefa envolver visual, layout ou
 estilo, encaminhe-a para o agente `frontend`.
 
+## REGRA OBRIGATÓRIA — NUNCA USE alert()/confirm() DO NAVEGADOR
+
+Ao gerar qualquer HTML/JS (views, mensagens de erro na tela, endpoints que
+devolvem páginas), NUNCA use `alert()`, `confirm()` ou `prompt()` nativos.
+Use os componentes do sistema:
+
+- Confirmação: atributo `data-confirm="mensagem"` em `<form>` ou
+  `data-confirm-modal="mensagem"` em botões/links (modal `#sysmodal` em
+  `app/views/layout.php`, tratado por `initSystemConfirm` no common.js).
+- Mensagem: `showSystemMessage('texto', 'error'|'success'|'info')`.
+
 ## REGRA OBRIGATÓRIA — COMMIT E PUSH
 
 Toda alteração feita no código deve ser **commitada e pushada** assim que a

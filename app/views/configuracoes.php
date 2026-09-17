@@ -552,7 +552,7 @@ $teamBlackPassword  = (string) ($teams['preta']['password']  ?? '');
             <li>↩️ Equipes voltam a 100 pontos, sem progresso</li>
             <li>📍 Tesouros ficam <strong>inativos</strong> — confirme as coordenadas no local pelo app admin</li>
         </ul>
-        <form method="post" action="/limpar/leve" onsubmit="return confirm('Limpar o jogo? Os tesouros completados e selfies serão apagados. Tesouros, história e desafio final serão mantidos.');">
+        <form method="post" action="/limpar/leve" data-confirm="Limpar o jogo? Os tesouros completados e selfies serão apagados. Tesouros, história e desafio final serão mantidos.">
             <?= csrf_field() ?>
             <button type="submit" class="btn btn-primary" style="width:auto; background:linear-gradient(135deg,#22C55E,#168a3a);">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -627,7 +627,7 @@ $teamBlackPassword  = (string) ($teams['preta']['password']  ?? '');
             Como a limpeza leve, mas <strong style="color:#ef5350;">também apaga os tesouros cadastrados</strong>
             (mantém data/horários, desafio final e credenciais).
         </p>
-        <form method="post" action="/limpar-jogo" onsubmit="return confirm('⚠️ Isso apagará o progresso, as selfies E os tesouros cadastrados. Continuar?');">
+        <form method="post" action="/limpar-jogo" data-confirm="⚠️ Isso apagará o progresso, as selfies E os tesouros cadastrados. Continuar?">
             <?= csrf_field() ?>
             <button type="submit" class="btn btn-danger btn-sm" style="width:auto;">
                 Resetar o jogo (apaga tesouros)
@@ -646,7 +646,7 @@ $teamBlackPassword  = (string) ($teams['preta']['password']  ?? '');
         <p style="color:rgba(247,236,212,0.7); font-size:0.85rem; line-height:1.6; margin-bottom:14px;">
             Apaga <strong style="color:#ef5350;">tudo</strong> e restaura as configurações padrão — o sistema fica vazio.
         </p>
-        <form method="post" action="/limpar" onsubmit="return confirm('⚠️ ATENÇÃO: apagará TODO o progresso, selfies, tesouros e restaurará as configurações padrão. Tem certeza?');">
+        <form method="post" action="/limpar" data-confirm="⚠️ ATENÇÃO: apagará TODO o progresso, selfies, tesouros e restaurará as configurações padrão. Tem certeza?">
             <?= csrf_field() ?>
             <button type="submit" class="btn btn-danger btn-sm" style="width:auto;">
                 Apagar tudo e recomeçar

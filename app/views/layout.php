@@ -86,6 +86,69 @@ if (count($parts) >= 2) {
             background: linear-gradient(135deg, #F97316, #EA580C); color: #fff;
         }
         @media (max-width: 600px) { .chat-panel { width: calc(100vw - 32px); right: 16px; } }
+
+        /* ═══ MODAL DE CONFIRMAÇÃO DO SISTEMA ═══ */
+        .sysmodal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            z-index: 10050;
+            background: rgba(0, 0, 0, 0.82);
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .sysmodal.open { display: flex; }
+        .sysmodal-card {
+            background: #0A1724;
+            border: 1px solid rgba(249, 115, 22, 0.3);
+            border-radius: 16px;
+            max-width: 440px;
+            width: 100%;
+            padding: 26px 24px 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+            text-align: center;
+            animation: sysmodalIn .18s ease;
+        }
+        @keyframes sysmodalIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+        .sysmodal-icon {
+            font-size: 30px;
+            margin-bottom: 10px;
+        }
+        .sysmodal-msg {
+            color: #f7ecd4;
+            font-size: .95rem;
+            line-height: 1.6;
+            margin-bottom: 22px;
+            white-space: pre-line;
+        }
+        .sysmodal-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+        .sysmodal-btn {
+            padding: 11px 22px;
+            border-radius: 10px;
+            border: none;
+            font-weight: 700;
+            font-size: .88rem;
+            cursor: pointer;
+            transition: transform .12s;
+        }
+        .sysmodal-btn:hover { transform: translateY(-1px); }
+        .sysmodal-btn.cancel {
+            background: rgba(247, 236, 212, 0.08);
+            color: #f7ecd4;
+            border: 1px solid rgba(247, 236, 212, 0.18);
+        }
+        .sysmodal-btn.confirm {
+            background: linear-gradient(135deg, #F97316, #EA580C);
+            color: #fff;
+        }
+        .sysmodal-btn.confirm.danger {
+            background: linear-gradient(135deg, #c0392b, #8e2a20);
+        }
     </style>
 </head>
 <body>
@@ -296,7 +359,9 @@ if (count($parts) >= 2) {
             }).then(function () {
                 input.value = '';
                 loadHistory();
-            }).catch(function () { alert('Erro ao enviar.'); })
+            }).catch(function () {
+                if (window.showSystemMessage) { window.showSystemMessage('Erro ao enviar a mensagem.', 'error'); }
+            })
               .finally(function () { sendBtn.disabled = false; });
         }
 
@@ -310,5 +375,16 @@ if (count($parts) >= 2) {
         }
     })();
     </script>
+<!-- ═══ MODAL DE CONFIRMAÇÃO (substitui o confirm() do navegador) ═══ -->
+<div id="sysmodal" class="sysmodal" role="dialog" aria-modal="true">
+    <div class="sysmodal-card">
+        <div class="sysmodal-icon" id="sysmodal-icon">⚠️</div>
+        <div class="sysmodal-msg" id="sysmodal-msg"></div>
+        <div class="sysmodal-actions">
+            <button type="button" class="sysmodal-btn cancel" id="sysmodal-cancel">Cancelar</button>
+            <button type="button" class="sysmodal-btn confirm" id="sysmodal-confirm">Confirmar</button>
+        </div>
+    </div>
+</div>
 </body>
 </html>
