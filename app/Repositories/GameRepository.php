@@ -191,6 +191,25 @@ final class GameRepository
     }
 
     /**
+     * A equipe é a PRIMEIRA a acertar a charada deste tesouro?
+     *
+     * Verdadeiro quando nenhuma OUTRA equipe já resolveu o tesouro
+     * (`riddle_correct = 1`). Usado para o bônus de +10 pontos.
+     * Deve ser chamado ANTES de gravar o acerto da própria equipe.
+     */
+    public static function isFirstFinder(int $treasureId, int $teamId): bool
+    {
+        $stmt = Database::get()->prepare(
+            'SELECT COUNT(*) FROM team_treasure_progress '
+            . 'WHERE treasure_id = :treasure_id AND team_id <> :team_id '
+            . 'AND riddle_correct = 1 AND disqualified = 0'
+        );
+        $stmt->execute([':treasure_id' => $treasureId, ':team_id' => $teamId]);
+
+        return (int) $stmt->fetchColumn() === 0;
+    }
+
+    /**
      * Sorteia e grava a charada (1 ou 2) assinalada à equipe em um tesouro.
      *
      * Regra: se a OUTRA equipe já tem uma charada assinalada para este

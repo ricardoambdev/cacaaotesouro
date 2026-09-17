@@ -164,6 +164,8 @@ final class Database
 
         self::ensureTeamPasswordColumn($pdo, $driver);
         self::ensureDisqualifiedColumn($pdo, $driver);
+        self::ensureProgressBonusColumn($pdo, $driver, 'local_bonus');
+        self::ensureProgressBonusColumn($pdo, $driver, 'first_bonus');
 
         self::seedDefaultTeams($pdo, $driver);
 
@@ -203,6 +205,8 @@ final class Database
             . 'found_at DATETIME NULL, '
             . 'points_awarded TINYINT(1) NOT NULL DEFAULT 0, '
             . 'disqualified TINYINT(1) NOT NULL DEFAULT 0, '
+            . 'local_bonus TINYINT(1) NOT NULL DEFAULT 0, '
+            . 'first_bonus TINYINT(1) NOT NULL DEFAULT 0, '
             . 'created_at DATETIME NOT NULL, '
             . 'updated_at DATETIME NULL, '
             . 'UNIQUE (team_id, treasure_id)'
@@ -364,12 +368,28 @@ final class Database
      */
     private static function ensureDisqualifiedColumn(PDO $pdo, string $driver): void
     {
+        self::ensureProgressBonusColumn($pdo, $driver, 'disqualified');
+    }
+
+    /**
+     * Garante que uma coluna flag TINYINT(1) NOT NULL DEFAULT 0 exista em
+     * `team_treasure_progress` (migração idempotente). Usadas como bônus:
+     * `disqualified`, `local_bonus` (responder no local) e `first_bonus`
+     * (primeira equipe a encontrar o tesouro).
+     */
+    private static function ensureProgressBonusColumn(PDO $pdo, string $driver, string $column): void
+    {
+        // Nome de coluna fixo (whitelist) — não vem de input do usuário.
+        if (!in_array($column, ['disqualified', 'local_bonus', 'first_bonus'], true)) {
+            return;
+        }
+
         try {
             if ($driver === 'sqlite') {
                 $found = false;
 
-                foreach ($pdo->query('PRAGMA table_info(team_treasure_progress)') as $column) {
-                    if (strtolower((string) $column['name']) === 'disqualified') {
+                foreach ($pdo->query('PRAGMA table_info(team_treasure_progress)') as $row) {
+                    if (strtolower((string) $row['name']) === $column) {
                         $found = true;
                         break;
                     }
@@ -377,7 +397,8 @@ final class Database
 
                 if (!$found) {
                     $pdo->exec(
-                        "ALTER TABLE team_treasure_progress ADD COLUMN disqualified TINYINT(1) NOT NULL DEFAULT 0"
+                        'ALTER TABLE team_treasure_progress ADD COLUMN ' . $column
+                        . ' TINYINT(1) NOT NULL DEFAULT 0'
                     );
                 }
 
@@ -389,16 +410,16 @@ final class Database
                 . 'WHERE table_schema = DATABASE() AND table_name = :table '
                 . 'AND column_name = :column'
             );
-            $stmt->execute([':table' => 'team_treasure_progress', ':column' => 'disqualified']);
+            $stmt->execute([':table' => 'team_treasure_progress', ':column' => $column]);
 
             if ((int) $stmt->fetchColumn() === 0) {
                 $pdo->exec(
-                    'ALTER TABLE team_treasure_progress '
-                    . 'ADD COLUMN disqualified TINYINT(1) NOT NULL DEFAULT 0 AFTER points_awarded'
+                    'ALTER TABLE team_treasure_progress ADD COLUMN ' . $column
+                    . ' TINYINT(1) NOT NULL DEFAULT 0 AFTER points_awarded'
                 );
             }
         } catch (PDOException $e) {
-            error_log('Database::ensureDisqualifiedColumn: ' . $e->getMessage());
+            error_log('Database::ensureProgressBonusColumn(' . $column . '): ' . $e->getMessage());
         }
     }
 

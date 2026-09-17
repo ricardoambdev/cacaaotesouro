@@ -157,11 +157,21 @@ final class DashboardController
             $treasureName = (string) $tName;
         }
 
-        // Reverter pontos: -20 do tesouro e -5 da selfie (se enviada).
+        // Reverter TODOS os pontos conquistados neste tesouro: -20 do acerto,
+        // -5 da selfie, -5 do bônus por responder no local e -10 do bônus de
+        // primeira equipe a encontrar.
         $delta = -20;
 
         if ((int) ($progress['selfie_points'] ?? 0) === 1) {
             $delta -= 5;
+        }
+
+        if ((int) ($progress['local_bonus'] ?? 0) === 1) {
+            $delta -= 5;
+        }
+
+        if ((int) ($progress['first_bonus'] ?? 0) === 1) {
+            $delta -= 10;
         }
 
         $newPoints = max(0, (int) $team['points'] + $delta);

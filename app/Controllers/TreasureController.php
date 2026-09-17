@@ -467,10 +467,33 @@ final class TreasureController
                 continue;
             }
 
+            // Pontos conquistados por esta equipe NESTE tesouro.
+            $earned = 0;
+
+            if ((int) ($row['riddle_correct'] ?? 0) === 1) {
+                $earned = 20;
+
+                if ((int) ($row['selfie_points'] ?? 0) === 1) {
+                    $earned += 5;
+                }
+
+                if ((int) ($row['local_bonus'] ?? 0) === 1) {
+                    $earned += 5;
+                }
+
+                if ((int) ($row['first_bonus'] ?? 0) === 1) {
+                    $earned += 10;
+                }
+            }
+
             $foundByTeam[(string) $color] = [
                 'found_at'        => $row['found_at'] ?? null,
                 'riddle_correct'  => (int) ($row['riddle_correct'] ?? 0),
                 'assigned_riddle' => $row['assigned_riddle'] ?? null,
+                'selfie_points'   => (int) ($row['selfie_points'] ?? 0),
+                'local_bonus'     => (int) ($row['local_bonus'] ?? 0),
+                'first_bonus'     => (int) ($row['first_bonus'] ?? 0),
+                'earned'          => $earned,
             ];
         }
 

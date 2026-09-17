@@ -30,6 +30,16 @@ final class ApiController
     private const SELFIE_DIR = '/public/uploads/selfies';
     private const MAX_SELFIE_BYTES = 5 * 1024 * 1024;
 
+    // ── Pontuação ────────────────────────────────────────────────────
+    /** Pontos por enviar a selfie no local. */
+    private const SELFIE_POINTS = 5;
+    /** Pontos por acertar a charada do tesouro. */
+    private const ANSWER_POINTS = 20;
+    /** Bônus por responder a charada estando no local (≤30m). */
+    private const LOCAL_BONUS_POINTS = 5;
+    /** Bônus da PRIMEIRA equipe a encontrar o tesouro. */
+    private const FIRST_BONUS_POINTS = 10;
+
     // ==================================================================
     // Autenticação de EQUIPE
     // ==================================================================
@@ -494,12 +504,12 @@ final class ApiController
             'selfie_points' => 1,
         ]);
 
-        TeamRepository::addPoints($teamId, 5);
-        GameRepository::logPoints($teamId, 5, 'selfie');
+        TeamRepository::addPoints($teamId, self::SELFIE_POINTS);
+        GameRepository::logPoints($teamId, self::SELFIE_POINTS, 'selfie');
 
         return $this->json($response, [
             'success' => true,
-            'message' => '+5 pontos pela selfie!',
+            'message' => '+' . self::SELFIE_POINTS . ' pontos pela selfie!',
             'points'  => (int) TeamRepository::find($teamId)['points'],
             'selfie_path' => $webPath,
         ]);
@@ -581,26 +591,70 @@ final class ApiController
 
         // Resposta correta (trim + case-insensitive).
         if (strcasecmp($answer, $correctAnswer) === 0) {
+            // Bônus: responder a charada NO LOCAL (+5 pontos) — GPS a menos
+            // de 30m do tesouro no momento da resposta.
+            $localBonus = $answerLat !== null && $answerLng !== null
+                && self::hasLocation($treasure)
+                && haversine_meters($answerLat, $answerLng, self::latOrNull($treasure), self::lngOrNull($treasure)) <= 30;
+
+            // Bônus: PRIMEIRO a encontrar este tesouro (+10 pontos). Vale a
+            // primeira equipe que acertar a charada — checado ANTES de gravar
+            // o acerto desta equipe.
+            $firstBonus = GameRepository::isFirstFinder($treasureId, $teamId);
+
             $this->updateProgress($teamId, $treasureId, [
                 'riddle_correct' => 1,
                 'found_at'       => date('Y-m-d H:i:s'),
                 'points_awarded' => 1,
+                'local_bonus'    => $localBonus ? 1 : 0,
+                'first_bonus'    => $firstBonus ? 1 : 0,
             ]);
 
-            TeamRepository::addPoints($teamId, 20);
-            GameRepository::logPoints($teamId, 20, 'tesouro');
+            TeamRepository::addPoints($teamId, self::ANSWER_POINTS);
+            GameRepository::logPoints($teamId, self::ANSWER_POINTS, 'tesouro');
 
-            $bonusMessage = '';
+            if ($localBonus) {
+                TeamRepository::addPoints($teamId, self::LOCAL_BONUS_POINTS);
+                GameRepository::logPoints($teamId, self::LOCAL_BONUS_POINTS, 'resposta no local');
+            }
 
-            // Bônus: responder a charada NO LOCAL (+5 pontos) — GPS a menos
-            // de 30m do tesouro no momento da resposta.
-            if ($answerLat !== null && $answerLng !== null
-                && self::hasLocation($treasure)
-                && haversine_meters($answerLat, $answerLng, self::latOrNull($treasure), self::lngOrNull($treasure)) <= 30
-            ) {
-                TeamRepository::addPoints($teamId, 5);
-                GameRepository::logPoints($teamId, 5, 'resposta no local');
-                $bonusMessage = ' +5 por responder no local!';
+            if ($firstBonus) {
+                TeamRepository::addPoints($teamId, self::FIRST_BONUS_POINTS);
+                GameRepository::logPoints($teamId, self::FIRST_BONUS_POINTS, 'primeiro a encontrar');
+            }
+
+            // Detalhamento dos pontos ganhos NESTE tesouro (mostrado no app).
+            // A selfie já foi premiada no envio, mas entra na lista porque é
+            // parte do que a equipe conquistou neste tesouro.
+            $breakdown = [];
+
+            $selfieSent = (int) $progress['selfie_points'] === 1;
+
+            if ($selfieSent) {
+                $breakdown[] = ['label' => 'Selfie enviada', 'points' => self::SELFIE_POINTS];
+            }
+
+            $breakdown[] = ['label' => 'Resposta correta', 'points' => self::ANSWER_POINTS];
+
+            if ($localBonus) {
+                $breakdown[] = ['label' => 'Responder no local', 'points' => self::LOCAL_BONUS_POINTS];
+            }
+
+            if ($firstBonus) {
+                $breakdown[] = ['label' => 'Primeiro a encontrar!', 'points' => self::FIRST_BONUS_POINTS];
+            }
+
+            // Total conquistado no tesouro (inclui a selfie) x total somado
+            // AGORA (resposta + bônus desta requisição).
+            $totalEarned = 0;
+            $deltaNow = 0;
+
+            foreach ($breakdown as $item) {
+                $totalEarned += (int) $item['points'];
+
+                if ($item['label'] !== 'Selfie enviada') {
+                    $deltaNow += (int) $item['points'];
+                }
             }
 
             // Mantém o current_step alinhado à ORDEM ATUAL: o passo passa a ser
@@ -635,9 +689,12 @@ final class ApiController
             return $this->json($response, [
                 'success'         => true,
                 'correct'         => true,
-                'message'         => 'Resposta correta! +20 pontos.' . $bonusMessage,
-                'points'          => $points + 20 + (($bonusMessage !== '') ? 5 : 0),
-                'delta'           => 20 + (($bonusMessage !== '') ? 5 : 0),
+                'message'         => 'Resposta correta! +' . $totalEarned . ' pontos neste tesouro.',
+                'points'          => $points + $deltaNow,
+                'delta'           => $deltaNow,
+                'total_earned'    => $totalEarned,
+                'breakdown'       => $breakdown,
+                'first_bonus'     => $firstBonus,
                 'selfie_required' => true,
                 'next'            => [
                     'treasure'        => $next,
