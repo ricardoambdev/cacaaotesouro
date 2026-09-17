@@ -603,11 +603,17 @@ final class ApiController
                 $bonusMessage = ' +5 por responder no local!';
             }
 
-            $newStep = (int) $team['current_step'] + 1;
+            // Mantém o current_step alinhado à ORDEM ATUAL: o passo passa a ser
+            // o índice (na ordem vigente) do tesouro recém-respondido + 1.
+            $order = GameRepository::treasureOrderForTeam($team);
+            $answeredIndex = array_search($treasureId, $order, true);
+            $newStep = $answeredIndex === false
+                ? (int) $team['current_step'] + 1
+                : (int) $answeredIndex + 1;
+
             TeamRepository::updateGameState($teamId, ['current_step' => $newStep]);
 
             // Próximo tesouro (considerando a nova etapa) ou desafio final.
-            $order = GameRepository::treasureOrderForTeam($team);
             $nextId = $order[$newStep] ?? null;
             $next = null;
 
@@ -624,7 +630,7 @@ final class ApiController
                 }
             }
 
-            $finalAvailable = $newStep >= count($order);
+            $finalAvailable = $newStep >= count($order) || $nextId === null;
 
             return $this->json($response, [
                 'success'         => true,

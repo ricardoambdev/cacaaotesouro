@@ -93,22 +93,54 @@ final class GameRepository
     }
 
     /**
-     * Id do tesouro atual da equipe (ordered[current_step]), ou null se a
-     * equipe já completou todos os tesouros ativos.
+     * Indica se a equipe já RESOLVEU um tesouro (deve ser pulado na ordem):
+     * - encontrou (acertou a charada) e não foi desclassificado, OU
+     * - o tesouro foi desclassificado (não pode ser refeito).
+     *
+     * @param array<string, mixed> $team Linha da tabela teams
+     */
+    public static function isTreasurePassed(int $teamId, int $treasureId): bool
+    {
+        $progress = self::progress($teamId, $treasureId);
+
+        if ($progress === null) {
+            return false;
+        }
+
+        $disqualified = (int) ($progress['disqualified'] ?? 0) === 1;
+        $found = (int) ($progress['riddle_correct'] ?? 0) === 1;
+
+        return $disqualified || $found;
+    }
+
+    /**
+     * Id do tesouro atual da equipe: o PRIMEIRO tesouro da ordem de jogo
+     * que a equipe ainda NÃO resolveu.
+     *
+     * Derivar do progresso real (em vez de confiar em current_step) torna
+     * a progressão auto-corretiva: se a ordem dos tesouros mudar ou um
+     * progresso for removido (desclassificação/zerar coordenada), a equipe
+     * volta para o primeiro tesouro realmente pendente.
      *
      * @param array<string, mixed> $team Linha da tabela teams
      */
     public static function currentTreasureId(array $team): ?int
     {
         $order = self::treasureOrderForTeam($team);
-        $step = (int) $team['current_step'];
+        $teamId = (int) $team['id'];
 
-        return $order[$step] ?? null;
+        foreach ($order as $treasureId) {
+            if (!self::isTreasurePassed($teamId, $treasureId)) {
+                return $treasureId;
+            }
+        }
+
+        return null;
     }
 
     /**
-     * Indica se o desafio final está disponível para a equipe
-     * (current_step >= nº de tesouros ativos).
+     * Indica se o desafio final está disponível para a equipe (todos os
+     * tesouros da ordem foram completados).
      *
      * @param array<string, mixed> $team Linha da tabela teams
      */
@@ -116,7 +148,11 @@ final class GameRepository
     {
         $order = self::treasureOrderForTeam($team);
 
-        return (int) $team['current_step'] >= count($order);
+        if ($order === []) {
+            return false;
+        }
+
+        return self::currentTreasureId($team) === null;
     }
 
     /**
