@@ -521,13 +521,13 @@
      ------------------------------------------------------- */
   function initDragReorder() {
     var list = document.getElementById('treasure-list');
-    var btn = document.getElementById('btn-save-order');
     var csrfEl = document.getElementById('csrf-token-data');
-    if (!list || !btn) return;
+    if (!list) return;
 
     var csrf = csrfEl ? csrfEl.getAttribute('data-csrf') : '';
     var isRandomOrder = list.getAttribute('data-random-order') === 'true';
     var draggedEl = null;
+    var saveTimer = null;
 
     function readOrder() {
       return Array.from(list.querySelectorAll('.treasure-card[data-treasure-id]'))
@@ -544,9 +544,42 @@
       });
     }
 
+    function scheduleSave() {
+      if (saveTimer) clearTimeout(saveTimer);
+      saveTimer = setTimeout(function () {
+        saveOrder();
+      }, 400);
+    }
+
+    function saveOrder() {
+      var order = readOrder();
+
+      fetch('/tesouros/reorder', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-Token': csrf
+        },
+        body: JSON.stringify({ ids: order })
+      })
+        .then(function (res) {
+          if (!res.ok) throw new Error('HTTP ' + res.status);
+          return res.json();
+        })
+        .then(function (data) {
+          if (data.success) {
+            showSystemMessage('Ordem salva!', 'success');
+          } else {
+            showSystemMessage(data.error || 'Não foi possível salvar a ordem.', 'error');
+          }
+        })
+        .catch(function () {
+          showSystemMessage('Não foi possível salvar a ordem.', 'error');
+        });
+    }
+
     // Disable drag if random order
     if (isRandomOrder) {
-      btn.disabled = true;
       list.querySelectorAll('.drag-handle').forEach(function (h) {
         h.style.cursor = 'not-allowed';
         h.style.opacity = '0.3';
@@ -626,7 +659,7 @@
       }
 
       updateOrderNumbers();
-      btn.disabled = false;
+      scheduleSave();
     });
 
     // Also support click-to-move for accessibility (legacy)
@@ -641,52 +674,9 @@
         if (idx < cards.length - 1) {
           list.insertBefore(cards[idx + 1], card);
           updateOrderNumbers();
-          btn.disabled = false;
+          scheduleSave();
         }
       });
-    });
-
-    // Save order via fetch
-    btn.addEventListener('click', function () {
-      btn.disabled = true;
-      var order = readOrder();
-
-      fetch('/tesouros/reorder', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRF-Token': csrf
-        },
-        body: JSON.stringify({ ids: order })
-      })
-        .then(function (res) {
-          if (!res.ok) throw new Error('HTTP ' + res.status);
-          return res.json();
-        })
-        .then(function (data) {
-          if (data.success) {
-            // Show inline success feedback
-            var origText = btn.innerHTML;
-            btn.innerHTML = '✓ Ordem salva!';
-            btn.style.background = 'rgba(39, 174, 96, 0.2)';
-            btn.style.borderColor = 'rgba(39, 174, 96, 0.4)';
-            btn.style.color = '#5fd99f';
-            setTimeout(function () {
-              btn.innerHTML = origText;
-              btn.style.background = '';
-              btn.style.borderColor = '';
-              btn.style.color = '';
-              btn.disabled = false;
-            }, 2000);
-          } else {
-            showSystemMessage(data.error || 'Falha ao salvar a ordem.', 'error');
-            btn.disabled = false;
-          }
-        })
-        .catch(function () {
-          showSystemMessage('Falha ao salvar a ordem.', 'error');
-          btn.disabled = false;
-        });
     });
 
     // Initialize order on page load

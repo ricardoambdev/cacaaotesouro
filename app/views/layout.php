@@ -257,7 +257,11 @@ if (count($parts) >= 2) {
 
         <!-- Conteúdo principal -->
         <main class="main">
+            <?php $statusTag = game_status_tag(); ?>
             <header class="topbar">
+                <span class="badge <?= e($statusTag['class']) ?> topbar-status" title="Status da partida">
+                    <?= e($statusTag['icon']) ?> <?= e($statusTag['label']) ?>
+                </span>
                 <span class="topbar-name"><?= e($userName) ?></span>
                 <div class="topbar-avatar"><?= e($initials) ?></div>
             </header>

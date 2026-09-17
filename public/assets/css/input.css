@@ -596,6 +596,11 @@
     color: #f7ecd4;
   }
 
+  .topbar-status {
+    font-size: .72rem;
+    margin-right: auto;
+  }
+
   .content {
     flex: 1;
     padding: 32px;
@@ -905,6 +910,11 @@
     justify-content: space-between;
     gap: 16px;
     flex-wrap: wrap;
+    margin-bottom: 32px;
+  }
+
+  .page-header-row .page-header {
+    margin-bottom: 0;
   }
 
   /* ---- Form Inline (for delete forms) ---- */
@@ -1477,6 +1487,7 @@
   .team-marker {
     display: inline-flex;
     align-items: center;
+    flex-wrap: wrap;
     gap: 6px;
     padding: 6px 12px;
     border-radius: 8px;
@@ -1942,6 +1953,10 @@
   }
 
   .topbar-name {
+    display: none;
+  }
+
+  .topbar-status {
     display: none;
   }
 

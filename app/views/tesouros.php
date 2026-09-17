@@ -16,40 +16,26 @@ $treasures = $treasures ?? [];
 $name = (string) ($user['name'] ?? '');
 
 $isRandomOrder = ($game['treasureOrder'] ?? 'estabelecida') === 'aleatorio';
-$orderLabel = $isRandomOrder ? 'Aleatória por equipe' : 'Estabelecida (sort_order)';
-$gameActive = ($game['gameActive'] ?? '0') === '1';
 ?>
-<div class="page-header">
-    <h1 class="page-title">Tesouros</h1>
-    <p class="page-subtitle">Gerencie os tesouros escondidos do jogo do Quico.</p>
-</div>
-
-<?php if ($gameActive): ?>
-    <div class="badge badge-success" style="margin-bottom: 16px; display: inline-block;">▶ Partida ativa</div>
-<?php else: ?>
-    <div class="badge badge-warning" style="margin-bottom: 16px; display: inline-block;">⏸ Partida pausada</div>
-<?php endif; ?>
-
-<div class="badge badge-info" style="margin-bottom: 16px; display: inline-block;">Ordem: <?= e($orderLabel) ?></div>
-
-<?php if (!empty($game['winner'])): ?>
-    <div class="badge badge-success" style="margin-bottom: 16px; display: inline-block;">
-        🏆 Vencedora: <?= e((string) $game['winner']['name']) ?>
+<div class="page-header-row">
+    <div class="page-header">
+        <h1 class="page-title">Tesouros</h1>
+        <p class="page-subtitle">Gerencie os tesouros escondidos do jogo do Quico.</p>
     </div>
-<?php endif; ?>
-
-<div style="margin-bottom: 20px;">
-    <a href="/tesouros/novo" class="btn btn-primary" style="width: auto;">
+    <a href="/tesouros/novo" class="btn btn-primary" style="width:auto;">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 6px;">
             <line x1="12" y1="5" x2="12" y2="19"/>
             <line x1="5" y1="12" x2="19" y2="12"/>
         </svg>
         Cadastrar tesouro
     </a>
-    <button type="button" id="btn-save-order" class="btn btn-ghost btn-sm" style="margin-left: 8px;" disabled>
-        💾 Salvar nova ordem
-    </button>
 </div>
+
+<?php if (!empty($game['winner'])): ?>
+    <div class="badge badge-success" style="margin-bottom: 16px; display: inline-block;">
+        🏆 Vencedora: <?= e((string) $game['winner']['name']) ?>
+    </div>
+<?php endif; ?>
 
 <?php if ($treasures === []): ?>
     <div class="empty-state">
@@ -104,7 +90,7 @@ $gameActive = ($game['gameActive'] ?? '0') === '1';
                                 <polyline points="7 10 12 15 17 10"/>
                                 <line x1="12" y1="15" x2="12" y2="3"/>
                             </svg>
-                            Baixar QR (SVG)
+                            Baixar QR
                         </a>
                     </div>
                 <?php endif; ?>
@@ -144,12 +130,16 @@ $gameActive = ($game['gameActive'] ?? '0') === '1';
                         foreach ($allColors as $color):
                             $found = false;
                             $foundAt = '';
+                            $earned = 0;
+                            $isFirst = false;
                             foreach ($teams as $team) {
                                 if ((string) ($team['color'] ?? '') === $color) {
                                     $row = $progress[$color] ?? null;
                                     if ($row !== null && (int) ($row['riddle_correct'] ?? 0) === 1) {
                                         $found = true;
                                         $foundAt = (string) ($row['found_at'] ?? '');
+                                        $earned = (int) ($row['earned'] ?? 0);
+                                        $isFirst = (int) ($row['first_bonus'] ?? 0) === 1;
                                     }
                                     break;
                                 }
@@ -159,7 +149,10 @@ $gameActive = ($game['gameActive'] ?? '0') === '1';
                                 <span class="team-marker-dot"></span>
                                 <span class="team-marker-label"><?= e($color) ?></span>
                                 <?php if ($found): ?>
-                                    <span class="team-marker-status">✔ <?= e($foundAt) ?></span>
+                                    <span class="team-marker-status">✔ <?= e($foundAt) ?> · +<?= $earned ?> pts</span>
+                                    <?php if ($isFirst): ?>
+                                        <span class="badge badge-success" title="Primeira equipe a encontrar este tesouro!">🚀 1º +10</span>
+                                    <?php endif; ?>
                                 <?php else: ?>
                                     <span class="team-marker-status">Não encontrado</span>
                                 <?php endif; ?>
