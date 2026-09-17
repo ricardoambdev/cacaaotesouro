@@ -253,7 +253,8 @@ final class TreasureController
 
     /**
      * POST /tesouros/{id}/coordenada/zerar — zera a coordenada confirmada
-     * e desativa o tesouro (voltará a precisar de confirmação pelo app).
+     * e desativa o tesouro. Também reseta as equipes que finalizaram este
+     * tesouro (remove o progresso e reverte os pontos ganhos).
      */
     public function clearCoordinate(Request $request, Response $response, array $args): Response
     {
@@ -266,11 +267,67 @@ final class TreasureController
         }
 
         $pdo = \App\Database::get();
+
+        // ── Reseta as equipes que finalizaram este tesouro ──
+        $stmt = $pdo->prepare('SELECT * FROM team_treasure_progress WHERE treasure_id = :tid');
+        $stmt->execute([':tid' => $id]);
+        $progressRows = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+
+        $reset = 0;
+
+        foreach ($progressRows as $row) {
+            $teamId = (int) $row['team_id'];
+
+            // Se a equipe já tinha FINALIZADO (acertou a charada), reverte
+            // os pontos ganhos: -20 (tesouro) e -5 (selfie, se enviada).
+            if ((int) ($row['riddle_correct'] ?? 0) === 1) {
+                $team = TeamRepository::find($teamId);
+
+                if ($team !== null) {
+                    $delta = -20;
+
+                    if ((int) ($row['selfie_points'] ?? 0) === 1) {
+                        $delta -= 5;
+                    }
+
+                    $newPoints = max(0, (int) $team['points'] + $delta);
+                    TeamRepository::updateGameState($teamId, ['points' => $newPoints]);
+                    GameRepository::logPoints(
+                        $teamId,
+                        $delta,
+                        'coordenada zerada do tesouro "' . (string) $treasure['name'] . '"'
+                    );
+                    $reset++;
+                }
+            }
+
+            // Remove a selfie (arquivo) e o progresso desta equipe.
+            $selfiePath = (string) ($row['selfie_path'] ?? '');
+
+            if ($selfiePath !== '') {
+                $file = str_replace('\\', '/', dirname(__DIR__, 2) . '/public' . $selfiePath);
+
+                if (is_file($file)) {
+                    @unlink($file);
+                }
+            }
+        }
+
+        $del = $pdo->prepare('DELETE FROM team_treasure_progress WHERE treasure_id = :tid');
+        $del->execute([':tid' => $id]);
+
+        // ── Zera a coordenada e desativa o tesouro ──────────
         $pdo->prepare(
             'UPDATE treasures SET lat = NULL, lng = NULL, active = 0, updated_at = :updated WHERE id = :id'
         )->execute([':updated' => date('Y-m-d H:i:s'), ':id' => $id]);
 
-        flash_set('success', 'Coordenada zerada. O tesouro foi desativado e precisará ser confirmado novamente pelo app admin.');
+        $msg = 'Coordenada zerada. O tesouro foi desativado e precisará ser confirmado novamente pelo app admin.';
+
+        if ($reset > 0) {
+            $msg .= sprintf(' %d equipe(s) que haviam finalizado este tesouro foram resetadas (pontos revertidos).', $reset);
+        }
+
+        flash_set('success', $msg);
         redirect('/tesouros/' . $id . '/editar');
     }
 
