@@ -64,3 +64,6 @@ flutter:
     - assets/sounds/acerto.mp3
     - assets/sounds/choro.mp3
     - assets/sounds/notificacao.mp3
+    - assets/sounds/bg_desafio.mp3
+    - assets/sounds/risada.mp3
+    - assets/sounds/ali-esta.mp3

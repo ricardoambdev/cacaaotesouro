@@ -39,6 +39,10 @@ class _TeamHomeScreenState extends State<TeamHomeScreen> {
   CheckinResult? _checkinResult;
   AnswerResult? _answerResult;
 
+  /// Cena sonora atual ('nenhuma' | 'erro' | 'desafio') — evita reiniciar o
+  /// som a cada rebuild. Controlada por [_syncSounds].
+  String _soundScene = 'nenhuma';
+
   // ── Timer de envio de localização ──────────────────────
   Timer? _locationTimer;
 
@@ -58,8 +62,53 @@ class _TeamHomeScreenState extends State<TeamHomeScreen> {
   void dispose() {
     _locationTimer?.cancel();
     _messagesTimer?.cancel();
-    _soundService.dispose();
+    // NUNCA chamar _soundService.dispose() aqui: o SoundService é um
+    // singleton e o player seria destruído para o resto da sessão (os sons
+    // parariam de tocar). Apenas paramos o que estiver tocando.
+    _soundService.stopAll();
     super.dispose();
+  }
+
+  /// Cena sonora atual. Muda quando a tela visível muda.
+  String _currentSoundScene() {
+    final result = _answerResult;
+
+    // Erro da charada: som em loop até sair da tela.
+    if (_flowState == TreasureFlowState.answerResult &&
+        result != null &&
+        !result.correct) {
+      return 'erro';
+    }
+
+    // Desafio final: música de fundo.
+    if (_flowState == TreasureFlowState.finalChallenge) {
+      return 'desafio';
+    }
+
+    return 'nenhuma';
+  }
+
+  /// Garante que só o som da cena atual esteja tocando.
+  ///
+  /// Chamado no `build()` — reage a qualquer mudança de `_flowState`.
+  void _syncSounds() {
+    final scene = _currentSoundScene();
+
+    if (scene == _soundScene) return;
+
+    _soundScene = scene;
+
+    switch (scene) {
+      case 'erro':
+        _soundService.playChoroLoop();
+        break;
+      case 'desafio':
+        _soundService.playBackgroundMusic();
+        break;
+      default:
+        _soundService.stopLoop();
+        _soundService.stopBackgroundMusic();
+    }
   }
 
   Future<void> _loadState() async {
@@ -424,11 +473,10 @@ class _TeamHomeScreenState extends State<TeamHomeScreen> {
 
       if (!mounted) return;
 
-      // Tocar som de acordo com o resultado
+      // Som do acerto (o erro entra em loop pelo _syncSounds, ao renderizar
+      // a tela de resultado).
       if (result.correct) {
         _soundService.playAcerto();
-      } else {
-        _soundService.playChoro();
       }
 
       setState(() {
@@ -456,7 +504,7 @@ class _TeamHomeScreenState extends State<TeamHomeScreen> {
 
       if (!mounted) return;
 
-      // Tocar som de acordo com o resultado
+      // Tocar som de acordo com o resultado (desafio final: um som só)
       if (result.correct) {
         _soundService.playAcerto();
       } else {
@@ -559,6 +607,10 @@ class _TeamHomeScreenState extends State<TeamHomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Mantém os sons em sincronia com a tela visível: som de erro em loop na
+    // tela de erro da charada e música de fundo no desafio final.
+    _syncSounds();
+
     return Scaffold(
       appBar: AppBar(
         title: Row(
