@@ -136,10 +136,6 @@ $gameActive = ($game['gameActive'] ?? '0') === '1';
                         <?= e((string) ($treasure['description'] ?? '')) ?>
                     </p>
 
-                    <p class="treasure-card-desc" style="opacity:.75;font-size:.92em;">
-                        💡 Dica: <?= e((string) ($treasure['clue'] ?? '')) ?>
-                    </p>
-
                     <!-- Team Progress Markers -->
                     <div class="treasure-card-progress">
                         <?php
