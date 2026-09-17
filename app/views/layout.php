@@ -264,10 +264,10 @@ if (count($parts) >= 2) {
                 <span class="badge <?= e($statusTag['class']) ?> topbar-status" title="Status da partida">
                     <?= e($statusTag['icon']) ?> <?= e($statusTag['label']) ?>
                 </span>
-                <span class="topbar-name"><?= e($userName) ?></span>
                 <button id="chat-toggle" class="topbar-chat" type="button" aria-label="Mensagens para as equipes" title="Mensagens para as equipes">
                     💬
                 </button>
+                <span class="topbar-name"><?= e($userName) ?></span>
                 <div class="topbar-avatar"><?= e($initials) ?></div>
             </header>
 
