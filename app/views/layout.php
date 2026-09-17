@@ -40,18 +40,20 @@ if (count($parts) >= 2) {
     <link rel="stylesheet" href="/assets/css/tailwind.css?v=<?= e((string) $cssVersion) ?>">
     <meta name="csrf-token-data" content="<?= e(csrf_token()) ?>">
     <style>
-        /* ═══ CHAT FLUTUANTE ═══ */
-        .chat-fab {
-            position: fixed; right: 22px; bottom: 22px; z-index: 900;
-            width: 58px; height: 58px; border-radius: 50%; border: none; cursor: pointer;
-            background: linear-gradient(135deg, #F97316, #EA580C);
-            color: #fff; font-size: 24px; display: flex; align-items: center; justify-content: center;
-            box-shadow: 0 6px 18px rgba(234, 88, 12, 0.45); transition: transform .15s;
+        /* ═══ CHAT NO HEADER ═══ */
+        .topbar-chat {
+            position: relative;
+            display: flex; align-items: center; justify-content: center;
+            width: 38px; height: 38px; flex-shrink: 0;
+            border-radius: 50%; border: 1.5px solid rgba(249,115,22,0.3);
+            background: rgba(249,115,22,0.1); color: #f7ecd4;
+            font-size: 17px; cursor: pointer; transition: all .15s;
         }
-        .chat-fab:hover { transform: scale(1.08); }
+        .topbar-chat:hover { background: rgba(249,115,22,0.22); border-color: #F97316; }
+        .topbar-chat.active { background: rgba(249,115,22,0.28); border-color: #F97316; }
         .chat-panel {
-            position: fixed; right: 22px; bottom: 92px; z-index: 950;
-            width: 340px; max-width: calc(100vw - 32px); height: 460px; max-height: calc(100vh - 130px);
+            position: fixed; top: 72px; right: 24px; z-index: 950;
+            width: 340px; max-width: calc(100vw - 32px); height: 460px; max-height: calc(100vh - 100px);
             background: #0A1724; border: 1px solid rgba(249,115,22,0.25); border-radius: 16px;
             display: flex; flex-direction: column; overflow: hidden;
             box-shadow: 0 12px 40px rgba(0,0,0,.55); animation: chatIn .2s ease;
@@ -85,7 +87,7 @@ if (count($parts) >= 2) {
             padding: 10px 16px; border-radius: 10px; border: none; cursor: pointer; font-weight: 700; font-size: .82rem;
             background: linear-gradient(135deg, #F97316, #EA580C); color: #fff;
         }
-        @media (max-width: 600px) { .chat-panel { width: calc(100vw - 32px); right: 16px; } }
+        @media (max-width: 600px) { .chat-panel { width: calc(100vw - 32px); right: 16px; top: 68px; } }
 
         /* ═══ MODAL DE CONFIRMAÇÃO DO SISTEMA ═══ */
         .sysmodal {
@@ -263,6 +265,9 @@ if (count($parts) >= 2) {
                     <?= e($statusTag['icon']) ?> <?= e($statusTag['label']) ?>
                 </span>
                 <span class="topbar-name"><?= e($userName) ?></span>
+                <button id="chat-toggle" class="topbar-chat" type="button" aria-label="Mensagens para as equipes" title="Mensagens para as equipes">
+                    💬
+                </button>
                 <div class="topbar-avatar"><?= e($initials) ?></div>
             </header>
 
@@ -280,9 +285,7 @@ if (count($parts) >= 2) {
 
     <script src="/assets/js/common.js?v=<?= e((string) $jsVersion) ?>"></script>
 
-    <!-- ═══ CHAT FLUTUANTE (mensagens para as equipes) ═══ -->
-    <button id="chat-fab" class="chat-fab" aria-label="Abrir chat">💬</button>
-
+    <!-- ═══ CHAT (mensagens para as equipes) ═══ -->
     <div id="chat-panel" class="chat-panel" style="display:none;">
         <div class="chat-header">📣 Mensagens para as equipes</div>
         <div class="chat-recipients">
@@ -301,7 +304,7 @@ if (count($parts) >= 2) {
 
     <script>
     (function () {
-        var fab = document.getElementById('chat-fab');
+        var fab = document.getElementById('chat-toggle');
         var panel = document.getElementById('chat-panel');
         var historyEl = document.getElementById('chat-history');
         var input = document.getElementById('chat-input');
@@ -311,10 +314,33 @@ if (count($parts) >= 2) {
         var target = 'todos';
         if (!fab || !panel) return;
 
+        function openChat() {
+            panel.style.display = 'flex';
+            fab.classList.add('active');
+            loadHistory();
+        }
+        function closeChat() {
+            panel.style.display = 'none';
+            fab.classList.remove('active');
+        }
+
         fab.addEventListener('click', function () {
             var isOpen = panel.style.display !== 'none';
-            panel.style.display = isOpen ? 'none' : 'flex';
-            if (!isOpen) loadHistory();
+            if (isOpen) { closeChat(); } else { openChat(); }
+        });
+
+        /* Fechar ao clicar fora */
+        document.addEventListener('click', function (e) {
+            if (panel.style.display === 'none') return;
+            if (panel.contains(e.target) || fab.contains(e.target)) return;
+            closeChat();
+        });
+
+        /* Fechar com Esc */
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape' && panel.style.display !== 'none') {
+                closeChat();
+            }
         });
 
         document.querySelectorAll('.chat-recipient').forEach(function (btn) {
