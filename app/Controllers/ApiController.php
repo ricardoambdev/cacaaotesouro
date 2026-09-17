@@ -637,6 +637,7 @@ final class ApiController
                 'correct'         => true,
                 'message'         => 'Resposta correta! +20 pontos.' . $bonusMessage,
                 'points'          => $points + 20 + (($bonusMessage !== '') ? 5 : 0),
+                'delta'           => 20 + (($bonusMessage !== '') ? 5 : 0),
                 'selfie_required' => true,
                 'next'            => [
                     'treasure'        => $next,
@@ -658,6 +659,7 @@ final class ApiController
             'correct'  => false,
             'message'  => 'Resposta incorreta. -5 pontos.',
             'points'   => $points - 5,
+            'delta'    => -5,
             'attempts' => $attempts,
         ]);
     }
