@@ -131,6 +131,7 @@ $app->post('/tesouros/novo', [TreasureController::class, 'store'])->add($mw['aut
 $app->get('/tesouros/{id}/editar', [TreasureController::class, 'editForm'])->add($mw['authRequired']);
 $app->post('/tesouros/{id}/editar', [TreasureController::class, 'update'])->add($mw['authRequired']);
 $app->post('/tesouros/{id}/excluir', [TreasureController::class, 'delete'])->add($mw['authRequired']);
+$app->post('/tesouros/{id}/coordenada/zerar', [TreasureController::class, 'clearCoordinate'])->add($mw['authRequired']);
 $app->post('/tesouros/reorder', [TreasureController::class, 'reorder'])->add($mw['authRequired']);
 
 // Jogo (história, desafio final e estado geral)

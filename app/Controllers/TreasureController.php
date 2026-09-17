@@ -252,6 +252,29 @@ final class TreasureController
     }
 
     /**
+     * POST /tesouros/{id}/coordenada/zerar — zera a coordenada confirmada
+     * e desativa o tesouro (voltará a precisar de confirmação pelo app).
+     */
+    public function clearCoordinate(Request $request, Response $response, array $args): Response
+    {
+        $id = (int) ($args['id'] ?? 0);
+        $treasure = TreasureRepository::find($id);
+
+        if ($treasure === null) {
+            flash_set('error', 'Tesouro não encontrado.');
+            redirect('/tesouros');
+        }
+
+        $pdo = \App\Database::get();
+        $pdo->prepare(
+            'UPDATE treasures SET lat = NULL, lng = NULL, active = 0, updated_at = :updated WHERE id = :id'
+        )->execute([':updated' => date('Y-m-d H:i:s'), ':id' => $id]);
+
+        flash_set('success', 'Coordenada zerada. O tesouro foi desativado e precisará ser confirmado novamente pelo app admin.');
+        redirect('/tesouros/' . $id . '/editar');
+    }
+
+    /**
      * Reordena os tesouros (POST JSON: { ids: [5,2,9,...] }).
      *
      * A rota passa pelo CSRF (a view inclui o token; requisições JSON

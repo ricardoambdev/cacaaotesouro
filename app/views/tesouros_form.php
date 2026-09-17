@@ -218,7 +218,7 @@ $hasQr = $qrPath !== '';
 
         <!-- Coordinate status (edit only) -->
         <?php if ($isEdit): ?>
-            <div style="margin-top: 16px; padding-top: 12px; border-top: 1px solid rgba(245, 197, 66, 0.08);">
+            <div style="margin-top: 16px; padding-top: 12px; border-top: 1px solid rgba(245, 197, 66, 0.08); display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
                 <?php if ($hasGps): ?>
                     <span class="badge badge-success">📍 Coordenada confirmada (<?= e((string) $lat) ?>, <?= e((string) $lng) ?>)</span>
                 <?php else: ?>
@@ -226,9 +226,22 @@ $hasQr = $qrPath !== '';
                 <?php endif; ?>
 
                 <?php if ((int) ($treasure['active'] ?? 0) === 1): ?>
-                    <span class="badge badge-success" style="margin-left: 6px;">✔ Ativo</span>
+                    <span class="badge badge-success">✔ Ativo</span>
                 <?php else: ?>
-                    <span class="badge badge-warning" style="margin-left: 6px;">Inativo</span>
+                    <span class="badge badge-warning">Inativo</span>
+                <?php endif; ?>
+
+                <?php if ($hasGps): ?>
+                    <button type="submit" form="clearCoordsForm"
+                            class="btn btn-sm btn-auto"
+                            style="width:auto; background:linear-gradient(135deg,#c0392b,#8e2a20); color:#fff; padding:6px 12px; font-size:.78rem;"
+                            onclick="return confirm('Zerar a coordenada deste tesouro? Ele será DESATIVADO e precisará ser confirmado novamente pelo app admin no local.');">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/>
+                            <line x1="9" y1="6" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="18"/>
+                        </svg>
+                        Zerar coordenada
+                    </button>
                 <?php endif; ?>
             </div>
         <?php endif; ?>
@@ -247,3 +260,11 @@ $hasQr = $qrPath !== '';
         </button>
     </div>
 </form>
+
+<?php if ($isEdit): ?>
+<!-- Form separado: zera a coordenada e desativa o tesouro (o botão na
+     seção de coordenadas o aciona via atributo form=) -->
+<form id="clearCoordsForm" method="post" action="/tesouros/<?= (int) ($treasure['id'] ?? 0) ?>/coordenada/zerar" style="display:none;">
+    <?= csrf_field() ?>
+</form>
+<?php endif; ?>
