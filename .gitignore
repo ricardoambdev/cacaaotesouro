@@ -33,4 +33,8 @@ Thumbs.db
 /mobile/.flutter-plugins*
 
 # Configuração do opencode (node_modules do workspace)
-/.opencode/node_modules/cookies.txt
+/.opencode/node_modules/
+
+# Artefatos de teste local (cookies de sessão gerados por scripts curl)
+/cookies.txt
+/cookies*.txt
