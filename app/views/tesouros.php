@@ -96,6 +96,16 @@ $gameActive = ($game['gameActive'] ?? '0') === '1';
                 <?php if (($treasure['qr_svg_path'] ?? '') !== ''): ?>
                     <div class="treasure-card-qr">
                         <img src="<?= e((string) $treasure['qr_svg_path']) ?>" alt="QR code" class="qr-thumb">
+                        <a href="<?= e((string) $treasure['qr_svg_path']) ?>"
+                           download="QR_<?= e((string) ($treasure['code'] ?? 'tesouro')) ?>.svg"
+                           class="download-btn">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                <polyline points="7 10 12 15 17 10"/>
+                                <line x1="12" y1="15" x2="12" y2="3"/>
+                            </svg>
+                            Baixar QR (SVG)
+                        </a>
                     </div>
                 <?php endif; ?>
 
@@ -160,22 +170,6 @@ $gameActive = ($game['gameActive'] ?? '0') === '1';
                             </span>
                         <?php endforeach; ?>
                     </div>
-
-                    <!-- QR Download -->
-                    <?php if (($treasure['qr_svg_path'] ?? '') !== ''): ?>
-                        <div class="treasure-card-qr-footer">
-                            <a href="<?= e((string) $treasure['qr_svg_path']) ?>"
-                               download="QR_<?= e((string) ($treasure['code'] ?? 'tesouro')) ?>.svg"
-                               class="download-btn">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                                    <polyline points="7 10 12 15 17 10"/>
-                                    <line x1="12" y1="15" x2="12" y2="3"/>
-                                </svg>
-                                Baixar QR
-                            </a>
-                        </div>
-                    <?php endif; ?>
 
                     <!-- Actions -->
                     <div class="treasure-card-actions">

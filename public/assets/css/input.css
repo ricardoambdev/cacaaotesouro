@@ -986,7 +986,8 @@
   .treasure-card-qr {
     flex-shrink: 0;
     display: flex;
-    align-items: flex-start;
+    align-items: center;
+    gap: 10px;
     padding-top: 2px;
   }
 
@@ -1911,6 +1912,11 @@
   }
 
   .treasure-card-actions {
+    justify-content: center;
+  }
+
+  .treasure-card-qr {
+    flex-direction: column;
     justify-content: center;
   }
 
