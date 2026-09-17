@@ -38,6 +38,7 @@ if (count($parts) >= 2) {
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Pirata+One&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/assets/css/tailwind.css?v=<?= e((string) $cssVersion) ?>">
+    <link rel="stylesheet" href="/assets/css/icons.css?v=<?= e((string) @filemtime(__DIR__ . '/../../public/assets/css/icons.css')) ?>">
     <meta name="csrf-token-data" content="<?= e(csrf_token()) ?>">
     <style>
         /* ═══ CHAT NO HEADER ═══ */
@@ -262,10 +263,10 @@ if (count($parts) >= 2) {
             <?php $statusTag = game_status_tag(); ?>
             <header class="topbar">
                 <span class="badge <?= e($statusTag['class']) ?> topbar-status" title="Status da partida">
-                    <?= e($statusTag['icon']) ?> <?= e($statusTag['label']) ?>
+                    <?= icon((string) $statusTag['icon'], 16) ?> <?= e($statusTag['label']) ?>
                 </span>
                 <button id="chat-toggle" class="topbar-chat" type="button" aria-label="Mensagens para as equipes" title="Mensagens para as equipes">
-                    💬
+                    <?= icon('chat', 20) ?>
                 </button>
                 <span class="topbar-name"><?= e($userName) ?></span>
                 <div class="topbar-avatar"><?= e($initials) ?></div>

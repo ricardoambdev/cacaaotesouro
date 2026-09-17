@@ -24,6 +24,7 @@ $jsVersion = @filemtime(__DIR__ . '/../../public/assets/js/common.js') ?: 1;
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Pirata+One&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/assets/css/tailwind.css?v=<?= e((string) $cssVersion) ?>">
+    <link rel="stylesheet" href="/assets/css/icons.css?v=<?= e((string) @filemtime(__DIR__ . '/../../public/assets/css/icons.css')) ?>">
 </head>
 <body>
     <div class="auth-layout">

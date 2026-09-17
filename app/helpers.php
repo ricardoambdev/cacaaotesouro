@@ -280,7 +280,7 @@ function game_status_tag(): array
         return [
             'label' => 'Partida encerrada',
             'class' => 'badge-info',
-            'icon'  => '🏆',
+            'icon'  => 'emoji_events',
         ];
     }
 
@@ -288,13 +288,39 @@ function game_status_tag(): array
         return [
             'label' => 'Partida pausada',
             'class' => 'badge-warning',
-            'icon'  => '⏸',
+            'icon'  => 'pause',
         ];
     }
 
     return [
         'label' => 'Partida ativa',
         'class' => 'badge-success',
-        'icon'  => '▶',
+        'icon'  => 'play_arrow',
     ];
+}
+
+/**
+ * Ícone do Material Icons (Google Fonts).
+ *
+ * A fonte é hospedada localmente (`public/assets/fonts`) — funciona offline,
+ * sem depender de CDN. Nomes disponíveis: https://fonts.google.com/icons
+ *
+ * @param string $name  Nome do ícone, ex.: 'chat', 'delete', 'place'.
+ * @param int    $size  Tamanho em px (14|16|18|20|22|24|28|32|40|48).
+ * @param string $class Classes extras (opcional).
+ * @param string $attrs Atributos extras já escapados (opcional).
+ */
+function icon(string $name, int $size = 20, string $class = '', string $attrs = ''): string
+{
+    $sizes = [14, 16, 18, 20, 22, 24, 28, 32, 40, 48];
+
+    $classes = 'material-icons' . (in_array($size, $sizes, true) ? ' size-' . $size : '');
+
+    if (trim($class) !== '') {
+        $classes .= ' ' . trim($class);
+    }
+
+    return '<span class="' . e($classes) . '" aria-hidden="true"'
+        . ($attrs !== '' ? ' ' . $attrs : '')
+        . '>' . e($name) . '</span>';
 }

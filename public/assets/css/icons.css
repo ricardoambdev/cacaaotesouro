@@ -1,0 +1,70 @@
+/* ═══════════════════════════════════════════════════════════════
+   MATERIAL ICONS (Google) — hospedado LOCALMENTE
+   ═══════════════════════════════════════════════════════════════
+   Fonte oficial: https://fonts.google.com/icons
+   Arquivos:  /assets/fonts/material-icons.woff2 (principal)
+              /assets/fonts/material-icons.ttf (fallback)
+
+   Uso direto no HTML:
+       <span class="material-icons">chat</span>
+       <span class="material-icons size-18">delete</span>
+
+   Uso no PHP (recomendado):
+       <?= icon('chat') ?>
+       <?= icon('delete', 18) ?>
+       <?= icon('place', 16, '', 'style="opacity:.7"') ?>
+
+   Nomes dos ícones: https://fonts.google.com/icons
+   ═══════════════════════════════════════════════════════════════ */
+
+@font-face {
+  font-family: 'Material Icons';
+  font-style: normal;
+  font-weight: 400;
+  font-display: block;
+  src: url('/assets/fonts/material-icons.woff2') format('woff2'),
+       url('/assets/fonts/material-icons.ttf') format('truetype');
+}
+
+.material-icons {
+  font-family: 'Material Icons';
+  font-weight: normal;
+  font-style: normal;
+  font-size: 20px;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  display: inline-block;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+  -webkit-font-feature-settings: 'liga';
+  font-feature-settings: 'liga';
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  vertical-align: middle;
+  color: currentColor;
+  -webkit-user-select: none;
+  user-select: none;
+  flex-shrink: 0;
+}
+
+/* Tamanhos */
+.material-icons.size-14 { font-size: 14px; }
+.material-icons.size-16 { font-size: 16px; }
+.material-icons.size-18 { font-size: 18px; }
+.material-icons.size-20 { font-size: 20px; }
+.material-icons.size-22 { font-size: 22px; }
+.material-icons.size-24 { font-size: 24px; }
+.material-icons.size-28 { font-size: 28px; }
+.material-icons.size-32 { font-size: 32px; }
+.material-icons.size-40 { font-size: 40px; }
+.material-icons.size-48 { font-size: 48px; }
+
+/* Ícone dentro de botões/links do sistema: alinha com o texto */
+.btn .material-icons,
+.download-btn .material-icons,
+.tab-btn .material-icons,
+.sidebar-link .material-icons {
+  pointer-events: none;
+}
