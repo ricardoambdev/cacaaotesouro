@@ -1755,6 +1755,35 @@
     flex-shrink: 0;
     opacity: 0.4;
   }
+
+  /* ---- Aside: Section Label & Team Progress ---- */
+  .aside-section-label {
+    font-family: Inter, sans-serif;
+    font-size: .68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .1em;
+    color: rgba(247,236,212,.45);
+    margin: 0 0 8px;
+  }
+
+  .aside-team-progress {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    width: 100%;
+  }
+
+  .aside-team-progress .team-marker {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .aside-team-status-block {
+    margin-top: 16px;
+    padding-top: 12px;
+    border-top: 1px solid rgba(245, 197, 66, 0.08);
+  }
 }
 
 /* ============================================================

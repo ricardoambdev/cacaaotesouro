@@ -221,6 +221,35 @@ $hasQr = $qrPath !== '';
                     <p style="margin: 0; font-size: 14px; opacity: .85;">O código do QR será gerado automaticamente ao salvar.</p>
                 <?php endif; ?>
 
+                <!-- Status das equipes (edit only) -->
+                <?php if ($isEdit): ?>
+                    <div class="aside-team-status-block">
+                        <p class="aside-section-label">Status das equipes</p>
+                        <div class="aside-team-progress">
+                            <?php foreach (['preta', 'laranja'] as $color): ?>
+                                <?php
+                                $found = false;
+                                $foundAt = '';
+                                $row = ($progress ?? [])[$color] ?? null;
+                                if ($row !== null && (int) ($row['riddle_correct'] ?? 0) === 1) {
+                                    $found = true;
+                                    $foundAt = (string) ($row['found_at'] ?? '');
+                                }
+                                ?>
+                                <span class="team-marker marker-<?= e($color) ?> <?= $found ? 'marker-found' : 'marker-missing' ?>">
+                                    <span class="team-marker-dot"></span>
+                                    <span class="team-marker-label"><?= e($color) ?></span>
+                                    <?php if ($found): ?>
+                                        <span class="team-marker-status">✔ <?= e($foundAt) ?></span>
+                                    <?php else: ?>
+                                        <span class="team-marker-status">Não encontrado</span>
+                                    <?php endif; ?>
+                                </span>
+                            <?php endforeach; ?>
+                        </div>
+                    </div>
+                <?php endif; ?>
+
                 <!-- Coordinate status + badges (edit only) -->
                 <?php if ($isEdit): ?>
                     <div style="margin-top: 16px; padding-top: 12px; border-top: 1px solid rgba(245, 197, 66, 0.08); display:flex; align-items:flex-start; gap:8px; flex-wrap:wrap;">
