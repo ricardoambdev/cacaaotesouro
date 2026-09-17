@@ -202,6 +202,81 @@ final class GameController
     // ------------------------------------------------------------------
 
     /**
+     * POST /iniciar-jogo — prepara o jogo para as equipes começarem a
+     * caçada: zera o progresso, apaga as selfies e as localizações e
+     * devolve cada equipe aos 100 pontos iniciais.
+     *
+     * Diferente das outras limpezas, os tesouros NÃO são tocados: eles
+     * continuam cadastrados, ATIVOS e com as coordenadas já confirmadas
+     * — não é preciso reconfigurar nada.
+     */
+    public function startGame(Request $request, Response $response): Response
+    {
+        $pdo = Database::get();
+        $root = dirname(__DIR__, 2); // raiz do projeto (app/Controllers → projeto)
+
+        // ── Selfies (arquivos) ──────────────────────────────
+        $selfiesDir = $root . '/public/uploads/selfies';
+
+        if (is_dir($selfiesDir)) {
+            foreach (glob(str_replace('\\', '/', $selfiesDir) . '/*') ?: [] as $file) {
+                if (is_file($file)) {
+                    // Retry curto: evita bloqueio transitório do Windows.
+                    for ($i = 0; $i < 3; $i++) {
+                        if (@unlink($file) || !is_file($file)) {
+                            break;
+                        }
+                        usleep(100000);
+                    }
+                }
+            }
+        }
+
+        // ── Progresso zerado (nenhum tesouro encontrado) ────
+        $pdo->exec('DELETE FROM team_treasure_progress');
+        $pdo->exec('DELETE FROM points_log');
+        $pdo->exec('DELETE FROM team_locations');
+        $pdo->exec('DELETE FROM team_messages');
+
+        // ── Equipes: 100 pontos, sem progresso, prontas para correr ──
+        $pdo->exec(
+            "UPDATE teams SET points = 100, status = 'playing', "
+            . "finished_at = NULL, current_step = 0, "
+            . "session_token = NULL, order_sequence = NULL"
+        );
+
+        // ── Nova partida: sorteia uma nova ordem (se o modo for aleatório) ──
+        SettingsRepository::set('treasureOrderSequence', '');
+
+        // ── Jogo pronto para começar (tesouros INTACTOS) ────
+        SettingsRepository::update([
+            'gameStatus'   => 'playing',
+            'gameActive'   => '1',
+            'winnerTeamId' => '',
+        ]);
+
+        // ── Confere se os tesouros estão prontos (ativos + coordenadas) ──
+        $ready = (int) $pdo->query(
+            'SELECT COUNT(*) FROM treasures WHERE active = 1 AND lat IS NOT NULL AND lng IS NOT NULL'
+        )->fetchColumn();
+
+        $total = (int) $pdo->query('SELECT COUNT(*) FROM treasures')->fetchColumn();
+
+        if ($ready >= $total) {
+            flash_set('success', 'Jogo iniciado! Cada equipe está com 100 pontos, sem nenhum tesouro '
+                . 'encontrado e com as selfies apagadas. Os ' . $total . ' tesouro(s) continuam '
+                . 'ativos com as coordenadas confirmadas — todos prontos para a caçada!');
+        } else {
+            flash_set('error', 'Jogo iniciado (equipes com 100 pontos e sem progresso), mas atenção: '
+                . 'apenas ' . $ready . ' de ' . $total . ' tesouro(s) estão ativos e com coordenadas '
+                . 'confirmadas. Confirme os demais pelo app admin para que as equipes consigam '
+                . 'encontrá-los.');
+        }
+
+        redirect('/configuracoes');
+    }
+
+    /**
      * POST /limpar/leve — limpa o progresso do jogo (tesouros completados,
      * selfies, pontos, localizações, mensagens) e reseta as equipes,
      * mas MANTÉM os tesouros cadastrados, a história e o desafio final.

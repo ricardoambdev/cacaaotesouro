@@ -530,14 +530,47 @@ $teamBlackPassword  = (string) ($teams['preta']['password']  ?? '');
         <p class="page-subtitle">Escolha o que deseja limpar. As ações mantêm o que você indica.</p>
     </div>
 
-    <!-- ── 1. LIMPEZA LEVE (recomendada) ──────────────────── -->
-    <div class="settings-card" style="border:1px solid rgba(34,197,94,0.4); background:rgba(34,197,94,0.05);">
+    <!-- ── 0. INICIAR O JOGO ──────────────────────────────── -->
+    <div class="settings-card" style="border:1px solid rgba(249,115,22,0.5); background:rgba(249,115,22,0.06);">
+        <h2 class="settings-card-title" style="color:#F97316;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="5 3 19 12 5 21 5 3"/>
+            </svg>
+            Iniciar o jogo
+        </h2>
+        <p style="color:rgba(247,236,212,0.7); font-size:0.9rem; line-height:1.7; margin-bottom:16px;">
+            Deixa tudo <strong style="color:#F97316;">pronto para as equipes saírem correndo atrás dos tesouros</strong>.
+            Zera o progresso e as selfies, devolve <strong>100 pontos</strong> para cada equipe e
+            <strong style="color:#22C55E;">mantém os tesouros ativos com as coordenadas já confirmadas</strong>
+            — não é preciso reconfigurar nada.
+        </p>
+        <ul style="color:rgba(247,236,212,0.65); font-size:0.88rem; line-height:1.8; margin:0 0 20px; padding-left:18px;">
+            <li>🎯 Cada equipe volta a <strong>100 pontos</strong></li>
+            <li>🗑️ Progresso zerado — <strong>nenhum tesouro encontrado</strong></li>
+            <li>🗑️ Selfies, localizações e mensagens apagadas</li>
+            <li>📱 Equipes podem entrar novamente nos aparelhos</li>
+            <li>✅ Tesouros cadastrados, <strong>ativos e com coordenadas confirmadas</strong></li>
+            <li>✅ História e desafio final <strong>mantidos</strong></li>
+        </ul>
+        <form method="post" action="/iniciar-jogo" data-confirm="Iniciar o jogo? Cada equipe voltará para 100 pontos e TODO o progresso será apagado (tesouros encontrados, selfies, pontos, localizações e mensagens). Os tesouros continuam ativos com as coordenadas confirmadas. Continuar?">
+            <?= csrf_field() ?>
+            <button type="submit" class="btn btn-primary" style="width:auto; background:linear-gradient(135deg,#F97316,#c2410c);">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polygon points="5 3 19 12 5 21 5 3"/>
+                </svg>
+                Iniciar o jogo
+            </button>
+        </form>
+    </div>
+
+    <!-- ── 1. LIMPEZA LEVE ────────────────────────────────── -->
+    <div class="settings-card" style="margin-top:20px; border:1px solid rgba(34,197,94,0.4); background:rgba(34,197,94,0.05);">
         <h2 class="settings-card-title" style="color:#22C55E;">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
                 <polyline points="22 4 12 14.01 9 11.01"/>
             </svg>
-            Limpar o jogo (recomendado)
+            Limpar o jogo (reconfirmar coordenadas)
         </h2>
         <p style="color:rgba(247,236,212,0.7); font-size:0.9rem; line-height:1.7; margin-bottom:16px;">
             Apaga os <strong style="color:#22C55E;">tesouros completados</strong> e as selfies, e reseta as equipes.
