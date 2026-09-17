@@ -162,12 +162,29 @@ class CheckinResult {
   }
 }
 
+/// Item de breakdown de pontos (ex: "Resposta correta": +20).
+class BreakdownItem {
+  final String label;
+  final int points;
+
+  const BreakdownItem({required this.label, required this.points});
+
+  factory BreakdownItem.fromJson(Map<String, dynamic> json) {
+    return BreakdownItem(
+      label: (json['label'] as String?) ?? '',
+      points: (json['points'] as num?)?.toInt() ?? 0,
+    );
+  }
+}
+
 /// Resultado de uma resposta (riddle ou final).
 class AnswerResult {
   final bool correct;
   final String message;
   final int points;
   final int delta;
+  final int totalEarned;
+  final List<BreakdownItem> breakdown;
   final GameTreasure? nextTreasure;
   final bool finalAvailable;
   final int attempts;
@@ -177,6 +194,8 @@ class AnswerResult {
     required this.message,
     required this.points,
     this.delta = 0,
+    this.totalEarned = 0,
+    this.breakdown = const [],
     this.nextTreasure,
     required this.finalAvailable,
     required this.attempts,
@@ -186,11 +205,21 @@ class AnswerResult {
     final nextData = json['next'] as Map<String, dynamic>?;
     final treasureData = nextData?['treasure'] as Map<String, dynamic>?;
 
+    // Parse breakdown; fallback para lista vazia se ausente.
+    final breakdownList = (json['breakdown'] as List<dynamic>?)
+            ?.map((e) => BreakdownItem.fromJson(e as Map<String, dynamic>))
+            .toList() ??
+        [];
+
+    final delta = (json['delta'] as num?)?.toInt() ?? 0;
+
     return AnswerResult(
       correct: json['correct'] == true,
       message: (json['message'] as String?) ?? '',
       points: (json['points'] as num?)?.toInt() ?? 0,
-      delta: (json['delta'] as num?)?.toInt() ?? 0,
+      delta: delta,
+      totalEarned: (json['total_earned'] as num?)?.toInt() ?? delta,
+      breakdown: breakdownList,
       nextTreasure: treasureData != null ? GameTreasure.fromJson(treasureData) : null,
       finalAvailable: nextData?['final_available'] == true,
       attempts: (json['attempts'] as num?)?.toInt() ?? 1,

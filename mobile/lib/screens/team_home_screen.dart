@@ -1205,6 +1205,22 @@ class _TeamHomeScreenState extends State<TeamHomeScreen> {
     );
   }
 
+  /// Traduz o label da API em texto legível para a UI.
+  String _breakdownText(String label, int points) {
+    switch (label) {
+      case 'Selfie enviada':
+        return '+$points pontos pela selfie enviada';
+      case 'Resposta correta':
+        return '+$points pontos de resposta correta';
+      case 'Responder no local':
+        return '+$points pontos por responder no local';
+      case 'Primeiro a encontrar!':
+        return '+$points pontos por ser o primeiro a encontrar';
+      default:
+        return '+$points pontos';
+    }
+  }
+
   Widget _buildAnswerResult() {
     final result = _answerResult;
     if (result == null) return const SizedBox();
@@ -1236,72 +1252,30 @@ class _TeamHomeScreenState extends State<TeamHomeScreen> {
                 color: result.correct ? Colors.greenAccent : Colors.redAccent,
               ),
             ),
+
+            // ══════════════════════════════════════════════
+            //  CASO CORRETO → lista de pontos conquistados
+            // ══════════════════════════════════════════════
             if (result.correct) ...[
-              const SizedBox(height: 8),
+              const SizedBox(height: 20),
+
+              // ── Lista de breakdown ───────────────────
+              _buildBreakdownList(result),
+
+              const SizedBox(height: 20),
+
+              // ── Total em verde ───────────────────────
               Text(
-                result.message,
-                textAlign: TextAlign.center,
+                '+${result.totalEarned} pontos',
                 style: const TextStyle(
-                  fontSize: 15,
-                  color: AppColors.ivory,
+                  fontSize: 28,
+                  fontWeight: FontWeight.w900,
+                  color: Colors.greenAccent,
                 ),
               ),
-            ],
 
-            // ── Delta (ganho ou penalização) ──────────────
-            const SizedBox(height: 12),
-            Builder(
-              builder: (context) {
-                final String deltaText;
-                if (result.correct) {
-                  final ganhou = result.delta != 0 ? result.delta : 20;
-                  deltaText = '+$ganhou pontos';
-                } else {
-                  final perdeu = result.delta != 0 ? result.delta.abs() : 5;
-                  deltaText = 'perdeu $perdeu pontos';
-                }
-                return Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                  decoration: BoxDecoration(
-                    color: result.correct
-                        ? Colors.greenAccent.withValues(alpha: 0.12)
-                        : Colors.redAccent.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: result.correct
-                          ? Colors.greenAccent.withValues(alpha: 0.4)
-                          : Colors.redAccent.withValues(alpha: 0.4),
-                    ),
-                  ),
-                  child: Text(
-                    deltaText,
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w800,
-                      color: result.correct
-                          ? Colors.greenAccent
-                          : Colors.redAccent,
-                    ),
-                  ),
-                );
-              },
-            ),
-
-            // ── Total atualizado ─────────────────────────
-            const SizedBox(height: 6),
-            Text(
-              'Total: ${result.points} pontos',
-              style: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: AppColors.ivoryMuted,
-              ),
-            ),
-
-            if (result.correct) ...[
-              // ── Botão "Próximo tesouro" ──────────────────
-              const SizedBox(height: 24),
+              // ── Botão "Próximo tesouro" ──────────────
+              const SizedBox(height: 28),
               SizedBox(
                 width: double.infinity,
                 height: 52,
@@ -1343,8 +1317,51 @@ class _TeamHomeScreenState extends State<TeamHomeScreen> {
                 ),
               ),
             ],
+
+            // ══════════════════════════════════════════════
+            //  CASO ERRADO → mantém layout original
+            // ══════════════════════════════════════════════
             if (!result.correct) ...[
-              // ── Botão "Tentar Novamente" ─────────────────
+              // ── Delta (penalização) ──────────────────
+              const SizedBox(height: 12),
+              Builder(
+                builder: (context) {
+                  final perdeu = result.delta != 0 ? result.delta.abs() : 5;
+                  final deltaText = 'perdeu $perdeu pontos';
+                  return Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: Colors.redAccent.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: Colors.redAccent.withValues(alpha: 0.4),
+                      ),
+                    ),
+                    child: Text(
+                      deltaText,
+                      style: const TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w800,
+                        color: Colors.redAccent,
+                      ),
+                    ),
+                  );
+                },
+              ),
+
+              // ── Total atualizado ─────────────────────
+              const SizedBox(height: 6),
+              Text(
+                'Total: ${result.points} pontos',
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.ivoryMuted,
+                ),
+              ),
+
+              // ── Botão "Tentar Novamente" ─────────────
               const SizedBox(height: 24),
               SizedBox(
                 width: double.infinity,
@@ -1371,6 +1388,93 @@ class _TeamHomeScreenState extends State<TeamHomeScreen> {
             ],
           ],
         ),
+      ),
+    );
+  }
+
+  /// Monta a lista de breakdown de pontos.
+  /// Se a API retornou itens, usa eles; caso contrário, monta um fallback.
+  Widget _buildBreakdownList(AnswerResult result) {
+    List<BreakdownItem> items;
+
+    if (result.breakdown.isNotEmpty) {
+      items = result.breakdown;
+    } else {
+      // Fallback: servidor antigo sem breakdown — montar lista básica
+      items = [];
+
+      // Selfie sempre foi enviada neste ponto (o fluxo exige selfie antes
+      // da charada), então incluí-la no fallback é razoável.
+      items.add(const BreakdownItem(label: 'Selfie enviada', points: 5));
+
+      // Resposta correta: tentar deduzir de delta; senão, 20 padrão.
+      final correctPoints = result.delta > 0 ? result.delta : 20;
+      items.add(BreakdownItem(
+        label: 'Resposta correta',
+        points: correctPoints,
+      ));
+    }
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.navyMedium,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: Colors.greenAccent.withValues(alpha: 0.2),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: items.map((item) {
+          final text = _breakdownText(item.label, item.points);
+          // Separar "+N" do resto do texto
+          final plusMatch = RegExp(r'^\+(\d+)').firstMatch(text);
+          final String prefix;
+          final String suffix;
+          if (plusMatch != null) {
+            prefix = plusMatch.group(0)!;
+            suffix = text.substring(plusMatch.end);
+          } else {
+            prefix = '';
+            suffix = text;
+          }
+          return Padding(
+            padding: const EdgeInsets.symmetric(vertical: 4),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Bullet
+                const Text('•  ', style: TextStyle(
+                  color: Colors.greenAccent,
+                  fontSize: 15,
+                )),
+                // "+N" em verde/dourado negrito
+                if (prefix.isNotEmpty)
+                  Text(
+                    prefix,
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w800,
+                      color: Colors.greenAccent,
+                    ),
+                  ),
+                // Texto da conquista em cor clara
+                Expanded(
+                  child: Text(
+                    suffix,
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w500,
+                      color: AppColors.ivory,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          );
+        }).toList(),
       ),
     );
   }
