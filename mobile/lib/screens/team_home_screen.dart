@@ -80,8 +80,9 @@ class _TeamHomeScreenState extends State<TeamHomeScreen> {
       return 'erro';
     }
 
-    // Desafio final: música de fundo.
-    if (_flowState == TreasureFlowState.finalChallenge) {
+    // Desafio final aberto: música de fundo em loop — inclusive quando o app
+    // abre direto nele (sem ter passado pelas telas anteriores).
+    if (_isFinalChallengeVisible) {
       return 'desafio';
     }
 
@@ -759,6 +760,29 @@ class _TeamHomeScreenState extends State<TeamHomeScreen> {
   //  ABA TESOURO
   // ════════════════════════════════════════════════════════════
 
+  /// O desafio final está sendo exibido AGORA?
+  ///
+  /// Fonte única de verdade — usada tanto para renderizar a tela quanto para
+  /// tocar a música de fundo (assim nunca divergem).
+  ///
+  /// Nunca fica visível por cima da tela de resultado: depois de acertar o
+  /// ÚLTIMO tesouro a equipe continua vendo o resultado e só vai para o
+  /// desafio final ao tocar no botão "Próximo desafio".
+  bool get _isFinalChallengeVisible {
+    final state = _gameState;
+
+    if (state == null) return false;
+
+    // Só quando não há mais tesouro para caçar E o desafio está liberado.
+    if (state.currentTreasure != null || !state.finalAvailable) return false;
+
+    // Nunca por cima das telas de resultado (charada ou desafio final).
+    if (_flowState == TreasureFlowState.answerResult) return false;
+    if (_flowState == TreasureFlowState.finalResult) return false;
+
+    return true;
+  }
+
   Widget _buildTreasureTab() {
     if (_gameState == null) return const SizedBox();
 
@@ -767,9 +791,9 @@ class _TeamHomeScreenState extends State<TeamHomeScreen> {
       return _buildWaitingState();
     }
 
-    // Final disponível → desafio final
-    if (_gameState!.currentTreasure == null && _gameState!.finalAvailable &&
-        _flowState != TreasureFlowState.finalResult) {
+    // Desafio final liberado → mostra o desafio (esconde a tela de resultado
+    // até a equipe tocar no botão "Próximo desafio").
+    if (_isFinalChallengeVisible) {
       return _buildFinalChallenge();
     }
 
@@ -1349,10 +1373,18 @@ class _TeamHomeScreenState extends State<TeamHomeScreen> {
                   ),
                   child: ElevatedButton.icon(
                     onPressed: _loadState,
-                    icon: const Icon(Icons.arrow_forward, size: 20),
-                    label: const Text(
-                      'Próximo tesouro',
-                      style: TextStyle(
+                    icon: Icon(
+                      result.finalAvailable
+                          ? Icons.emoji_events
+                          : Icons.arrow_forward,
+                      size: 20,
+                    ),
+                    label: Text(
+                      // Era o último tesouro: o próximo passo é o desafio final.
+                      result.finalAvailable
+                          ? 'Próximo desafio'
+                          : 'Próximo tesouro',
+                      style: const TextStyle(
                         fontSize: 17,
                         fontWeight: FontWeight.w700,
                       ),
