@@ -504,9 +504,9 @@ class _TeamHomeScreenState extends State<TeamHomeScreen> {
 
       if (!mounted) return;
 
-      // Tocar som de acordo com o resultado (desafio final: um som só)
+      // Som do desafio final: acerto = risada comemorativa; erro = choro.
       if (result.correct) {
-        _soundService.playAcerto();
+        _soundService.playRisada();
       } else {
         _soundService.playChoro();
       }
