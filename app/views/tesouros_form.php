@@ -262,7 +262,7 @@ $hasQr = $qrPath !== '';
                                 </div>
                             </div>
                         <?php else: ?>
-                            <span class="badge badge-warning">📍 Coordenada pendente — confirme pelo app admin</span>
+                            <span class="badge badge-warning">📍 Coordenada pendente</span>
                         <?php endif; ?>
 
                         <?php if ((int) ($treasure['active'] ?? 0) === 1): ?>
