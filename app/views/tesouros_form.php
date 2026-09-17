@@ -223,9 +223,15 @@ $hasQr = $qrPath !== '';
 
                 <!-- Coordinate status + badges (edit only) -->
                 <?php if ($isEdit): ?>
-                    <div style="margin-top: 16px; padding-top: 12px; border-top: 1px solid rgba(245, 197, 66, 0.08); display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                    <div style="margin-top: 16px; padding-top: 12px; border-top: 1px solid rgba(245, 197, 66, 0.08); display:flex; align-items:flex-start; gap:8px; flex-wrap:wrap;">
                         <?php if ($hasGps): ?>
-                            <span class="badge badge-success">📍 Coordenada confirmada (<?= e((string) $lat) ?>, <?= e((string) $lng) ?>)</span>
+                            <div class="coord-status">
+                                <span class="badge badge-success">📍 Coordenada confirmada</span>
+                                <div class="coord-values">
+                                    <div class="coord-value"><span class="coord-value-label">Lat</span><span><?= e((string) $lat) ?></span></div>
+                                    <div class="coord-value"><span class="coord-value-label">Lng</span><span><?= e((string) $lng) ?></span></div>
+                                </div>
+                            </div>
                         <?php else: ?>
                             <span class="badge badge-warning">📍 Coordenada pendente — confirme pelo app admin</span>
                         <?php endif; ?>

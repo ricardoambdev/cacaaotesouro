@@ -733,6 +733,12 @@
     padding-top: 8px;
   }
 
+  /* ---- Coordinate Status Block ---- */
+  .coord-status { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; width: 100%; }
+  .coord-values { display: flex; flex-direction: column; gap: 2px; width: 100%; }
+  .coord-value { display: flex; align-items: baseline; gap: 8px; font-family: 'Courier New', monospace; font-size: .88rem; color: #f97316; letter-spacing: .02em; word-break: break-all; }
+  .coord-value-label { font-family: Inter, sans-serif; font-size: .68rem; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; color: rgba(247,236,212,.45); min-width: 32px; flex-shrink: 0; }
+
   /* ---- Treasure Form 2-Column Layout ---- */
   .treasure-form-layout {
     display: grid;
