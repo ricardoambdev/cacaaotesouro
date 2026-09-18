@@ -207,14 +207,14 @@ $teamBlackPassword  = (string) ($teams['preta']['password']  ?? '');
             <div class="env-current-indicator">
                 <?php
                 $envLabels = [
-                    'servidor' => ['icon' => '🌐', 'label' => 'Servidor',  'badge' => 'badge-success'],
-                    'rede'     => ['icon' => '📡', 'label' => 'Rede local', 'badge' => 'badge-warning'],
-                    'local'    => ['icon' => '💻', 'label' => 'Local',     'badge' => 'badge-info'],
+                    'servidor' => ['icon' => 'public',   'label' => 'Servidor',  'badge' => 'badge-success'],
+                    'rede'     => ['icon' => 'wifi',     'label' => 'Rede local', 'badge' => 'badge-warning'],
+                    'local'    => ['icon' => 'computer', 'label' => 'Local',     'badge' => 'badge-info'],
                 ];
                 $envInfo = $envLabels[$currentEnvironment] ?? $envLabels['servidor'];
                 ?>
                 <span class="env-current-label">Ambiente ativo:</span>
-                <span class="badge <?= e($envInfo['badge']) ?>"><?= $envInfo['icon'] ?> <?= e($envInfo['label']) ?></span>
+                <span class="badge <?= e($envInfo['badge']) ?>"><?= icon((string) $envInfo['icon'], 18) ?> <?= e($envInfo['label']) ?></span>
             </div>
 
             <!-- Lista de ambientes -->
@@ -232,7 +232,7 @@ $teamBlackPassword  = (string) ($teams['preta']['password']  ?? '');
                             <div class="env-row-header">
                                 <span class="env-name">
                                     <?php if ($envBadge): ?>
-                                        <?= $envBadge['icon'] ?>
+                                        <?= icon((string) $envBadge['icon'], 16) ?>
                                     <?php endif; ?>
                                     <?= e($envName) ?>
                                 </span>
@@ -609,7 +609,7 @@ $teamBlackPassword  = (string) ($teams['preta']['password']  ?? '');
             Como a limpeza leve, mas <strong style="color:#ef5350;">também apaga os tesouros cadastrados</strong>
             (mantém data/horários, desafio final e credenciais).
         </p>
-        <form method="post" action="/limpar-jogo" data-confirm="⚠️ Isso apagará o progresso, as selfies E os tesouros cadastrados. Continuar?">
+        <form method="post" action="/limpar-jogo" data-confirm="Isso apagará o progresso, as selfies E os tesouros cadastrados. Continuar?">
             <?= csrf_field() ?>
             <button type="submit" class="btn btn-danger btn-sm" style="width:auto;">
                 Resetar o jogo (apaga tesouros)
@@ -625,7 +625,7 @@ $teamBlackPassword  = (string) ($teams['preta']['password']  ?? '');
         <p style="color:rgba(247,236,212,0.7); font-size:0.85rem; line-height:1.6; margin-bottom:14px;">
             Apaga <strong style="color:#ef5350;">tudo</strong> e restaura as configurações padrão — o sistema fica vazio.
         </p>
-        <form method="post" action="/limpar" data-confirm="⚠️ ATENÇÃO: apagará TODO o progresso, selfies, tesouros e restaurará as configurações padrão. Tem certeza?">
+        <form method="post" action="/limpar" data-confirm="ATENÇÃO: apagará TODO o progresso, selfies, tesouros e restaurará as configurações padrão. Tem certeza?">
             <?= csrf_field() ?>
             <button type="submit" class="btn btn-danger btn-sm" style="width:auto;">
                 Apagar tudo e recomeçar

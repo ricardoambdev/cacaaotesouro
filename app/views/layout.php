@@ -260,8 +260,8 @@ if (count($parts) >= 2) {
         <div class="chat-header"><?= icon('campaign', 18) ?> Mensagens para as equipes</div>
         <div class="chat-recipients">
             <button type="button" class="chat-recipient active" data-target="todos">Todos</button>
-            <button type="button" class="chat-recipient" data-target="laranja">🟠 Equipe Laranja</button>
-            <button type="button" class="chat-recipient" data-target="preta">⚫ Equipe Preta</button>
+            <button type="button" class="chat-recipient" data-target="laranja"><?= icon('circle', 12, 'chat-recipient-dot', 'style="color:#E67E22;"') ?> Equipe Laranja</button>
+            <button type="button" class="chat-recipient" data-target="preta"><?= icon('circle', 12, 'chat-recipient-dot', 'style="color:#95A5A6;"') ?> Equipe Preta</button>
         </div>
         <div class="chat-history" id="chat-history">
             <div class="chat-empty">Carregando mensagens...</div>
@@ -378,7 +378,7 @@ if (count($parts) >= 2) {
 <!-- ═══ MODAL DE CONFIRMAÇÃO (substitui o confirm() do navegador) ═══ -->
 <div id="sysmodal" class="sysmodal" role="dialog" aria-modal="true">
     <div class="sysmodal-card">
-        <div class="sysmodal-icon" id="sysmodal-icon">⚠️</div>
+        <div class="sysmodal-icon" id="sysmodal-icon"><?= icon('warning', 32) ?></div>
         <div class="sysmodal-msg" id="sysmodal-msg"></div>
         <div class="sysmodal-actions">
             <button type="button" class="sysmodal-btn cancel" id="sysmodal-cancel">Cancelar</button>

@@ -1831,6 +1831,12 @@
     opacity: 0.4;
   }
 
+  /* ---- Chat Recipient Dot (Material Icon circle) ---- */
+  .chat-recipient .chat-recipient-dot {
+    vertical-align: middle;
+    margin-right: 4px;
+  }
+
   /* ---- Aside: Section Label & Team Progress ---- */
   .aside-section-label {
     font-family: Inter, sans-serif;
