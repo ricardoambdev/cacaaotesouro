@@ -314,7 +314,20 @@
     msgEl.textContent = message || 'Tem certeza?';
     confirmBtn.textContent = options.confirmText || 'Confirmar';
     confirmBtn.className = 'sysmodal-btn confirm' + (options.danger === false ? '' : ' danger');
-    if (iconEl) iconEl.textContent = options.icon || (options.danger === false ? '❓' : '⚠️');
+
+    // Ícone do modal em Material Icons (Google). `options.icon` recebe o
+    // NOME do ícone (ex.: 'delete'); por padrão: aviso ou interrogação.
+    if (iconEl) {
+      var iconName = options.icon || (options.danger === false ? 'help' : 'warning');
+
+      iconEl.textContent = '';
+
+      var iconSpan = document.createElement('span');
+      iconSpan.className = 'material-icons size-32';
+      iconSpan.setAttribute('aria-hidden', 'true');
+      iconSpan.textContent = iconName;
+      iconEl.appendChild(iconSpan);
+    }
 
     _sysConfirmCallback = onConfirm || null;
     modal.classList.add('open');
