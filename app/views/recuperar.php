@@ -23,7 +23,7 @@ $username = (string) ($old['username'] ?? '');
 
     <?php if ($devLink !== null && $devLink !== ''): ?>
         <div class="dev-link">
-            <strong>🗺️ Ambiente de desenvolvimento</strong>
+            <strong><?= icon('map', 16) ?> Ambiente de desenvolvimento</strong>
             <a href="<?= e($devLink) ?>"><?= e($devLink) ?></a>
         </div>
     <?php endif; ?>

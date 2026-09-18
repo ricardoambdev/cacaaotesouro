@@ -561,7 +561,7 @@ $colorMap = [
                     <div class="db-form-row" style="flex-direction:column; gap:8px;">
                         <input type="text" name="message" class="db-input" placeholder="Mensagem para as equipes..." maxlength="500" required>
                         <button type="submit" class="db-btn-apply" style="width:100%; background:linear-gradient(135deg,#22C55E,#168a3a);">
-                            📣 Enviar mensagem para as equipes
+                            <?= icon('campaign', 16) ?> Enviar mensagem para as equipes
                         </button>
                     </div>
                 </form>
@@ -621,7 +621,7 @@ $colorMap = [
                     <div class="db-treasure-list">
                         <?php foreach ($foundItems as $treasure): ?>
                         <div class="db-treasure-item">
-                            <span class="db-treasure-icon">&#x1F3AF;</span>
+                            <?= icon('gps_fixed', 16, 'db-treasure-icon') ?>
                             <div class="db-treasure-info">
                                 <div class="db-treasure-name"><?= e((string)($treasure['name'] ?? '')) ?></div>
                                 <div class="db-treasure-code"><?= e((string)($treasure['code'] ?? '')) ?></div>
@@ -631,7 +631,7 @@ $colorMap = [
                             </div>
                             <?php if (!empty($treasure['selfie_path'])): ?>
                             <button type="button" class="db-btn-selfie" data-selfie="<?= e((string)$treasure['selfie_path']) ?>"
-                                    title="Abrir selfie">📷</button>
+                                    title="Abrir selfie"><?= icon('photo_camera', 16) ?></button>
                             <?php endif; ?>
                             <form method="post" action="/admin/desclassificar"
                                   data-confirm="Desclassificar este tesouro da <?= e($teamName) ?>? Os pontos serão revertidos e o tesouro não poderá ser refeito.">

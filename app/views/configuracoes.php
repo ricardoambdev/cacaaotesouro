@@ -65,22 +65,22 @@ $teamBlackPassword  = (string) ($teams['preta']['password']  ?? '');
 <!-- Tab Navigation -->
 <nav class="tab-nav" role="tablist" aria-label="Configurações">
     <button type="button" class="tab-btn active" data-tab="geral" role="tab" aria-selected="true" aria-controls="tab-geral">
-        ⚙ Geral
+        <?= icon('settings', 16) ?> Geral
     </button>
     <button type="button" class="tab-btn" data-tab="api" role="tab" aria-selected="false" aria-controls="tab-api">
-        🔗 API &amp; Desenvolvimento
+        <?= icon('link', 16) ?> API &amp; Desenvolvimento
     </button>
     <button type="button" class="tab-btn" data-tab="equipes" role="tab" aria-selected="false" aria-controls="tab-equipes">
-        👥 Usuários das Equipes
+        <?= icon('groups', 16) ?> Usuários das Equipes
     </button>
     <button type="button" class="tab-btn" data-tab="jogo" role="tab" aria-selected="false" aria-controls="tab-jogo">
-        🎮 Jogo
+        <?= icon('sports_esports', 16) ?> Jogo
     </button>
     <button type="button" class="tab-btn" data-tab="limpeza" role="tab" aria-selected="false" aria-controls="tab-limpeza">
-        🧹 Limpeza
+        <?= icon('cleaning_services', 16) ?> Limpeza
     </button>
     <button type="button" class="tab-btn" data-tab="backup" role="tab" aria-selected="false" aria-controls="tab-backup">
-        💾 Backup
+        <?= icon('backup', 16) ?> Backup
     </button>
 </nav>
 
@@ -94,10 +94,7 @@ $teamBlackPassword  = (string) ($teams['preta']['password']  ?? '');
         <!-- Card: Identidade -->
         <div class="settings-card">
             <h2 class="settings-card-title">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-                    <circle cx="12" cy="7" r="4"/>
-                </svg>
+                <?= icon('person', 20) ?>
                 Identidade
             </h2>
 
@@ -117,10 +114,7 @@ $teamBlackPassword  = (string) ($teams['preta']['password']  ?? '');
         <!-- Card: Preferências -->
         <div class="settings-card">
             <h2 class="settings-card-title">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <circle cx="12" cy="12" r="3"/>
-                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
-                </svg>
+                <?= icon('tune', 20) ?>
                 Preferências
             </h2>
 
@@ -156,10 +150,7 @@ $teamBlackPassword  = (string) ($teams['preta']['password']  ?? '');
         <!-- Card: Contato -->
         <div class="settings-card">
             <h2 class="settings-card-title">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
-                    <polyline points="22,6 12,13 2,6"/>
-                </svg>
+                <?= icon('mail', 20) ?>
                 Contato
             </h2>
 
@@ -177,9 +168,7 @@ $teamBlackPassword  = (string) ($teams['preta']['password']  ?? '');
         <!-- Card: API do aplicativo -->
         <div class="settings-card">
             <h2 class="settings-card-title">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/>
-                </svg>
+                <?= icon('code', 20) ?>
                 API do aplicativo
             </h2>
 
@@ -210,11 +199,7 @@ $teamBlackPassword  = (string) ($teams['preta']['password']  ?? '');
         <!-- Painel: Ambiente (só aparece quando devMode está ativo no servidor) -->
         <div class="dev-panel">
             <h2 class="settings-card-title">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
-                    <line x1="8" y1="21" x2="16" y2="21"/>
-                    <line x1="12" y1="17" x2="12" y2="21"/>
-                </svg>
+                <?= icon('computer', 20) ?>
                 Ambiente
             </h2>
 
@@ -262,7 +247,7 @@ $teamBlackPassword  = (string) ($teams['preta']['password']  ?? '');
                                 <div class="env-url-row">
                                     <span class="api-url-box"><span class="url-text"><?= e($envUrl) ?></span></span>
                                     <button type="button" class="btn btn-primary btn-auto btn-sm btn-copy" data-copy="<?= e($envUrl) ?>">
-                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                                        <?= icon('content_copy', 14) ?>
                                         Copiar
                                     </button>
                                 </div>
@@ -296,7 +281,7 @@ $teamBlackPassword  = (string) ($teams['preta']['password']  ?? '');
                     <?php if (!empty($apiUrl)): ?>
                         <span class="api-url-box"><span class="url-text"><?= e($apiUrl) ?></span></span>
                         <button type="button" class="btn btn-primary btn-auto btn-sm btn-copy" data-copy="<?= e($apiUrl) ?>">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                            <?= icon('content_copy', 14) ?>
                             Copiar
                         </button>
                     <?php else: ?>
@@ -307,7 +292,7 @@ $teamBlackPassword  = (string) ($teams['preta']['password']  ?? '');
 
             <?php if ($hasApk): ?>
             <div style="margin-top:18px; padding:18px; border:1px solid rgba(34,197,94,0.3); border-radius:14px; background:rgba(34,197,94,0.05);">
-                <div style="font-weight:700; color:#22C55E; margin-bottom:8px; font-size:.85rem; text-transform:uppercase; letter-spacing:.06em;">📱 Instalar o aplicativo</div>
+                <div style="font-weight:700; color:#22C55E; margin-bottom:8px; font-size:.85rem; text-transform:uppercase; letter-spacing:.06em;"><?= icon('smartphone', 16) ?> Instalar o aplicativo</div>
                 <p style="font-size:.85rem; color:rgba(247,236,212,.75); margin-bottom:14px;">
                     Link para baixar o APK (servidor de produção):
                     <a href="<?= e($apkUrl) ?>" target="_blank" rel="noopener" style="color:#22C55E; font-weight:600; word-break:break-all;"><?= e($apkUrl) ?></a>
@@ -366,10 +351,7 @@ $teamBlackPassword  = (string) ($teams['preta']['password']  ?? '');
         <!-- Card: Equipe Laranja -->
         <div class="settings-card team-card team-laranja">
             <h2 class="settings-card-title">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <circle cx="12" cy="12" r="10"/>
-                    <path d="M12 6v6l4 2"/>
-                </svg>
+                <?= icon('schedule', 20) ?>
                 Equipe Laranja
             </h2>
 
@@ -390,8 +372,8 @@ $teamBlackPassword  = (string) ($teams['preta']['password']  ?? '');
                 <div class="password-field">
                     <input type="password" id="teamOrangePassword" name="teamOrangePassword" class="form-input" placeholder="Senha atual da equipe (edite se quiser trocar)" autocomplete="new-password" value="<?= e($teamOrangePassword) ?>">
                     <button type="button" class="password-toggle" data-toggle-password="teamOrangePassword" aria-label="Mostrar/ocultar senha">
-                        <svg class="icon-eye-open" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                        <svg class="icon-eye-closed" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none;"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+                        <?= icon('visibility', 20, 'icon-eye-open') ?>
+                        <?= icon('visibility_off', 20, 'icon-eye-closed', 'style="display:none;"') ?>
                     </button>
                 </div>
                 <div class="error-inline"></div>
@@ -401,10 +383,7 @@ $teamBlackPassword  = (string) ($teams['preta']['password']  ?? '');
         <!-- Card: Equipe Preta -->
         <div class="settings-card team-card team-preta">
             <h2 class="settings-card-title">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <circle cx="12" cy="12" r="10"/>
-                    <path d="M12 6v6l4 2"/>
-                </svg>
+                <?= icon('schedule', 20) ?>
                 Equipe Preta
             </h2>
 
@@ -425,8 +404,8 @@ $teamBlackPassword  = (string) ($teams['preta']['password']  ?? '');
                 <div class="password-field">
                     <input type="password" id="teamBlackPassword" name="teamBlackPassword" class="form-input" placeholder="Senha atual da equipe (edite se quiser trocar)" autocomplete="new-password" value="<?= e($teamBlackPassword) ?>">
                     <button type="button" class="password-toggle" data-toggle-password="teamBlackPassword" aria-label="Mostrar/ocultar senha">
-                        <svg class="icon-eye-open" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                        <svg class="icon-eye-closed" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none;"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+                        <?= icon('visibility', 20, 'icon-eye-open') ?>
+                        <?= icon('visibility_off', 20, 'icon-eye-closed', 'style="display:none;"') ?>
                     </button>
                 </div>
                 <div class="error-inline"></div>
@@ -449,10 +428,7 @@ $teamBlackPassword  = (string) ($teams['preta']['password']  ?? '');
         <!-- Card: Regras da partida -->
         <div class="settings-card">
             <h2 class="settings-card-title">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <circle cx="12" cy="12" r="10"/>
-                    <path d="M12 6v6l4 2"/>
-                </svg>
+                <?= icon('schedule', 20) ?>
                 Regras da partida
             </h2>
 
@@ -478,10 +454,7 @@ $teamBlackPassword  = (string) ($teams['preta']['password']  ?? '');
         <!-- Card: Admin da API -->
         <div class="settings-card">
             <h2 class="settings-card-title">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-                    <circle cx="12" cy="7" r="4"/>
-                </svg>
+                <?= icon('person', 20) ?>
                 Admin do aplicativo (API)
             </h2>
 
@@ -499,8 +472,8 @@ $teamBlackPassword  = (string) ($teams['preta']['password']  ?? '');
                     <input type="password" id="adminPassword" name="adminPassword" class="form-input"
                            placeholder="Deixe em branco para manter a atual" autocomplete="new-password">
                     <button type="button" class="password-toggle" data-toggle-password="adminPassword" aria-label="Mostrar/ocultar senha">
-                        <svg class="icon-eye-open" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                        <svg class="icon-eye-closed" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none;"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+                        <?= icon('visibility', 20, 'icon-eye-open') ?>
+                        <?= icon('visibility_off', 20, 'icon-eye-closed', 'style="display:none;"') ?>
                     </button>
                 </div>
                 <div class="error-inline"></div>
@@ -512,11 +485,7 @@ $teamBlackPassword  = (string) ($teams['preta']['password']  ?? '');
 
     <div class="settings-actions">
         <button type="submit" class="btn btn-primary" style="width: auto;">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
-                <polyline points="17 21 17 13 7 13 7 21"/>
-                <polyline points="7 3 7 8 15 8"/>
-            </svg>
+            <?= icon('save', 18) ?>
             Salvar alterações
         </button>
         <a href="/tesouros" class="btn btn-ghost btn-auto" style="margin-left:12px;">Cancelar</a>
@@ -533,9 +502,7 @@ $teamBlackPassword  = (string) ($teams['preta']['password']  ?? '');
     <!-- ── 0. INICIAR O JOGO ──────────────────────────────── -->
     <div class="settings-card" style="border:1px solid rgba(249,115,22,0.5); background:rgba(249,115,22,0.06);">
         <h2 class="settings-card-title" style="color:#F97316;">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <polygon points="5 3 19 12 5 21 5 3"/>
-            </svg>
+            <?= icon('play_arrow', 20) ?>
             Iniciar o jogo
         </h2>
         <p style="color:rgba(247,236,212,0.7); font-size:0.9rem; line-height:1.7; margin-bottom:16px;">
@@ -545,19 +512,17 @@ $teamBlackPassword  = (string) ($teams['preta']['password']  ?? '');
             — não é preciso reconfigurar nada.
         </p>
         <ul style="color:rgba(247,236,212,0.65); font-size:0.88rem; line-height:1.8; margin:0 0 20px; padding-left:18px;">
-            <li>🎯 Cada equipe volta a <strong>100 pontos</strong></li>
-            <li>🗑️ Progresso zerado — <strong>nenhum tesouro encontrado</strong></li>
-            <li>🗑️ Selfies, localizações e mensagens apagadas</li>
-            <li>📱 Equipes podem entrar novamente nos aparelhos</li>
-            <li>✅ Tesouros cadastrados, <strong>ativos e com coordenadas confirmadas</strong></li>
-            <li>✅ História e desafio final <strong>mantidos</strong></li>
+            <li><?= icon('gps_fixed', 14) ?> Cada equipe volta a <strong>100 pontos</strong></li>
+            <li><?= icon('delete', 14) ?> Progresso zerado — <strong>nenhum tesouro encontrado</strong></li>
+            <li><?= icon('delete', 14) ?> Selfies, localizações e mensagens apagadas</li>
+            <li><?= icon('smartphone', 14) ?> Equipes podem entrar novamente nos aparelhos</li>
+            <li><?= icon('check_circle', 14) ?> Tesouros cadastrados, <strong>ativos e com coordenadas confirmadas</strong></li>
+            <li><?= icon('check_circle', 14) ?> História e desafio final <strong>mantidos</strong></li>
         </ul>
         <form method="post" action="/iniciar-jogo" data-confirm="Iniciar o jogo? Cada equipe voltará para 100 pontos e TODO o progresso será apagado (tesouros encontrados, selfies, pontos, localizações e mensagens). Os tesouros continuam ativos com as coordenadas confirmadas. Continuar?">
             <?= csrf_field() ?>
             <button type="submit" class="btn btn-primary" style="width:auto; background:linear-gradient(135deg,#F97316,#c2410c);">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <polygon points="5 3 19 12 5 21 5 3"/>
-                </svg>
+                <?= icon('play_arrow', 18) ?>
                 Iniciar o jogo
             </button>
         </form>
@@ -566,10 +531,7 @@ $teamBlackPassword  = (string) ($teams['preta']['password']  ?? '');
     <!-- ── 1. LIMPEZA LEVE ────────────────────────────────── -->
     <div class="settings-card" style="margin-top:20px; border:1px solid rgba(34,197,94,0.4); background:rgba(34,197,94,0.05);">
         <h2 class="settings-card-title" style="color:#22C55E;">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
-                <polyline points="22 4 12 14.01 9 11.01"/>
-            </svg>
+            <?= icon('check_circle', 20) ?>
             Limpar o jogo (reconfirmar coordenadas)
         </h2>
         <p style="color:rgba(247,236,212,0.7); font-size:0.9rem; line-height:1.7; margin-bottom:16px;">
@@ -578,20 +540,17 @@ $teamBlackPassword  = (string) ($teams['preta']['password']  ?? '');
             Após limpar, os tesouros <strong style="color:#22C55E;">precisarão ter as coordenadas confirmadas novamente</strong> pelo app admin.
         </p>
         <ul style="color:rgba(247,236,212,0.65); font-size:0.88rem; line-height:1.8; margin:0 0 20px; padding-left:18px;">
-            <li>✅ Tesouros cadastrados e QR codes <strong>mantidos</strong></li>
-            <li>✅ História e desafio final <strong>mantidos</strong></li>
-            <li>🗑️ Tesouros completados e selfies apagados</li>
-            <li>🗑️ Pontos, localizações e mensagens apagados</li>
-            <li>↩️ Equipes voltam a 100 pontos, sem progresso</li>
-            <li>📍 Tesouros ficam <strong>inativos</strong> — confirme as coordenadas no local pelo app admin</li>
+            <li><?= icon('check_circle', 14) ?> Tesouros cadastrados e QR codes <strong>mantidos</strong></li>
+            <li><?= icon('check_circle', 14) ?> História e desafio final <strong>mantidos</strong></li>
+            <li><?= icon('delete', 14) ?> Tesouros completados e selfies apagados</li>
+            <li><?= icon('delete', 14) ?> Pontos, localizações e mensagens apagados</li>
+            <li><?= icon('replay', 14) ?> Equipes voltam a 100 pontos, sem progresso</li>
+            <li><?= icon('place', 14) ?> Tesouros ficam <strong>inativos</strong> — confirme as coordenadas no local pelo app admin</li>
         </ul>
         <form method="post" action="/limpar/leve" data-confirm="Limpar o jogo? Os tesouros completados e selfies serão apagados. Tesouros, história e desafio final serão mantidos.">
             <?= csrf_field() ?>
             <button type="submit" class="btn btn-primary" style="width:auto; background:linear-gradient(135deg,#22C55E,#168a3a);">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
-                    <polyline points="22 4 12 14.01 9 11.01"/>
-                </svg>
+                <?= icon('check_circle', 18) ?>
                 Limpar o jogo
             </button>
         </form>
@@ -605,10 +564,7 @@ $teamBlackPassword  = (string) ($teams['preta']['password']  ?? '');
     <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
         <div class="settings-card" style="margin:0;">
             <h2 class="settings-card-title" style="color:#F97316; font-size:1rem;">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                    <circle cx="12" cy="12" r="3"/>
-                </svg>
+                <?= icon('visibility', 18) ?>
                 Reexibir história
             </h2>
             <p style="color:rgba(247,236,212,0.6); font-size:0.82rem; line-height:1.6; margin-bottom:14px;">
@@ -624,11 +580,7 @@ $teamBlackPassword  = (string) ($teams['preta']['password']  ?? '');
 
         <div class="settings-card" style="margin:0;">
             <h2 class="settings-card-title" style="color:#27ae60; font-size:1rem;">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <circle cx="12" cy="12" r="10"/>
-                    <line x1="12" y1="8" x2="12" y2="16"/>
-                    <line x1="8" y1="12" x2="16" y2="12"/>
-                </svg>
+                <?= icon('add_circle', 18) ?>
                 Criar 5 tesouros
             </h2>
             <p style="color:rgba(247,236,212,0.6); font-size:0.82rem; line-height:1.6; margin-bottom:14px;">
@@ -650,10 +602,7 @@ $teamBlackPassword  = (string) ($teams['preta']['password']  ?? '');
 
     <div class="settings-card" style="border:1px solid rgba(239,68,68,0.35); background:rgba(239,68,68,0.05);">
         <h2 class="settings-card-title" style="color:#ef5350; font-size:1.05rem;">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M3 6h18"/>
-                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
-            </svg>
+            <?= icon('delete', 18) ?>
             Resetar somente o jogo
         </h2>
         <p style="color:rgba(247,236,212,0.7); font-size:0.85rem; line-height:1.6; margin-bottom:14px;">
@@ -670,10 +619,7 @@ $teamBlackPassword  = (string) ($teams['preta']['password']  ?? '');
 
     <div class="settings-card" style="border:1px solid rgba(239,68,68,0.5); background:rgba(239,68,68,0.08); margin-top:16px;">
         <h2 class="settings-card-title" style="color:#ef5350; font-size:1.05rem;">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M3 6h18"/>
-                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
-            </svg>
+            <?= icon('delete_forever', 18) ?>
             Apagar tudo e recomeçar
         </h2>
         <p style="color:rgba(247,236,212,0.7); font-size:0.85rem; line-height:1.6; margin-bottom:14px;">
@@ -699,11 +645,7 @@ $teamBlackPassword  = (string) ($teams['preta']['password']  ?? '');
         <!-- Exportar -->
         <div class="settings-card" style="margin:0;">
             <h2 class="settings-card-title" style="color:#27ae60;">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                    <polyline points="7 10 12 15 17 10"/>
-                    <line x1="12" y1="15" x2="12" y2="3"/>
-                </svg>
+                <?= icon('download', 18) ?>
                 Baixar tesouros (JSON)
             </h2>
             <p style="color:rgba(247,236,212,0.6); font-size:0.85rem; line-height:1.6; margin-bottom:14px;">
@@ -711,7 +653,7 @@ $teamBlackPassword  = (string) ($teams['preta']['password']  ?? '');
                 (código, nome, descrição, dica, charadas e respostas). Use para guardar ou transferir para outro sistema.
             </p>
             <a href="/admin/backup" class="btn btn-primary btn-auto btn-sm" style="background:linear-gradient(135deg,#27ae60,#1e8a4c);">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                <?= icon('download', 16) ?>
                 Baixar backup JSON
             </a>
         </div>
@@ -719,11 +661,7 @@ $teamBlackPassword  = (string) ($teams['preta']['password']  ?? '');
         <!-- Importar -->
         <div class="settings-card" style="margin:0;">
             <h2 class="settings-card-title" style="color:#F97316;">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                    <polyline points="17 8 12 3 7 8"/>
-                    <line x1="12" y1="3" x2="12" y2="15"/>
-                </svg>
+                <?= icon('upload', 18) ?>
                 Importar tesouros (JSON)
             </h2>
             <p style="color:rgba(247,236,212,0.6); font-size:0.85rem; line-height:1.6; margin-bottom:14px;">
@@ -747,11 +685,7 @@ $teamBlackPassword  = (string) ($teams['preta']['password']  ?? '');
 
     <div class="settings-card" style="margin-top:20px; border:1px solid rgba(247,236,212,0.12);">
         <h2 class="settings-card-title" style="color:rgba(247,236,212,0.8); font-size:1rem;">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="12" cy="12" r="10"/>
-                <line x1="12" y1="16" x2="12" y2="12"/>
-                <line x1="12" y1="8" x2="12.01" y2="8"/>
-            </svg>
+            <?= icon('info', 18) ?>
             Formato do JSON
         </h2>
         <pre style="background:rgba(5,11,18,.6); border:1px solid rgba(247,236,212,0.12); border-radius:8px; padding:14px; font-size:.78rem; color:rgba(247,236,212,.75); overflow-x:auto; margin:0;">

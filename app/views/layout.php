@@ -186,72 +186,41 @@ if (count($parts) >= 2) {
 
             <nav class="sidebar-nav">
                 <a href="/" class="sidebar-link <?= $active === 'painel' ? 'active' : '' ?>">
-                    <svg class="sidebar-link-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <rect x="3" y="3" width="7" height="7" rx="1"/>
-                        <rect x="14" y="3" width="7" height="7" rx="1"/>
-                        <rect x="3" y="14" width="7" height="7" rx="1"/>
-                        <rect x="14" y="14" width="7" height="7" rx="1"/>
-                    </svg>
+                    <?= icon('dashboard', 20, 'sidebar-link-icon') ?>
                     Painel
                 </a>
 
                 <a href="/tesouros" class="sidebar-link <?= $active === 'tesouros' ? 'active' : '' ?>">
-                    <svg class="sidebar-link-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M4 19V5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v14"/>
-                        <path d="M4 19l5-5"/>
-                        <path d="M20 19l-5-5"/>
-                        <line x1="9" y1="8" x2="9" y2="8.01"/>
-                        <line x1="15" y1="8" x2="15" y2="8.01"/>
-                        <line x1="9" y1="14" x2="15" y2="14"/>
-                        <line x1="12" y1="11" x2="12" y2="17"/>
-                    </svg>
+                    <?= icon('map', 20, 'sidebar-link-icon') ?>
                     Tesouros
                 </a>
 
                 <a href="/jogo" class="sidebar-link <?= $active === 'jogo' ? 'active' : '' ?>">
-                    <svg class="sidebar-link-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
-                        <polyline points="22 4 12 14.01 9 11.01"/>
-                    </svg>
+                    <?= icon('check_circle', 20, 'sidebar-link-icon') ?>
                     Jogo
                 </a>
 
                 <a href="/historia" class="sidebar-link <?= $active === 'historia' ? 'active' : '' ?>">
-                    <svg class="sidebar-link-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M4 19V5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v14"/>
-                        <path d="M4 19l5-5"/>
-                        <path d="M20 19l-5-5"/>
-                        <line x1="9" y1="8" x2="15" y2="8"/>
-                    </svg>
+                    <?= icon('menu_book', 20, 'sidebar-link-icon') ?>
                     História
                 </a>
 
                 <a href="/desafio-final" class="sidebar-link <?= $active === 'desafio-final' ? 'active' : '' ?>">
-                    <svg class="sidebar-link-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
-                        <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-                    </svg>
+                    <?= icon('lock', 20, 'sidebar-link-icon') ?>
                     Desafio Final
                 </a>
             </nav>
 
             <div class="sidebar-footer">
                 <a href="/configuracoes" class="sidebar-link <?= $active === 'configuracoes' ? 'active' : '' ?>">
-                    <svg class="sidebar-link-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <circle cx="12" cy="12" r="3"/>
-                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
-                    </svg>
+                    <?= icon('settings', 20, 'sidebar-link-icon') ?>
                     Configurações
                 </a>
 
                 <form method="post" action="/logout" class="sidebar-logout-form">
                     <?= csrf_field() ?>
                     <button type="submit" class="sidebar-logout-btn">
-                        <svg class="sidebar-logout-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-                            <polyline points="16 17 21 12 16 7"/>
-                            <line x1="21" y1="12" x2="9" y2="12"/>
-                        </svg>
+                        <?= icon('logout', 20, 'sidebar-logout-icon') ?>
                         Sair
                     </button>
                 </form>
@@ -288,7 +257,7 @@ if (count($parts) >= 2) {
 
     <!-- ═══ CHAT (mensagens para as equipes) ═══ -->
     <div id="chat-panel" class="chat-panel" style="display:none;">
-        <div class="chat-header">📣 Mensagens para as equipes</div>
+        <div class="chat-header"><?= icon('campaign', 18) ?> Mensagens para as equipes</div>
         <div class="chat-recipients">
             <button type="button" class="chat-recipient active" data-target="todos">Todos</button>
             <button type="button" class="chat-recipient" data-target="laranja">🟠 Equipe Laranja</button>

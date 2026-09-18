@@ -40,9 +40,9 @@ foreach ($teams as $t) {
     <div class="game-stat-card">
         <div class="game-stat-value">
             <?php if ($gameActive): ?>
-                <span style="color: #5fd99f;">▶</span>
+                <?= icon('play_arrow', 28) ?>
             <?php else: ?>
-                <span style="color: #F97316;">⏸</span>
+                <?= icon('pause', 28) ?>
             <?php endif; ?>
         </div>
         <div class="game-stat-label"><?= $gameActive ? 'Partida ativa' : 'Pausada' ?></div>
@@ -54,13 +54,13 @@ foreach ($teams as $t) {
     </div>
 
     <div class="game-stat-card">
-        <div class="game-stat-value"><?= $order === 'aleatorio' ? '🎲' : '📋' ?></div>
+        <div class="game-stat-value"><?= $order === 'aleatorio' ? icon('casino', 28) : icon('list', 28) ?></div>
         <div class="game-stat-label">Ordem <?= $order === 'aleatorio' ? 'aleatória' : 'estabelecida' ?></div>
     </div>
 
     <?php if ($winner !== ''): ?>
     <div class="game-stat-card">
-        <div class="game-stat-value">🏆</div>
+        <div class="game-stat-value"><?= icon('emoji_events', 28) ?></div>
         <div class="game-stat-label"><?= e($winner) ?></div>
     </div>
     <?php endif; ?>
@@ -69,7 +69,7 @@ foreach ($teams as $t) {
 <?php if ($winner !== ''): ?>
     <div class="settings-card" style="border-left: 4px solid #27ae60;">
         <div style="display: flex; align-items: center; gap: 12px;">
-            <span style="font-size: 2rem;">🏆</span>
+            <?= icon('emoji_events', 32) ?>
             <div>
                 <h3 style="margin: 0; font-family: 'Pirata One', 'Georgia', cursive; color: #F97316; font-size: 1.2rem;">
                     Equipe vencedora: <?= e($winner) ?>
@@ -85,12 +85,7 @@ foreach ($teams as $t) {
 <!-- Team Cards -->
 <div class="settings-card">
     <h2 class="settings-card-title">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-            <circle cx="9" cy="7" r="4"/>
-            <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
-            <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-        </svg>
+        <?= icon('groups', 20) ?>
         Equipes
     </h2>
 
@@ -118,13 +113,13 @@ foreach ($teams as $t) {
                                 </span>
                                 <?= e((string) ($team['name'] ?? '')) ?>
                                 <?php if ($isWinner): ?>
-                                    <span class="badge badge-success" style="margin-left: 6px;">🏆 Vencedora</span>
+                                    <span class="badge badge-success" style="margin-left: 6px;"><?= icon('emoji_events', 14) ?> Vencedora</span>
                                 <?php endif; ?>
                             </h3>
                             <div class="treasure-card-badges">
-                                <span class="badge badge-info">⭐ <?= $points ?> pontos</span>
+                                <span class="badge badge-info"><?= icon('stars', 14) ?> <?= $points ?> pontos</span>
                                 <?php if ($isFinished): ?>
-                                    <span class="badge badge-success">✔ Terminou</span>
+                                    <span class="badge badge-success"><?= icon('check', 14) ?> Terminou</span>
                                 <?php else: ?>
                                     <span class="badge badge-warning">Em jogo</span>
                                 <?php endif; ?>

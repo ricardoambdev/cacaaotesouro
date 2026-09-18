@@ -18,12 +18,7 @@ $historyContent = $historyContent ?? '';
 
     <div class="settings-card">
         <h2 class="settings-card-title">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M4 19V5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v14"/>
-                <path d="M4 19l5-5"/>
-                <path d="M20 19l-5-5"/>
-                <line x1="9" y1="8" x2="15" y2="8"/>
-            </svg>
+            <?= icon('menu_book', 20) ?>
             Conteúdo da história
         </h2>
 
@@ -46,10 +41,7 @@ $historyContent = $historyContent ?? '';
 <?php if (!empty($historyContent)): ?>
     <div class="settings-card" style="margin-top: 24px;">
         <h2 class="settings-card-title">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                <circle cx="12" cy="12" r="3"/>
-            </svg>
+            <?= icon('visibility', 20) ?>
             Pré-visualização
         </h2>
         <div class="history-preview">

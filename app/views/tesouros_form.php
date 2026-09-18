@@ -60,11 +60,7 @@ $hasQr = $qrPath !== '';
             <!-- Card: Identificação -->
             <div class="settings-card">
                 <h2 class="settings-card-title">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
-                        <line x1="3" y1="9" x2="21" y2="9"/>
-                        <line x1="9" y1="21" x2="9" y2="9"/>
-                    </svg>
+                    <?= icon('badge', 20) ?>
                     Identificação
                 </h2>
 
@@ -100,10 +96,7 @@ $hasQr = $qrPath !== '';
             <!-- Card: Charada 1 -->
             <div class="settings-card">
                 <h2 class="settings-card-title">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <polyline points="4 17 10 11 4 5"/>
-                        <line x1="12" y1="19" x2="20" y2="19"/>
-                    </svg>
+                    <?= icon('terminal', 20) ?>
                     Charada 1
                 </h2>
 
@@ -137,10 +130,7 @@ $hasQr = $qrPath !== '';
             <!-- Card: Charada 2 -->
             <div class="settings-card">
                 <h2 class="settings-card-title">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <polyline points="4 17 10 11 4 5"/>
-                        <line x1="12" y1="19" x2="20" y2="19"/>
-                    </svg>
+                    <?= icon('terminal', 20) ?>
                     Charada 2
                 </h2>
 
@@ -176,12 +166,7 @@ $hasQr = $qrPath !== '';
             <div class="treasure-aside-card">
                 <!-- QR code (somente leitura) -->
                 <h2 class="settings-card-title">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <rect x="3" y="3" width="7" height="7" rx="1"/>
-                        <rect x="14" y="3" width="7" height="7" rx="1"/>
-                        <rect x="3" y="14" width="7" height="7" rx="1"/>
-                        <rect x="14" y="14" width="7" height="7" rx="1"/>
-                    </svg>
+                    <?= icon('qr_code_2', 20) ?>
                     QR code
                 </h2>
 
@@ -199,11 +184,7 @@ $hasQr = $qrPath !== '';
                                 <a href="<?= e($qrPath) ?>"
                                    download="QR_<?= e((string) ($treasure['code'] ?? 'tesouro')) ?>.svg"
                                    class="download-btn">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                                        <polyline points="7 10 12 15 17 10"/>
-                                        <line x1="12" y1="15" x2="12" y2="3"/>
-                                    </svg>
+                                    <?= icon('download', 14) ?>
                                     Baixar QR (SVG)
                                 </a>
                             </div>
@@ -211,12 +192,7 @@ $hasQr = $qrPath !== '';
                     </div>
                 <?php else: ?>
                     <div class="qr-thumb qr-thumb-placeholder" style="margin-bottom: 12px;">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <rect x="3" y="3" width="7" height="7" rx="1"/>
-                            <rect x="14" y="3" width="7" height="7" rx="1"/>
-                            <rect x="3" y="14" width="7" height="7" rx="1"/>
-                            <rect x="14" y="14" width="7" height="7" rx="1"/>
-                        </svg>
+                        <?= icon('qr_code_2', 36) ?>
                     </div>
                     <p style="margin: 0; font-size: 14px; opacity: .85;">O código do QR será gerado automaticamente ao salvar.</p>
                 <?php endif; ?>
@@ -240,7 +216,7 @@ $hasQr = $qrPath !== '';
                                     <span class="team-marker-dot"></span>
                                     <span class="team-marker-label"><?= e($color) ?></span>
                                     <?php if ($found): ?>
-                                        <span class="team-marker-status">✔ <?= e($foundAt) ?></span>
+                                        <span class="team-marker-status"><?= icon('check', 14) ?> <?= e($foundAt) ?></span>
                                     <?php else: ?>
                                         <span class="team-marker-status">Não encontrado</span>
                                     <?php endif; ?>
@@ -255,18 +231,18 @@ $hasQr = $qrPath !== '';
                     <div style="margin-top: 16px; padding-top: 12px; border-top: 1px solid rgba(245, 197, 66, 0.08); display:flex; align-items:flex-start; gap:8px; flex-wrap:wrap;">
                         <?php if ($hasGps): ?>
                             <div class="coord-status">
-                                <span class="badge badge-success">📍 Coordenada confirmada</span>
+                                <span class="badge badge-success"><?= icon('place', 14) ?> Coordenada confirmada</span>
                                 <div class="coord-values">
                                     <div class="coord-value"><span class="coord-value-label">Lat</span><span><?= e((string) $lat) ?></span></div>
                                     <div class="coord-value"><span class="coord-value-label">Lng</span><span><?= e((string) $lng) ?></span></div>
                                 </div>
                             </div>
                         <?php else: ?>
-                            <span class="badge badge-warning">📍 Coordenada pendente</span>
+                            <span class="badge badge-warning"><?= icon('place', 14) ?> Coordenada pendente</span>
                         <?php endif; ?>
 
                         <?php if ((int) ($treasure['active'] ?? 0) === 1): ?>
-                            <span class="badge badge-success">✔ Ativo</span>
+                            <span class="badge badge-success"><?= icon('check', 14) ?> Ativo</span>
                         <?php else: ?>
                             <span class="badge badge-warning">Inativo</span>
                         <?php endif; ?>
@@ -276,10 +252,7 @@ $hasQr = $qrPath !== '';
                                     data-confirm-modal="Zerar a coordenada deste tesouro?&#10;Ele será DESATIVADO e precisará ser confirmado novamente pelo app admin no local."
                                     class="btn btn-sm btn-auto"
                                     style="width:auto; background:linear-gradient(135deg,#c0392b,#8e2a20); color:#fff; padding:6px 12px; font-size:.78rem;">
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/>
-                                    <line x1="9" y1="6" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="18"/>
-                                </svg>
+                                <?= icon('delete', 14) ?>
                                 Zerar coordenada
                             </button>
                         <?php endif; ?>
@@ -289,11 +262,7 @@ $hasQr = $qrPath !== '';
                 <!-- Salvar -->
                 <div style="margin-top: 20px;">
                     <button type="submit" class="btn btn-primary">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
-                            <polyline points="17 21 17 13 7 13 7 21"/>
-                            <polyline points="7 3 7 8 15 8"/>
-                        </svg>
+                        <?= icon('save', 18) ?>
                         Salvar
                     </button>
                 </div>

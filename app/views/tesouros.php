@@ -23,17 +23,14 @@ $isRandomOrder = ($game['treasureOrder'] ?? 'estabelecida') === 'aleatorio';
         <p class="page-subtitle">Gerencie os tesouros escondidos do jogo do Quico.</p>
     </div>
     <a href="/tesouros/novo" class="btn btn-primary" style="width:auto;">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 6px;">
-            <line x1="12" y1="5" x2="12" y2="19"/>
-            <line x1="5" y1="12" x2="19" y2="12"/>
-        </svg>
+        <?= icon('add', 18) ?>
         Cadastrar tesouro
     </a>
 </div>
 
 <?php if (!empty($game['winner'])): ?>
     <div class="badge badge-success" style="margin-bottom: 16px; display: inline-block;">
-        🏆 Vencedora: <?= e((string) $game['winner']['name']) ?>
+        <?= icon('emoji_events', 16) ?> Vencedora: <?= e((string) $game['winner']['name']) ?>
     </div>
 <?php endif; ?>
 
@@ -53,11 +50,7 @@ $isRandomOrder = ($game['treasureOrder'] ?? 'estabelecida') === 'aleatorio';
 
     <?php if ($isRandomOrder): ?>
         <div class="drag-disabled-notice">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="12" cy="12" r="10"/>
-                <line x1="12" y1="8" x2="12" y2="12"/>
-                <line x1="12" y1="16" x2="12.01" y2="16"/>
-            </svg>
+            <?= icon('info', 16) ?>
             A ordem é <strong style="margin: 0 4px;">aleatória</strong> — os tesouros são sorteados por equipe. Arrastar está desabilitado.
         </div>
     <?php endif; ?>
@@ -85,11 +78,7 @@ $isRandomOrder = ($game['treasureOrder'] ?? 'estabelecida') === 'aleatorio';
                         <a href="<?= e((string) $treasure['qr_svg_path']) ?>"
                            download="QR_<?= e((string) ($treasure['code'] ?? 'tesouro')) ?>.svg"
                            class="download-btn">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                                <polyline points="7 10 12 15 17 10"/>
-                                <line x1="12" y1="15" x2="12" y2="3"/>
-                            </svg>
+                            <?= icon('download', 14) ?>
                             Baixar QR
                         </a>
                     </div>
@@ -105,15 +94,15 @@ $isRandomOrder = ($game['treasureOrder'] ?? 'estabelecida') === 'aleatorio';
 
                         <div class="treasure-card-badges">
                             <?php if ($isActive): ?>
-                                <span class="badge badge-success">✔ Ativo</span>
+                                <span class="badge badge-success"><?= icon('check', 14) ?> Ativo</span>
                             <?php else: ?>
                                 <span class="badge badge-warning">Inativo</span>
                             <?php endif; ?>
 
                             <?php if ($hasGps): ?>
-                                <span class="badge badge-success">📍 <?= e((string) $lat) ?>, <?= e((string) $lng) ?></span>
+                                <span class="badge badge-success"><?= icon('place', 14) ?> <?= e((string) $lat) ?>, <?= e((string) $lng) ?></span>
                             <?php else: ?>
-                                <span class="badge badge-warning">📍 Coordenada pendente</span>
+                                <span class="badge badge-warning"><?= icon('place', 14) ?> Coordenada pendente</span>
                             <?php endif; ?>
                         </div>
                     </div>
@@ -149,9 +138,9 @@ $isRandomOrder = ($game['treasureOrder'] ?? 'estabelecida') === 'aleatorio';
                                 <span class="team-marker-dot"></span>
                                 <span class="team-marker-label"><?= e($color) ?></span>
                                 <?php if ($found): ?>
-                                    <span class="team-marker-status">✔ <?= e($foundAt) ?> · +<?= $earned ?> pts</span>
+                                    <span class="team-marker-status"><?= icon('check', 14) ?> <?= e($foundAt) ?> · +<?= $earned ?> pts</span>
                                     <?php if ($isFirst): ?>
-                                        <span class="badge badge-success" title="Primeira equipe a encontrar este tesouro!">🚀 1º +10</span>
+                                        <span class="badge badge-success" title="Primeira equipe a encontrar este tesouro!"><?= icon('rocket_launch', 14) ?> 1º +10</span>
                                     <?php endif; ?>
                                 <?php else: ?>
                                     <span class="team-marker-status">Não encontrado</span>

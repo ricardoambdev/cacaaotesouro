@@ -495,7 +495,14 @@
     opacity: 0.7;
   }
 
-  .sidebar-link.active .sidebar-link-icon {
+  .sidebar-link .material-icons.sidebar-link-icon {
+    font-size: 20px;
+    flex-shrink: 0;
+    opacity: 0.7;
+  }
+
+  .sidebar-link.active .sidebar-link-icon,
+  .sidebar-link.active .material-icons.sidebar-link-icon {
     opacity: 1;
   }
 
@@ -534,6 +541,11 @@
   .sidebar-logout-icon {
     width: 20px;
     height: 20px;
+    flex-shrink: 0;
+  }
+
+  .sidebar-logout-btn .material-icons.sidebar-logout-icon {
+    font-size: 20px;
     flex-shrink: 0;
   }
 
@@ -731,6 +743,11 @@
   .settings-card-title svg {
     width: 20px;
     height: 20px;
+    opacity: 0.7;
+  }
+
+  .settings-card-title .material-icons {
+    font-size: 20px;
     opacity: 0.7;
   }
 
@@ -946,6 +963,11 @@
     opacity: 0.3;
   }
 
+  .qr-thumb-placeholder .material-icons {
+    font-size: 36px;
+    opacity: 0.3;
+  }
+
   .qr-thumb-preview {
     width: 140px;
     height: 140px;
@@ -1047,6 +1069,12 @@
   }
 
   .treasure-card-coords svg {
+    flex-shrink: 0;
+    opacity: 0.5;
+  }
+
+  .treasure-card-coords .material-icons {
+    font-size: 14px;
     flex-shrink: 0;
     opacity: 0.5;
   }
@@ -1254,6 +1282,10 @@
     color: #5fd99f;
   }
 
+  .dev-panel .settings-card-title .material-icons {
+    color: #5fd99f;
+  }
+
   /* ---- Environment Panel (Ambiente) ---- */
   .env-current-indicator {
     display: flex;
@@ -1395,6 +1427,10 @@
     height: 18px;
   }
 
+  .password-toggle .material-icons {
+    font-size: 18px;
+  }
+
   .form-group.has-error .password-toggle {
     border-color: #c0392b;
   }
@@ -1418,6 +1454,10 @@
     color: #f39c12;
   }
 
+  .team-card.team-laranja .settings-card-title .material-icons {
+    color: #f39c12;
+  }
+
   .team-card.team-preta {
     border-left-color: #7f8c8d;
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(127, 140, 141, 0.15);
@@ -1429,6 +1469,10 @@
   }
 
   .team-card.team-preta .settings-card-title svg {
+    color: #bdc3c7;
+  }
+
+  .team-card.team-preta .settings-card-title .material-icons {
     color: #bdc3c7;
   }
 
@@ -1585,6 +1629,11 @@
     flex-shrink: 0;
   }
 
+  .download-btn .material-icons {
+    font-size: 14px;
+    flex-shrink: 0;
+  }
+
   /* ---- QR Card Footer ---- */
   .treasure-card-qr-footer {
     display: flex;
@@ -1612,6 +1661,12 @@
   .drag-disabled-notice svg {
     width: 16px;
     height: 16px;
+    flex-shrink: 0;
+    opacity: 0.5;
+  }
+
+  .drag-disabled-notice .material-icons {
+    font-size: 16px;
     flex-shrink: 0;
     opacity: 0.5;
   }
@@ -1766,6 +1821,12 @@
   .final-answer-masked svg {
     width: 14px;
     height: 14px;
+    flex-shrink: 0;
+    opacity: 0.4;
+  }
+
+  .final-answer-masked .material-icons {
+    font-size: 14px;
     flex-shrink: 0;
     opacity: 0.4;
   }
