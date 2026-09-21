@@ -82,11 +82,23 @@ final class ApiController
         $currentToken = (string) ($team['session_token'] ?? '');
 
         // Conexão única: se outro aparelho já está logado com esta equipe,
-        // bloqueia (o usuário deve desconectar pelo admin ou esperar).
+        // bloqueia e devolve os dados PÚBLICOS da equipe + a história, para
+        // o app mostrar a tela de "outra conta logada" (pontos/história)
+        // enquanto espera a vaga liberar.
         if ($currentToken !== '' && $currentToken !== $deviceId) {
             return $this->json($response, [
                 'success' => false,
+                'code'    => 'team_busy',
                 'error'   => 'Outro membro da equipe já está logado no aplicativo.',
+                'team'    => [
+                    'id'       => $teamId,
+                    'name'     => (string) $team['name'],
+                    'color'    => (string) $team['color'],
+                    'username' => (string) $team['username'],
+                    'points'   => (int) $team['points'],
+                ],
+                'story'         => (string) SettingsRepository::get('historyContent', ''),
+                'story_version' => (int) SettingsRepository::get('storyVersion', '0'),
             ], 409);
         }
 
@@ -96,6 +108,11 @@ final class ApiController
         unset($_SESSION['user'], $_SESSION['admin']);
 
         TeamRepository::setSessionToken($teamId, $deviceId);
+
+        // Limpa as posições do aparelho ANTERIOR: só o dispositivo que está
+        // ativo agora deve aparecer no mapa do painel.
+        $del = Database::get()->prepare('DELETE FROM team_locations WHERE team_id = :team_id');
+        $del->execute([':team_id' => $teamId]);
 
         $_SESSION['team'] = [
             'id'       => $teamId,
@@ -132,6 +149,12 @@ final class ApiController
 
             if ($team !== null && (string) ($team['session_token'] ?? '') === $deviceId) {
                 TeamRepository::setSessionToken((int) $team['id'], null);
+
+                // Sem dispositivo ativo, a equipe sai do mapa do painel.
+                $del = Database::get()->prepare(
+                    'DELETE FROM team_locations WHERE team_id = :team_id'
+                );
+                $del->execute([':team_id' => (int) $team['id']]);
             }
         }
 
@@ -1001,7 +1024,12 @@ final class ApiController
         foreach (TeamRepository::all() as $row) {
             $teamId = (int) $row['id'];
 
-            $lastLocation = self::lastLocation($teamId);
+            // Só aparece no mapa quem tem um DISPOSITIVO ATIVO (sessão em
+            // uso). Sem sessão, posições antigas são ignoradas — assim o
+            // marcador some quando o aparelho sai.
+            $hasActiveDevice = trim((string) ($row['session_token'] ?? '')) !== '';
+
+            $lastLocation = $hasActiveDevice ? self::lastLocation($teamId) : null;
 
             // Online = enviou localização nos últimos 15s (o app envia a cada 5s).
             $online = false;
