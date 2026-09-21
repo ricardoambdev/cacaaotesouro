@@ -1335,6 +1335,9 @@ final class ApiController
             ],
             'teams'             => $teamsOut,
             'treasures_progress'=> $progressOut,
+            // História do jogo — o app admin exibe na barra inferior.
+            'story'             => (string) SettingsRepository::get('historyContent', ''),
+            'story_version'     => (int) SettingsRepository::get('storyVersion', '0'),
         ]);
     }
 
