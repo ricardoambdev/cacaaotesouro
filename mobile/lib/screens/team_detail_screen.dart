@@ -82,6 +82,13 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> {
     }
 
     final reason = _reasonController.text.trim();
+
+    // O motivo é obrigatório: ele vai como mensagem para a equipe.
+    if (reason.isEmpty) {
+      _showSnackBar('Informe o motivo do ajuste de pontos.', isError: true);
+      return;
+    }
+
     final deltaValue = _deltaController.text.trim();
 
     int effectiveDelta = delta;
@@ -100,7 +107,7 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> {
       final newPoints = await _apiService.adminTeamPoints(
         widget.teamId,
         effectiveDelta,
-        reason: reason.isNotEmpty ? reason : null,
+        reason: reason,
       );
       setState(() => _currentPoints = newPoints);
 
@@ -108,7 +115,7 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> {
       _reasonController.clear();
 
       _showSnackBar(
-        '${effectiveDelta >= 0 ? '+' : ''}$effectiveDelta pontos aplicados!',
+        '${effectiveDelta >= 0 ? '+' : ''}$effectiveDelta pontos aplicados! A equipe foi avisada.',
         isError: false,
       );
     } on ApiException catch (e) {
@@ -310,12 +317,22 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> {
               controller: _reasonController,
               style: const TextStyle(color: AppColors.ivory),
               decoration: InputDecoration(
-                labelText: 'Motivo (opcional)',
+                labelText: 'Motivo (obrigatório)',
                 prefixIcon: const Icon(Icons.notes, size: 20),
                 contentPadding: const EdgeInsets.symmetric(
                     horizontal: 14, vertical: 12),
               ),
               maxLength: 200,
+            ),
+            Padding(
+              padding: const EdgeInsets.only(left: 14, top: 2),
+              child: Text(
+                'O motivo será enviado como mensagem para a equipe.',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: AppColors.ivoryMuted,
+                ),
+              ),
             ),
 
             const SizedBox(height: 28),
