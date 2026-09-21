@@ -37,6 +37,9 @@ dependencies:
   # Renderização de HTML nas histórias
   flutter_widget_from_html_core: ^0.15.1
 
+  # Geração de QR Code (a aba "Cofre")
+  qr_flutter: ^4.1.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

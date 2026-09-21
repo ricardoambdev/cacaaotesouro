@@ -5,6 +5,7 @@ import 'package:flutter_widget_from_html_core/flutter_widget_from_html_core.dart
     show HtmlWidget;
 import 'package:geolocator/geolocator.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 import '../theme.dart';
 import '../models/game_state.dart';
 import '../services/api_service.dart';
@@ -649,6 +650,48 @@ class _TeamHomeScreenState extends State<TeamHomeScreen> {
     // tela de erro da charada e música de fundo no desafio final.
     _syncSounds();
 
+    // ── Abas dinâmicas ──────────────────────────────
+    // A aba Cofre só aparece quando a equipe alcançou o desafio final.
+    final bool showCofre =
+        _gameState != null && _gameState!.finalAvailable;
+    final List<Widget> tabPages = [
+      _buildTreasureTab(),
+      if (showCofre) _buildVaultContent(),
+      _buildStoryContent(),
+      _buildLeaderboardContent(),
+    ];
+    final List<NavigationDestination> tabDestinations = [
+      const NavigationDestination(
+        icon: Icon(Icons.account_balance_wallet_outlined,
+            color: AppColors.ivoryMuted),
+        selectedIcon:
+            Icon(Icons.account_balance_wallet, color: AppColors.gold),
+        label: 'Tesouro',
+      ),
+      if (showCofre)
+        const NavigationDestination(
+          icon: Icon(Icons.lock_outline, color: AppColors.ivoryMuted),
+          selectedIcon: Icon(Icons.lock, color: AppColors.gold),
+          label: 'Cofre',
+        ),
+      const NavigationDestination(
+        icon: Icon(Icons.info_outline, color: AppColors.ivoryMuted),
+        selectedIcon: Icon(Icons.info, color: AppColors.gold),
+        label: 'História',
+      ),
+      const NavigationDestination(
+        icon: Icon(Icons.leaderboard_outlined,
+            color: AppColors.ivoryMuted),
+        selectedIcon:
+            Icon(Icons.leaderboard, color: AppColors.gold),
+        label: 'Pontos',
+      ),
+      const NavigationDestination(
+        icon: Icon(Icons.logout, color: AppColors.ivoryMuted),
+        label: 'Sair',
+      ),
+    ];
+
     return Scaffold(
       appBar: AppBar(
         title: Row(
@@ -709,22 +752,18 @@ class _TeamHomeScreenState extends State<TeamHomeScreen> {
           const SizedBox(width: 8),
         ],
       ),
+
       body: _isLoading
           ? const Center(
               child: CircularProgressIndicator(color: AppColors.gold))
           : _error != null
               ? _buildError()
-              : _currentTab == 0
-                  ? _buildTreasureTab()
-                  : _currentTab == 1
-                      ? _buildStoryContent()
-                      : _currentTab == 2
-                          ? _buildLeaderboardContent()
-                          : const SizedBox(),
+              : tabPages[_currentTab.clamp(0, tabPages.length - 1)],
       bottomNavigationBar: NavigationBar(
         selectedIndex: _currentTab,
         onDestinationSelected: (index) {
-          if (index == 3) {
+          // Último destino = Sair (sempre o último da lista)
+          if (index == tabDestinations.length - 1) {
             _logout();
           } else {
             setState(() => _currentTab = index);
@@ -734,31 +773,7 @@ class _TeamHomeScreenState extends State<TeamHomeScreen> {
         indicatorColor: AppColors.gold.withValues(alpha: 0.15),
         height: 65,
         labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.account_balance_wallet_outlined,
-                color: AppColors.ivoryMuted),
-            selectedIcon:
-                Icon(Icons.account_balance_wallet, color: AppColors.gold),
-            label: 'Tesouro',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.info_outline, color: AppColors.ivoryMuted),
-            selectedIcon: Icon(Icons.info, color: AppColors.gold),
-            label: 'História',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.leaderboard_outlined,
-                color: AppColors.ivoryMuted),
-            selectedIcon:
-                Icon(Icons.leaderboard, color: AppColors.gold),
-            label: 'Pontos',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.logout, color: AppColors.ivoryMuted),
-            label: 'Sair',
-          ),
-        ],
+        destinations: tabDestinations,
       ),
     );
   }
@@ -1719,6 +1734,296 @@ class _TeamHomeScreenState extends State<TeamHomeScreen> {
             style: const TextStyle(
               fontSize: 15,
               color: AppColors.ivoryMuted,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ════════════════════════════════════════════════════════════
+  //  ABA COFRE
+  // ════════════════════════════════════════════════════════════
+
+  Widget _buildVaultContent() {
+    // Calcula a URL pública do cofre a partir do baseUrl da API.
+    // Ex.: https://cacaaotesouro.colegiohelena.com.br/api
+    //   →  https://cacaaotesouro.colegiohelena.com.br/cofre
+    final rawBase = ApiService.baseUrl;
+    final baseNoApi = rawBase.endsWith('/api')
+        ? rawBase.substring(0, rawBase.length - 4)
+        : rawBase;
+    final vaultUrl = '$baseNoApi/cofre';
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        children: [
+          // ── Título ──────────────────────────────────
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: AppColors.gold.withValues(alpha: 0.1),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(Icons.lock,
+                color: AppColors.gold, size: 36),
+          ),
+          const SizedBox(height: 14),
+          const Text(
+            'COFRE DA GINCANA',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 3,
+              color: AppColors.gold,
+            ),
+          ),
+
+          const SizedBox(height: 20),
+
+          // ── Card: Como funciona ────────────────────
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(
+              color: AppColors.navyMedium,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(
+                color: AppColors.gold.withValues(alpha: 0.15),
+              ),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'COMO FUNCIONA',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 2,
+                    color: AppColors.gold.withValues(alpha: 0.8),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                _vaultStep(1,
+                    'Encontre o código de 9 dígitos escondido no mundo físico.'),
+                _vaultStep(2,
+                    'Abra a página do cofre no navegador do celular (ou escaneie o QR abaixo).'),
+                _vaultStep(3,
+                    'Digite os 9 dígitos.'),
+                _vaultStep(4,
+                    'O cofre avisa que a senha final será revelada — só continue quando a outra equipe não estiver vendo.'),
+                _vaultStep(5,
+                    'Se o código estiver certo, o cofre revela a senha do desafio final.'),
+                _vaultStep(6,
+                    'Volte em Tesouro e use essa senha no desafio final para encerrar a caça ao tesouro!'),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 16),
+
+          // ── Aviso de privacidade ───────────────────
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: Colors.orangeAccent.withValues(alpha: 0.10),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: Colors.orangeAccent.withValues(alpha: 0.35),
+              ),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Icon(Icons.visibility_off,
+                    color: Colors.orangeAccent, size: 22),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    'A senha aparece na tela! Só abra o cofre quando a outra equipe não estiver por perto.',
+                    style: const TextStyle(
+                      fontSize: 14,
+                      height: 1.4,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.orangeAccent,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 20),
+
+          // ── Card: Link público ─────────────────────
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: AppColors.navyMedium,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(
+                color: AppColors.gold.withValues(alpha: 0.2),
+              ),
+            ),
+            child: Column(
+              children: [
+                Text(
+                  'LINK PÚBLICO DO COFRE',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 2,
+                    color: AppColors.gold.withValues(alpha: 0.7),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 14, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: AppColors.navyDark,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: AppColors.ivoryMuted.withValues(alpha: 0.15),
+                    ),
+                  ),
+                  child: SelectableText(
+                    vaultUrl,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      color: AppColors.ivory,
+                      height: 1.4,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: () async {
+                      await Clipboard.setData(
+                          ClipboardData(text: vaultUrl));
+                      if (!mounted) return;
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content:
+                              const Text('Link copiado!'),
+                          backgroundColor: AppColors.navyMedium,
+                          behavior: SnackBarBehavior.floating,
+                          duration: const Duration(seconds: 2),
+                        ),
+                      );
+                    },
+                    icon: const Icon(Icons.copy, size: 18),
+                    label: const Text('Copiar link'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppColors.gold,
+                      side: BorderSide(
+                          color:
+                              AppColors.gold.withValues(alpha: 0.4)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      padding:
+                          const EdgeInsets.symmetric(vertical: 12),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 20),
+
+          // ── QR Code ────────────────────────────────
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.gold.withValues(alpha: 0.15),
+                  blurRadius: 16,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Column(
+              children: [
+                QrImageView(
+                  data: vaultUrl,
+                  size: 180,
+                  backgroundColor: Colors.white,
+                  eyeStyle: const QrEyeStyle(
+                    eyeShape: QrEyeShape.square,
+                    color: AppColors.navyDark,
+                  ),
+                  dataModuleStyle: const QrDataModuleStyle(
+                    dataModuleShape: QrDataModuleShape.square,
+                    color: AppColors.navyDark,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                const Text(
+                  'Escaneie para abrir o cofre',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.navyDark,
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 24),
+        ],
+      ),
+    );
+  }
+
+  /// Passo numerado para a seção "Como funciona".
+  Widget _vaultStep(int number, String text) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 24,
+            height: 24,
+            decoration: BoxDecoration(
+              color: AppColors.gold.withValues(alpha: 0.15),
+              shape: BoxShape.circle,
+            ),
+            child: Center(
+              child: Text(
+                '$number',
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.gold,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              text,
+              style: const TextStyle(
+                fontSize: 14,
+                height: 1.4,
+                color: AppColors.ivory,
+              ),
             ),
           ),
         ],
