@@ -136,6 +136,17 @@ class SoundService {
     );
   }
 
+  /// Para somente os efeitos (notificação, acerto, etc.) sem mexer no
+  /// loop do erro nem na música de fundo.
+  Future<void> stopEffects() async {
+    await _guard(
+      () => _effects(),
+      () => _effectsPlayer = AudioPlayer(),
+      (p) => _effectsPlayer = p,
+      (player) => player.stop(),
+    );
+  }
+
   /// Para todos os sons (efeitos, loop de erro e música de fundo).
   ///
   /// Use no `dispose()` da tela — NUNCA [dispose].

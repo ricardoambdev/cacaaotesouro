@@ -855,15 +855,16 @@ class _TeamHomeScreenState extends State<TeamHomeScreen> {
   }
 
   Widget _buildMessageBanner(TeamMessage msg) {
+    final style = MessageKindStyle.forKind(msg.kind);
     return Container(
       width: double.infinity,
       margin: const EdgeInsets.fromLTRB(16, 8, 16, 0),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: AppColors.gold.withValues(alpha: 0.12),
+        color: style.color.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: AppColors.gold.withValues(alpha: 0.3),
+          color: style.color.withValues(alpha: 0.3),
         ),
       ),
       child: Row(
@@ -872,12 +873,12 @@ class _TeamHomeScreenState extends State<TeamHomeScreen> {
           Container(
             padding: const EdgeInsets.all(6),
             decoration: BoxDecoration(
-              color: AppColors.gold.withValues(alpha: 0.2),
+              color: style.color.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(6),
             ),
-            child: const Icon(
-              Icons.notifications_active,
-              color: AppColors.gold,
+            child: Icon(
+              style.icon,
+              color: style.color,
               size: 18,
             ),
           ),
@@ -886,13 +887,16 @@ class _TeamHomeScreenState extends State<TeamHomeScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'MENSAGEM DO ADMIN',
+                Text(
+                  (msg.title.isNotEmpty
+                      ? msg.title
+                      : style.fallbackTitle
+                  ).toUpperCase(),
                   style: TextStyle(
                     fontSize: 10,
                     fontWeight: FontWeight.w700,
                     letterSpacing: 1.5,
-                    color: AppColors.gold,
+                    color: style.color,
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -913,7 +917,18 @@ class _TeamHomeScreenState extends State<TeamHomeScreen> {
   }
 
   /// Popup com as novas mensagens (som + destaque).
+  ///
+  /// Cada mensagem exibe título colorido por tipo e o texto. O som de
+  /// notificação é parado ao clicar em OK.
   Widget _buildMessagePopup(List<TeamMessage> msgs) {
+    // Se todas as mensagens têm o mesmo kind, usa título e cor desse tipo;
+    // se há tipos mistos, usa título genérico dourado.
+    final kinds = msgs.map((m) => m.kind).toSet();
+    final bool singleKind = kinds.length == 1;
+    final String singleKindValue = singleKind ? kinds.first : '';
+    final MessageKindStyle singleStyle =
+        singleKind ? MessageKindStyle.forKind(singleKindValue) : MessageKindStyle.forKind('info');
+
     return AlertDialog(
       backgroundColor: AppColors.navyMedium,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
@@ -922,23 +937,26 @@ class _TeamHomeScreenState extends State<TeamHomeScreen> {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: AppColors.gold.withValues(alpha: 0.2),
+              color: (singleKind ? singleStyle.color : AppColors.gold)
+                  .withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(10),
             ),
-            child: const Icon(
-              Icons.notifications_active,
-              color: AppColors.gold,
+            child: Icon(
+              singleKind ? singleStyle.icon : Icons.notifications_active,
+              color: singleKind ? singleStyle.color : AppColors.gold,
               size: 22,
             ),
           ),
           const SizedBox(width: 12),
-          const Expanded(
+          Expanded(
             child: Text(
-              'Mensagem do organizador',
+              singleKind
+                  ? singleStyle.effectiveTitle(msgs.first.title)
+                  : 'Mensagens da organização',
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w800,
-                color: AppColors.gold,
+                color: singleKind ? singleStyle.color : AppColors.gold,
               ),
             ),
           ),
@@ -947,25 +965,62 @@ class _TeamHomeScreenState extends State<TeamHomeScreen> {
       content: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: msgs
-            .map(
-              (m) => Padding(
-                padding: const EdgeInsets.only(bottom: 10),
-                child: Text(
-                  m.message,
-                  style: const TextStyle(
-                    fontSize: 15,
-                    height: 1.5,
-                    color: AppColors.ivory,
-                  ),
+        children: msgs.map((m) {
+          final style = MessageKindStyle.forKind(m.kind);
+          final title = style.effectiveTitle(m.title);
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: style.color.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(10),
+                border: Border(
+                  left: BorderSide(color: style.color, width: 3),
                 ),
               ),
-            )
-            .toList(),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(style.icon, color: style.color, size: 16),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          title,
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700,
+                            color: style.color,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    m.message,
+                    style: const TextStyle(
+                      fontSize: 15,
+                      height: 1.5,
+                      color: AppColors.ivory,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }).toList(),
       ),
       actions: [
         TextButton(
-          onPressed: () => Navigator.pop(context),
+          onPressed: () {
+            // Parar efeitos sonoros (notificação) antes de fechar o popup.
+            _soundService.stopEffects();
+            Navigator.pop(context);
+          },
           child: const Text(
             'OK',
             style: TextStyle(

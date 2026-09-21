@@ -1,24 +1,81 @@
+import 'package:flutter/material.dart';
 import 'team.dart';
 import 'treasure.dart';
 
 /// Mensagem enviada pelo admin para uma equipe.
 class TeamMessage {
   final int id;
+  final String title;
   final String message;
+  final String kind; // 'info' | 'success' | 'error'
   final String createdAt;
 
   const TeamMessage({
     required this.id,
+    this.title = '',
     required this.message,
+    this.kind = 'info',
     required this.createdAt,
   });
+
+  /// Normaliza o kind para um dos três valores aceitos.
+  static String _normalizeKind(String? raw) {
+    if (raw == 'success' || raw == 'error') return raw!;
+    return 'info';
+  }
 
   factory TeamMessage.fromJson(Map<String, dynamic> json) {
     return TeamMessage(
       id: (json['id'] as num?)?.toInt() ?? 0,
+      title: (json['title'] as String?) ?? '',
       message: (json['message'] as String?) ?? '',
+      kind: _normalizeKind(json['kind'] as String?),
       createdAt: (json['created_at'] as String?) ?? '',
     );
+  }
+}
+
+/// Retorno de estilo visual por tipo de mensagem.
+class MessageKindStyle {
+  final Color color;
+  final IconData icon;
+  final String fallbackTitle;
+
+  const MessageKindStyle({
+    required this.color,
+    required this.icon,
+    required this.fallbackTitle,
+  });
+
+  /// Retorna o estilo visual correspondente ao [kind].
+  static MessageKindStyle forKind(String kind) {
+    switch (kind) {
+      case 'success':
+        return const MessageKindStyle(
+          color: Colors.greenAccent,
+          icon: Icons.check_circle,
+          fallbackTitle: 'Sucesso',
+        );
+      case 'error':
+        return const MessageKindStyle(
+          color: Colors.redAccent,
+          icon: Icons.error,
+          fallbackTitle: 'Atenção',
+        );
+      default:
+        return const MessageKindStyle(
+          color: Color(0xFFF97316), // AppColors.gold
+          icon: Icons.info,
+          fallbackTitle: 'Informação',
+        );
+    }
+  }
+
+  /// Título efetivo: usa o título da mensagem se não estiver vazio, senão o
+  /// fallback do tipo.
+  String effectiveTitle(String? messageTitle) {
+    final t = messageTitle?.trim() ?? '';
+    return t.isNotEmpty ? t : fallbackTitle;
   }
 }
 
