@@ -291,7 +291,10 @@ class AdminStatus {
   final int? winnerTeamId;
   final List<AdminTeamStatus> teams;
   final List<dynamic>? treasuresProgress;
-  final String story;
+  /// `null` quando o servidor NÃO retorna o campo (código antigo).
+  /// `''` quando o campo existe mas está vazio.
+  /// Conteúdo HTML quando há história.
+  final String? story;
   final int storyVersion;
 
   const AdminStatus({
@@ -300,7 +303,7 @@ class AdminStatus {
     this.winnerTeamId,
     required this.teams,
     this.treasuresProgress,
-    this.story = '',
+    this.story,
     this.storyVersion = 0,
   });
 
@@ -346,7 +349,7 @@ class AdminStatus {
       winnerTeamId: winnerTeamId,
       teams: teamsList,
       treasuresProgress: treasuresProgress,
-      story: (json['story'] as String?) ?? '',
+      story: json['story'] as String?,
       storyVersion: (json['story_version'] as num?)?.toInt() ?? 0,
     );
   }

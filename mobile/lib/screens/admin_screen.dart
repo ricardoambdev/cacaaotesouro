@@ -622,9 +622,86 @@ class _AdminScreenState extends State<AdminScreen> {
   }
 
   /// Abre a história do jogo em um modal inferior (somente leitura).
-  void _showStorySheet() {
-    final story = _status?.story ?? '';
-    final hasStory = story.trim().isNotEmpty;
+  Future<void> _showStorySheet() async {
+    // Busca fresco: a história pode ter sido editada depois do load inicial
+    AdminStatus? fresh;
+    try {
+      fresh = await _apiService.adminStatus();
+      if (mounted) setState(() => _status = fresh);
+    } catch (_) {
+      // Sem rede: usa o que já está em memória
+    }
+    final status = fresh ?? _status;
+    final story = status?.story; // String? — null = servidor sem o campo
+
+    if (!mounted) return;
+
+    // Determina qual conteúdo mostrar na folha
+    Widget content;
+    if (story == null) {
+      // Servidor NÃO retorna o campo (código antigo / desatualizado)
+      content = Center(
+        child: Padding(
+          padding: const EdgeInsets.all(32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.info_outline, color: AppColors.gold, size: 48),
+              const SizedBox(height: 16),
+              const Text(
+                'História não disponível neste servidor.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.gold,
+                ),
+              ),
+              const SizedBox(height: 10),
+              const Text(
+                'O sistema em uso ainda não envia a história para o aplicativo. '
+                'Atualize o sistema na hospedagem (git pull) e tente novamente.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 14,
+                  color: AppColors.ivoryMuted,
+                  height: 1.5,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    } else if (story.trim().isEmpty) {
+      // Campo existe mas está vazio
+      content = const Center(
+        child: Padding(
+          padding: EdgeInsets.all(32),
+          child: Text(
+            'Nenhuma história cadastrada.',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 15,
+              fontStyle: FontStyle.italic,
+              color: AppColors.ivoryMuted,
+            ),
+          ),
+        ),
+      );
+    } else {
+      // Conteúdo real
+      content = SingleChildScrollView(
+        padding: const EdgeInsets.all(20),
+        child: HtmlWidget(
+          story,
+          textStyle: const TextStyle(
+            fontSize: 15,
+            height: 1.7,
+            color: AppColors.ivory,
+          ),
+        ),
+      );
+    }
 
     showModalBottomSheet(
       context: context,
@@ -671,35 +748,7 @@ class _AdminScreenState extends State<AdminScreen> {
               ),
               const Divider(height: 1, color: AppColors.ivoryMuted),
               // ── Conteúdo ──────────────────────────────
-              Expanded(
-                child: hasStory
-                    ? SingleChildScrollView(
-                        controller: scrollController,
-                        padding: const EdgeInsets.all(20),
-                        child: HtmlWidget(
-                          story,
-                          textStyle: const TextStyle(
-                            fontSize: 15,
-                            height: 1.7,
-                            color: AppColors.ivory,
-                          ),
-                        ),
-                      )
-                    : const Center(
-                        child: Padding(
-                          padding: EdgeInsets.all(32),
-                          child: Text(
-                            'Nenhuma história cadastrada.',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontSize: 15,
-                              fontStyle: FontStyle.italic,
-                              color: AppColors.ivoryMuted,
-                            ),
-                          ),
-                        ),
-                      ),
-              ),
+              Expanded(child: content),
             ],
           ),
         ),
