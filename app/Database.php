@@ -254,6 +254,19 @@ final class Database
             . ')'
         );
 
+        // Tentativas no COFRE da gincana (página pública). Controla o
+        // bloqueio por tentativas erradas seguidas, por IP.
+        $pdo->exec(
+            'CREATE TABLE IF NOT EXISTS vault_attempts ('
+            . 'ip VARCHAR(45) NOT NULL, '
+            . 'wrong_streak INT NOT NULL DEFAULT 0, '
+            . 'blocks INT NOT NULL DEFAULT 0, '
+            . 'blocked_until DATETIME NULL, '
+            . 'updated_at DATETIME NULL, '
+            . 'PRIMARY KEY (ip)'
+            . ')'
+        );
+
         // SQLite não suporta KEY inline; o índice é criado em separado (o
         // nome precisa ser distinto porque índices SQLite são globais).
         if ($driver !== 'mysql') {
@@ -505,6 +518,13 @@ final class Database
             'finalAnswer'      => '',
             'finalCorrectPoints'=> '100',
             'finalWrongPenalty' => '20',
+            // Cofre virtual da gincana (página pública /cofre): a equipe
+            // encontra o código de 9 dígitos no mundo físico e, ao acertá-lo,
+            // o cofre revela a senha do desafio final (finalAnswer).
+            'vaultCode'        => '',   // 9 dígitos
+            'vaultMaxAttempts' => '3',  // erros seguidos antes de bloquear
+            'vaultBlockMinutes'=> '5',  // minutos de bloqueio
+            'vaultBlockNextDay'=> '0',  // '1' = após 3 bloqueios, até o dia seguinte
             'gameActive'       => '0',
             'winnerTeamId'     => '',
             // Regras do jogo (enforcement via ApiController::gameBlock)

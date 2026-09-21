@@ -1,0 +1,193 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Repositories;
+
+use App\Database;
+use DateTimeImmutable;
+use PDO;
+
+/**
+ * Controle de tentativas do COFRE virtual da gincana.
+ *
+ * A página do cofre é pública (sem login), então o controle de tentativas
+ * é feito por IP em `vault_attempts`:
+ *  - erros seguidos atingindo `vaultMaxAttempts` bloqueiam o cofre;
+ *  - o tempo de bloqueio é `vaultBlockMinutes`;
+ *  - com `vaultBlockNextDay` ligado, a partir de 3 bloqueios o cofre fica
+ *    bloqueado até o dia seguinte.
+ */
+final class VaultRepository
+{
+    /**
+     * IP do visitante — usado como chave do bloqueio.
+     */
+    public static function clientIp(): string
+    {
+        $forwarded = trim((string) ($_SERVER['HTTP_X_FORWARDED_FOR'] ?? ''));
+
+        if ($forwarded !== '') {
+            $first = trim(explode(',', $forwarded)[0]);
+
+            if ($first !== '') {
+                return mb_substr($first, 0, 45);
+            }
+        }
+
+        return mb_substr(trim((string) ($_SERVER['REMOTE_ADDR'] ?? '0.0.0.0')), 0, 45);
+    }
+
+    /**
+     * Situação atual do IP no cofre.
+     *
+     * @return array{wrong_streak: int, blocks: int, blocked_until: ?string}
+     */
+    public static function state(string $ip): array
+    {
+        $stmt = Database::get()->prepare(
+            'SELECT wrong_streak, blocks, blocked_until FROM vault_attempts WHERE ip = :ip'
+        );
+        $stmt->execute([':ip' => $ip]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if ($row === false) {
+            return ['wrong_streak' => 0, 'blocks' => 0, 'blocked_until' => null];
+        }
+
+        return [
+            'wrong_streak'  => (int) ($row['wrong_streak'] ?? 0),
+            'blocks'        => (int) ($row['blocks'] ?? 0),
+            'blocked_until' => $row['blocked_until'] !== null ? (string) $row['blocked_until'] : null,
+        ];
+    }
+
+    /**
+     * O cofre está bloqueado para este IP? (Considera bloqueio expirado.)
+     */
+    public static function blockedUntil(string $ip): ?string
+    {
+        $state = self::state($ip);
+        $until = $state['blocked_until'];
+
+        if ($until === null || $until === '') {
+            return null;
+        }
+
+        if (strtotime($until) <= time()) {
+            // Bloqueio venceu: zera o streak e libera.
+            self::save($ip, 0, $state['blocks'], null);
+
+            return null;
+        }
+
+        return $until;
+    }
+
+    /**
+     * Registra um erro e (se necessário) bloqueia o cofre.
+     *
+     * @return array{blocked: bool, blocked_until: ?string, wrong_streak: int, attempts_left: int}
+     */
+    public static function registerWrong(string $ip): array
+    {
+        $maxAttempts = max(1, (int) SettingsRepository::get('vaultMaxAttempts', '3'));
+        $blockMinutes = max(1, (int) SettingsRepository::get('vaultBlockMinutes', '5'));
+        $nextDay = (string) SettingsRepository::get('vaultBlockNextDay', '0') === '1';
+
+        $state = self::state($ip);
+        $streak = $state['wrong_streak'] + 1;
+        $blocks = $state['blocks'];
+        $blockedUntil = null;
+
+        if ($streak >= $maxAttempts) {
+            $streak = 0;
+            $blocks++;
+
+            // A partir do 3º bloqueio: até o dia seguinte (se a opção estiver ligada).
+            if ($nextDay && $blocks >= 3) {
+                $blockedUntil = (new DateTimeImmutable('tomorrow 00:00:00'))->format('Y-m-d H:i:s');
+            } else {
+                $blockedUntil = date('Y-m-d H:i:s', time() + ($blockMinutes * 60));
+            }
+        }
+
+        self::save($ip, $streak, $blocks, $blockedUntil);
+
+        return [
+            'blocked'       => $blockedUntil !== null,
+            'blocked_until' => $blockedUntil,
+            'wrong_streak'  => $streak,
+            'attempts_left' => max(0, $maxAttempts - $streak),
+        ];
+    }
+
+    /**
+     * Acertou o código: zera os erros seguidos (mantém o histórico de
+     * bloqueios, que conta para a regra do "até o dia seguinte").
+     */
+    public static function registerCorrect(string $ip): void
+    {
+        $state = self::state($ip);
+
+        self::save($ip, 0, $state['blocks'], null);
+    }
+
+    /**
+     * Limpa o controle de tentativas (usado ao reconfigurar/limpar o jogo).
+     */
+    public static function clearAll(): void
+    {
+        Database::get()->exec('DELETE FROM vault_attempts');
+    }
+
+    private static function save(string $ip, int $wrongStreak, int $blocks, ?string $blockedUntil): void
+    {
+        $pdo = Database::get();
+
+        $driver = app_config('db.driver', 'sqlite');
+        $now = date('Y-m-d H:i:s');
+
+        if ($driver === 'mysql') {
+            $stmt = $pdo->prepare(
+                'INSERT INTO vault_attempts (ip, wrong_streak, blocks, blocked_until, updated_at) '
+                . 'VALUES (:ip, :wrong_streak, :blocks, :blocked_until, :updated_at) '
+                . 'ON DUPLICATE KEY UPDATE wrong_streak = :wrong_streak_u, '
+                . 'blocks = :blocks_u, blocked_until = :blocked_until_u, updated_at = :updated_at_u'
+            );
+
+            $stmt->execute([
+                ':ip'                => $ip,
+                ':wrong_streak'      => $wrongStreak,
+                ':blocks'            => $blocks,
+                ':blocked_until'     => $blockedUntil,
+                ':updated_at'        => $now,
+                ':wrong_streak_u'    => $wrongStreak,
+                ':blocks_u'          => $blocks,
+                ':blocked_until_u'   => $blockedUntil,
+                ':updated_at_u'      => $now,
+            ]);
+
+            return;
+        }
+
+        $stmt = $pdo->prepare(
+            'INSERT INTO vault_attempts (ip, wrong_streak, blocks, blocked_until, updated_at) '
+            . 'VALUES (:ip, :wrong_streak, :blocks, :blocked_until, :updated_at) '
+            . 'ON CONFLICT(ip) DO UPDATE SET wrong_streak = :wrong_streak_u, '
+            . 'blocks = :blocks_u, blocked_until = :blocked_until_u, updated_at = :updated_at_u'
+        );
+
+        $stmt->execute([
+            ':ip'                => $ip,
+            ':wrong_streak'      => $wrongStreak,
+            ':blocks'            => $blocks,
+            ':blocked_until'     => $blockedUntil,
+            ':updated_at'        => $now,
+            ':wrong_streak_u'    => $wrongStreak,
+            ':blocks_u'          => $blocks,
+            ':blocked_until_u'   => $blockedUntil,
+            ':updated_at_u'      => $now,
+        ]);
+    }
+}

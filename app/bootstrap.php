@@ -161,6 +161,10 @@ $app->get('/jogo', [GameController::class, 'status'])->add($mw['authRequired']);
 // portanto um GET é livre.
 $app->get('/telao', [GameController::class, 'telao']);
 
+// COFRE virtual da gincana — página PÚBLICA (sem login). As chamadas de
+// conferência usam a API pública /api/cofre (isenta de CSRF).
+$app->get('/cofre', [GameController::class, 'vaultPage']);
+
 // ---------------------------------------------------------------------
 // API (JSON) — sem CSRF (ignorado para paths /api) e sem
 // authRequired/guestOnly: a autenticação é feita manualmente no
@@ -186,6 +190,10 @@ $app->get('/api', [ApiController::class, 'index']);
 $app->get('/api/story', [ApiController::class, 'story']);
 $app->get('/api/config', [ApiController::class, 'config']);
 $app->get('/api/telao', [ApiController::class, 'telao']);
+
+// Cofre virtual da gincana — PÚBLICO (sem login e sem CSRF, por ser /api/*).
+$app->get('/api/cofre', [ApiController::class, 'vaultStatus']);
+$app->post('/api/cofre', [ApiController::class, 'vaultCheck']);
 
 // Admin (app de gerenciamento)
 $app->post('/api/admin/login', [ApiController::class, 'adminLogin']);

@@ -10,6 +10,7 @@ use App\Repositories\SettingsRepository;
 use App\Repositories\TeamRepository;
 use App\Repositories\TreasureRepository;
 use App\Repositories\UserRepository;
+use App\Repositories\VaultRepository;
 use DateTime;
 use PDO;
 use Psr\Http\Message\ResponseInterface as Response;
@@ -1902,6 +1903,94 @@ final class ApiController
                 'team'      => '/api/team/login',
                 'admin'     => '/api/admin/login',
             ],
+        ]);
+    }
+
+    /**
+     * GET /api/cofre — situação do cofre virtual para o visitante atual.
+     *
+     * Público (sem login). Informa se está bloqueado, quanto falta liberar e
+     * quantas tentativas ainda restam.
+     */
+    public function vaultStatus(Request $request, Response $response): Response
+    {
+        $ip = VaultRepository::clientIp();
+        $blockedUntil = VaultRepository::blockedUntil($ip);
+        $state = VaultRepository::state($ip);
+
+        $maxAttempts = max(1, (int) SettingsRepository::get('vaultMaxAttempts', '3'));
+
+        return $this->json($response, [
+            'success'       => true,
+            'configured'    => trim((string) SettingsRepository::get('vaultCode', '')) !== '',
+            'blocked'       => $blockedUntil !== null,
+            'blocked_until' => $blockedUntil,
+            'attempts_left' => max(0, $maxAttempts - $state['wrong_streak']),
+            'max_attempts'  => $maxAttempts,
+        ]);
+    }
+
+    /**
+     * POST /api/cofre — confere o código de 9 dígitos do cofre.
+     *
+     * Body: { code: "123456789" }
+     *
+     * Público (sem login e sem CSRF, por ser /api/*). Quando o código está
+     * certo devolve a SENHA DO DESAFIO FINAL para a página revelar devagar.
+     */
+    public function vaultCheck(Request $request, Response $response): Response
+    {
+        $ip = VaultRepository::clientIp();
+
+        $blockedUntil = VaultRepository::blockedUntil($ip);
+
+        if ($blockedUntil !== null) {
+            return $this->json($response, [
+                'success'       => false,
+                'blocked'       => true,
+                'blocked_until' => $blockedUntil,
+                'error'         => 'O cofre está bloqueado. Tente novamente mais tarde.',
+            ], 423);
+        }
+
+        $body = (array) $request->getParsedBody();
+        $code = preg_replace('/\D/', '', (string) ($body['code'] ?? ''));
+
+        $vaultCode = preg_replace('/\D/', '', (string) SettingsRepository::get('vaultCode', ''));
+
+        if ($vaultCode === '') {
+            return $this->json($response, [
+                'success' => false,
+                'error'   => 'O cofre ainda não foi configurado pelo organizador.',
+            ], 400);
+        }
+
+        if (strlen((string) $code) !== 9) {
+            return $this->json($response, [
+                'success' => false,
+                'error'   => 'Digite os 9 dígitos do cofre.',
+            ], 400);
+        }
+
+        if (hash_equals($vaultCode, (string) $code)) {
+            VaultRepository::registerCorrect($ip);
+
+            return $this->json($response, [
+                'success'  => true,
+                'correct'  => true,
+                // Senha do desafio final — o que estava no envelope do cofre.
+                'password' => (string) SettingsRepository::get('finalAnswer', ''),
+            ]);
+        }
+
+        $result = VaultRepository::registerWrong($ip);
+
+        return $this->json($response, [
+            'success'       => true,
+            'correct'       => false,
+            'blocked'       => $result['blocked'],
+            'blocked_until' => $result['blocked_until'],
+            'attempts_left' => $result['attempts_left'],
         ]);
     }
 

@@ -7,6 +7,7 @@ namespace App\Controllers;
 use App\Repositories\GameRepository;
 use App\Repositories\SettingsRepository;
 use App\Repositories\TeamRepository;
+use App\Repositories\VaultRepository;
 use App\Database;
 use App\View;
 use PDO;
@@ -72,6 +73,13 @@ final class GameController
             $finalCorrectPoints = trim((string) ($body['finalCorrectPoints'] ?? ''));
             $finalWrongPenalty = trim((string) ($body['finalWrongPenalty'] ?? ''));
 
+            // ── Cofre da gincana (página pública /cofre) ──
+            // Só os dígitos interessam; vazio = cofre desativado.
+            $vaultCode = preg_replace('/\D/', '', (string) ($body['vaultCode'] ?? ''));
+            $vaultMaxAttempts = trim((string) ($body['vaultMaxAttempts'] ?? ''));
+            $vaultBlockMinutes = trim((string) ($body['vaultBlockMinutes'] ?? ''));
+            $vaultBlockNextDay = isset($body['vaultBlockNextDay']) ? '1' : '0';
+
             $errors = [];
 
             if ($finalAnswer === '') {
@@ -90,6 +98,21 @@ final class GameController
                 $errors[] = 'Os pontos perdidos por erro devem ser um inteiro entre 0 e 1000.';
             }
 
+            if ($vaultCode !== '' && strlen((string) $vaultCode) !== 9) {
+                $errors[] = 'O código do cofre deve ter exatamente 9 dígitos '
+                    . '(deixe vazio para desativar o cofre).';
+            }
+
+            if ($vaultMaxAttempts === '' || !ctype_digit($vaultMaxAttempts)
+                || (int) $vaultMaxAttempts < 1 || (int) $vaultMaxAttempts > 20) {
+                $errors[] = 'As tentativas do cofre devem ser um inteiro entre 1 e 20.';
+            }
+
+            if ($vaultBlockMinutes === '' || !ctype_digit($vaultBlockMinutes)
+                || (int) $vaultBlockMinutes < 1 || (int) $vaultBlockMinutes > 1440) {
+                $errors[] = 'O tempo de bloqueio do cofre deve ser entre 1 e 1440 minutos (24h).';
+            }
+
             if ($errors !== []) {
                 flash_set('error', implode(' ', $errors));
                 $_SESSION['old'] = [
@@ -97,18 +120,34 @@ final class GameController
                     'finalAnswer'        => $finalAnswer,
                     'finalCorrectPoints' => $finalCorrectPoints,
                     'finalWrongPenalty'  => $finalWrongPenalty,
+                    'vaultCode'          => $vaultCode,
+                    'vaultMaxAttempts'   => $vaultMaxAttempts,
+                    'vaultBlockMinutes'  => $vaultBlockMinutes,
+                    'vaultBlockNextDay'  => $vaultBlockNextDay,
                 ];
                 redirect('/desafio-final');
             }
+
+            $codeChanged = $vaultCode !== (string) SettingsRepository::get('vaultCode', '');
 
             SettingsRepository::update([
                 'finalClue'          => $finalClue,
                 'finalAnswer'        => $finalAnswer,
                 'finalCorrectPoints' => (string) (int) $finalCorrectPoints,
                 'finalWrongPenalty'  => (string) (int) $finalWrongPenalty,
+                'vaultCode'          => (string) $vaultCode,
+                'vaultMaxAttempts'   => (string) (int) $vaultMaxAttempts,
+                'vaultBlockMinutes'  => (string) (int) $vaultBlockMinutes,
+                'vaultBlockNextDay'  => $vaultBlockNextDay,
             ]);
 
-            flash_set('success', 'Desafio final salvo com sucesso.');
+            // Trocou o código do cofre? Zera os bloqueios, para ninguém ficar
+            // travado por tentativas da configuração anterior.
+            if ($codeChanged) {
+                VaultRepository::clearAll();
+            }
+
+            flash_set('success', 'Desafio final e cofre salvos com sucesso.');
             redirect('/desafio-final');
         }
 
@@ -120,6 +159,11 @@ final class GameController
             'finalAnswer'        => (string) ($old['finalAnswer'] ?? SettingsRepository::get('finalAnswer', '')),
             'finalCorrectPoints' => (string) ($old['finalCorrectPoints'] ?? SettingsRepository::get('finalCorrectPoints', '100')),
             'finalWrongPenalty'  => (string) ($old['finalWrongPenalty'] ?? SettingsRepository::get('finalWrongPenalty', '20')),
+            // Cofre da gincana
+            'vaultCode'          => (string) ($old['vaultCode'] ?? SettingsRepository::get('vaultCode', '')),
+            'vaultMaxAttempts'   => (string) ($old['vaultMaxAttempts'] ?? SettingsRepository::get('vaultMaxAttempts', '3')),
+            'vaultBlockMinutes'  => (string) ($old['vaultBlockMinutes'] ?? SettingsRepository::get('vaultBlockMinutes', '5')),
+            'vaultBlockNextDay'  => (string) ($old['vaultBlockNextDay'] ?? SettingsRepository::get('vaultBlockNextDay', '0')),
         ]);
 
         $response->getBody()->write($this->renderLayout($content, $user, 'desafio-final'));
@@ -190,6 +234,25 @@ final class GameController
     {
         $html = View::render('telao', [
             'siteName' => (string) app_config('app.name', 'Caça ao Tesouro'),
+        ]);
+
+        $response->getBody()->write($html);
+
+        return $response;
+    }
+
+    /**
+     * GET /cofre — COFRE virtual da gincana.
+     *
+     * Página PÚBLICA (sem login): a equipe digita os 9 dígitos encontrados
+     * no mundo físico e, se estiver certo, o cofre revela a senha do desafio
+     * final (a que estava prevista para o envelope dentro do cofre real).
+     */
+    public function vaultPage(Request $request, Response $response): Response
+    {
+        $html = View::render('cofre', [
+            'siteName' => (string) app_config('app.name', 'Caça ao Tesouro'),
+            'appUrl'   => rtrim((string) app_config('app.url', ''), '/'),
         ]);
 
         $response->getBody()->write($html);
