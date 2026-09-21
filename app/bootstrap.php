@@ -165,6 +165,9 @@ $app->get('/telao', [GameController::class, 'telao']);
 // conferência usam a API pública /api/cofre (isenta de CSRF).
 $app->get('/cofre', [GameController::class, 'vaultPage']);
 
+// QR code (SVG) do link do cofre — público, usado no painel e no app.
+$app->get('/cofre/qr.svg', [GameController::class, 'vaultQr']);
+
 // ---------------------------------------------------------------------
 // API (JSON) — sem CSRF (ignorado para paths /api) e sem
 // authRequired/guestOnly: a autenticação é feita manualmente no

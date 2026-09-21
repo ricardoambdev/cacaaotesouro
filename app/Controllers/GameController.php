@@ -695,6 +695,36 @@ final class GameController
     }
 
     /**
+     * GET /cofre/qr.svg — QR code (SVG) do link público do cofre.
+     *
+     * PÚBLICO: usado tanto na página do cofre quanto no app da equipe,
+     * para a equipe abrir a página do cofre rapidamente no celular.
+     */
+    public function vaultQr(Request $request, Response $response): Response
+    {
+        $url = rtrim((string) app_config('app.url', ''), '/') . '/cofre';
+
+        $svg = '';
+
+        try {
+            $options = new \chillerlan\QRCode\QROptions([
+                'outputType'   => \chillerlan\QRCode\QRCode::OUTPUT_MARKUP_SVG,
+                'eccLevel'     => \chillerlan\QRCode\QRCode::ECC_M,
+                'scale'        => 10,
+                'addQuietzone' => true,
+                'imageBase64'  => false,
+            ]);
+            $svg = (new \chillerlan\QRCode\QRCode($options))->render($url);
+        } catch (\Throwable $e) {
+            error_log('vaultQr: ' . $e->getMessage());
+        }
+
+        $response->getBody()->write($svg);
+
+        return $response->withHeader('Content-Type', 'image/svg+xml; charset=utf-8');
+    }
+
+    /**
      * POST /admin/import — importa tesouros de um arquivo JSON.
      * Tesouros com código já existente são ignorados; os novos são
      * adicionados automaticamente (com QR SVG gerado).
