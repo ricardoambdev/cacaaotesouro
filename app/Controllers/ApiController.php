@@ -1441,16 +1441,48 @@ final class ApiController
         }
 
         $delta = (int) $delta;
+
+        // O MOTIVO é obrigatório: além de ficar no histórico de pontos, ele
+        // vira uma mensagem para a equipe saber por que ganhou/perdeu pontos.
         $reason = trim((string) ($body['reason'] ?? ''));
+
+        if ($reason === '') {
+            return $this->json($response, [
+                'success' => false,
+                'error'   => 'Informe o motivo do ajuste de pontos.',
+            ], 400);
+        }
+
+        if (mb_strlen($reason) > 200) {
+            return $this->json($response, [
+                'success' => false,
+                'error'   => 'O motivo deve ter no máximo 200 caracteres.',
+            ], 400);
+        }
 
         $points = max(0, (int) $team['points'] + $delta);
 
         TeamRepository::updateGameState($teamId, ['points' => $points]);
-        GameRepository::logPoints($teamId, $delta, $reason !== '' ? $reason : 'ajuste do admin');
+        GameRepository::logPoints($teamId, $delta, $reason);
+
+        // Avisa a equipe pelo app (aparece como mensagem/notificação):
+        // ex.: "+10 pontos: acertou a charada extra".
+        $notice = sprintf('%s%d pontos: %s', $delta > 0 ? '+' : '', $delta, $reason);
+
+        $stmt = Database::get()->prepare(
+            'INSERT INTO team_messages (team_id, message, read_at, created_at) '
+            . 'VALUES (:team_id, :message, NULL, :created_at)'
+        );
+        $stmt->execute([
+            ':team_id'    => $teamId,
+            ':message'    => $notice,
+            ':created_at' => date('Y-m-d H:i:s'),
+        ]);
 
         return $this->json($response, [
             'success' => true,
             'points'  => $points,
+            'message' => $notice,
         ]);
     }
 

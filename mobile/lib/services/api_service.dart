@@ -747,29 +747,34 @@ class ApiService {
   // ════════════════════════════════════════════════════════════
 
   /// POST /api/admin/team-message → envia mensagem para uma equipe.
-  Future<Map<String, dynamic>> adminTeamMessage(
+  /// POST /api/admin/team-message
+  ///
+  /// A API responde com `message` sendo o TEXTO humano ("Mensagem enviada.")
+  /// — não um objeto. Antes o app tentava converter para Map e estourava um
+  /// TypeError, que aparecia como "Erro ao enviar a mensagem".
+  Future<void> adminTeamMessage(
     int teamId,
     String message,
   ) async {
-    final response = await http.post(
-      Uri.parse('$baseUrl/admin/team-message'),
-      headers: _adminHeaders,
-      body: json.encode({
-        'team_id': teamId,
-        'message': message,
-      }),
-    );
+    final response = await http
+        .post(
+          Uri.parse('$baseUrl/admin/team-message'),
+          headers: _adminHeaders,
+          body: json.encode({
+            'team_id': teamId,
+            'message': message,
+          }),
+        )
+        .timeout(requestTimeout);
 
     _extractCookie(response);
     _checkUnauthorized(response);
 
     final body = _parseBody(response);
-    if (response.statusCode == 200 && body['success'] == true) {
-      return body['message'] as Map<String, dynamic>;
+    if (response.statusCode != 200 || body['success'] != true) {
+      throw ApiException(
+          body['error'] as String? ?? 'Erro ao enviar mensagem.');
     }
-
-    throw ApiException(
-        body['error'] as String? ?? 'Erro ao enviar mensagem.');
   }
 
   /// POST /api/admin/team-message-all → envia mensagem para TODAS as equipes.
