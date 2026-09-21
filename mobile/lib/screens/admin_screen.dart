@@ -690,8 +690,10 @@ class _AdminScreenState extends State<AdminScreen> {
       );
     } else {
       // Conteúdo real
+      final bottomSafe = MediaQuery.viewPaddingOf(context).bottom;
       content = SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: EdgeInsets.fromLTRB(20, 20, 20, 32 + bottomSafe),
         child: HtmlWidget(
           story,
           textStyle: const TextStyle(
@@ -707,11 +709,9 @@ class _AdminScreenState extends State<AdminScreen> {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (ctx) => DraggableScrollableSheet(
-        initialChildSize: 0.85,
-        minChildSize: 0.4,
-        maxChildSize: 0.95,
-        builder: (ctx, scrollController) => Container(
+      builder: (ctx) => SizedBox(
+        height: MediaQuery.sizeOf(ctx).height * 0.85,
+        child: Container(
           decoration: const BoxDecoration(
             color: AppColors.navyMedium,
             borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
