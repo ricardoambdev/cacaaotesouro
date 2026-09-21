@@ -52,6 +52,10 @@ class _TeamHomeScreenState extends State<TeamHomeScreen> {
   // ── Mensagens não lidas ────────────────────────────────
   List<TeamMessage> _unreadMessages = [];
 
+  /// Controle de fila: impede que um segundo poll abra modais enquanto
+  /// o usuário ainda está vendo a fila de mensagens atual.
+  bool _showingMessageQueue = false;
+
   @override
   void initState() {
     super.initState();
@@ -196,30 +200,51 @@ class _TeamHomeScreenState extends State<TeamHomeScreen> {
     }
   }
 
-  /// Processa mensagens novas: toca som, salva lastId, mostra popup e marca
-  /// como lidas no servidor. Usado tanto no carregamento quanto no polling.
+  /// Processa mensagens novas: exibe uma por vez em fila sequencial.
+  ///
+  /// Cada mensagem abre um modal; ao clicar OK, fecha e abre a próxima.
+  /// O som de notificação toca quando CADA modal aparece e é parado ao
+  /// fechar (antes do próximo). O `setLastMessageId` e a marcação como
+  /// lido no servidor só acontecem DEPOIS de toda a fila ser exibida.
   Future<void> _handleNewTeamMessages(List<TeamMessage> messages) async {
     final lastId = await _deviceService.getLastMessageId();
     final newMsgs = messages.where((m) => m.id > lastId).toList();
     if (newMsgs.isEmpty) return;
 
-    // Tocar som de notificação
-    _soundService.playNotification();
+    // Já existe uma fila em exibição: deixa para o próximo poll.
+    // Nada é marcado como visto, então essas mensagens não se perdem.
+    if (_showingMessageQueue) return;
 
-    // Salvar o maior ID visto
+    _showingMessageQueue = true;
+
+    try {
+      for (var i = 0; i < newMsgs.length; i++) {
+        if (!mounted) break;
+
+        // Cada mensagem toca a notificação quando aparece.
+        _soundService.playNotification();
+
+        await showDialog<void>(
+          context: context,
+          barrierDismissible: true,
+          builder: (_) => _buildMessagePopup(
+            newMsgs[i],
+            index: i,
+            total: newMsgs.length,
+          ),
+        );
+
+        // Ao fechar (OK), para o som atual antes da próxima.
+        _soundService.stopEffects();
+      }
+    } finally {
+      _showingMessageQueue = false;
+    }
+
+    // Só depois de mostrar tudo, marca como visto/lido.
     final newest = newMsgs.reduce((a, b) => a.id > b.id ? a : b);
     await _deviceService.setLastMessageId(newest.id);
 
-    // Mostrar a mensagem em POPUP
-    if (mounted) {
-      showDialog(
-        context: context,
-        barrierDismissible: true,
-        builder: (_) => _buildMessagePopup(newMsgs),
-      );
-    }
-
-    // Marcar como lidas no servidor
     try {
       await _apiService.teamMarkMessagesRead(newMsgs.map((m) => m.id).toList());
     } catch (_) {
@@ -916,18 +941,18 @@ class _TeamHomeScreenState extends State<TeamHomeScreen> {
     );
   }
 
-  /// Popup com as novas mensagens (som + destaque).
+  /// Popup com UMA mensagem (fila sequencial).
   ///
-  /// Cada mensagem exibe título colorido por tipo e o texto. O som de
-  /// notificação é parado ao clicar em OK.
-  Widget _buildMessagePopup(List<TeamMessage> msgs) {
-    // Se todas as mensagens têm o mesmo kind, usa título e cor desse tipo;
-    // se há tipos mistos, usa título genérico dourado.
-    final kinds = msgs.map((m) => m.kind).toSet();
-    final bool singleKind = kinds.length == 1;
-    final String singleKindValue = singleKind ? kinds.first : '';
-    final MessageKindStyle singleStyle =
-        singleKind ? MessageKindStyle.forKind(singleKindValue) : MessageKindStyle.forKind('info');
+  /// Exibe o ícone e título coloridos por tipo de mensagem. Se houver mais
+  /// de uma mensagem na fila, mostra um contador discreto "X de Y".
+  Widget _buildMessagePopup(
+    TeamMessage msg, {
+    int index = 0,
+    int total = 1,
+  }) {
+    final style = MessageKindStyle.forKind(msg.kind);
+    final title = style.effectiveTitle(msg.title);
+    final bool showCounter = total > 1;
 
     return AlertDialog(
       backgroundColor: AppColors.navyMedium,
@@ -937,26 +962,19 @@ class _TeamHomeScreenState extends State<TeamHomeScreen> {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: (singleKind ? singleStyle.color : AppColors.gold)
-                  .withValues(alpha: 0.2),
+              color: style.color.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(10),
             ),
-            child: Icon(
-              singleKind ? singleStyle.icon : Icons.notifications_active,
-              color: singleKind ? singleStyle.color : AppColors.gold,
-              size: 22,
-            ),
+            child: Icon(style.icon, color: style.color, size: 22),
           ),
           const SizedBox(width: 12),
           Expanded(
             child: Text(
-              singleKind
-                  ? singleStyle.effectiveTitle(msgs.first.title)
-                  : 'Mensagens da organização',
+              title,
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w800,
-                color: singleKind ? singleStyle.color : AppColors.gold,
+                color: style.color,
               ),
             ),
           ),
@@ -965,62 +983,41 @@ class _TeamHomeScreenState extends State<TeamHomeScreen> {
       content: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: msgs.map((m) {
-          final style = MessageKindStyle.forKind(m.kind);
-          final title = style.effectiveTitle(m.title);
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 12),
-            child: Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: style.color.withValues(alpha: 0.08),
-                borderRadius: BorderRadius.circular(10),
-                border: Border(
-                  left: BorderSide(color: style.color, width: 3),
+        children: [
+          Text(
+            msg.message,
+            style: const TextStyle(
+              fontSize: 15,
+              height: 1.5,
+              color: AppColors.ivory,
+            ),
+          ),
+          if (showCounter) ...[
+            const SizedBox(height: 16),
+            Center(
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                decoration: BoxDecoration(
+                  color: AppColors.navyDark,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Text(
+                  '${index + 1} de $total',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.ivoryMuted.withValues(alpha: 0.8),
+                  ),
                 ),
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Icon(style.icon, color: style.color, size: 16),
-                      const SizedBox(width: 6),
-                      Expanded(
-                        child: Text(
-                          title,
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w700,
-                            color: style.color,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    m.message,
-                    style: const TextStyle(
-                      fontSize: 15,
-                      height: 1.5,
-                      color: AppColors.ivory,
-                    ),
-                  ),
-                ],
-              ),
             ),
-          );
-        }).toList(),
+          ],
+        ],
       ),
       actions: [
         TextButton(
-          onPressed: () {
-            // Parar efeitos sonoros (notificação) antes de fechar o popup.
-            _soundService.stopEffects();
-            Navigator.pop(context);
-          },
+          onPressed: () => Navigator.pop(context),
           child: const Text(
             'OK',
             style: TextStyle(
