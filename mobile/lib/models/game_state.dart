@@ -291,6 +291,8 @@ class AdminStatus {
   final int? winnerTeamId;
   final List<AdminTeamStatus> teams;
   final List<dynamic>? treasuresProgress;
+  final String story;
+  final int storyVersion;
 
   const AdminStatus({
     required this.gameActive,
@@ -298,6 +300,8 @@ class AdminStatus {
     this.winnerTeamId,
     required this.teams,
     this.treasuresProgress,
+    this.story = '',
+    this.storyVersion = 0,
   });
 
   factory AdminStatus.fromJson(Map<String, dynamic> json) {
@@ -342,6 +346,8 @@ class AdminStatus {
       winnerTeamId: winnerTeamId,
       teams: teamsList,
       treasuresProgress: treasuresProgress,
+      story: (json['story'] as String?) ?? '',
+      storyVersion: (json['story_version'] as num?)?.toInt() ?? 0,
     );
   }
 }

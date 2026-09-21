@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_widget_from_html_core/flutter_widget_from_html_core.dart';
 import '../theme.dart';
 import '../models/treasure.dart';
 import '../models/game_state.dart';
@@ -174,13 +175,9 @@ class _AdminScreenState extends State<AdminScreen> {
             tooltip: 'Atualizar',
             onPressed: _loadData,
           ),
-          IconButton(
-            icon: const Icon(Icons.logout),
-            tooltip: 'Sair',
-            onPressed: _logout,
-          ),
         ],
       ),
+      bottomNavigationBar: _buildBottomBar(),
       body: _isLoading
           ? const Center(
               child: CircularProgressIndicator(color: AppColors.gold))
@@ -220,12 +217,13 @@ class _AdminScreenState extends State<AdminScreen> {
   }
 
   Widget _buildContent() {
+    final bottomInset = MediaQuery.viewPaddingOf(context).bottom;
     return RefreshIndicator(
       onRefresh: _loadData,
       color: AppColors.gold,
       backgroundColor: AppColors.navyMedium,
       child: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.fromLTRB(16, 16, 16, 32 + bottomInset),
         children: [
           // ── Status do Jogo ────────────────────────────
           if (_status != null) _buildGameStatus(),
@@ -516,6 +514,197 @@ class _AdminScreenState extends State<AdminScreen> {
     if (sent == true && mounted) {
       _showSnackBar('Mensagem enviada para todas as equipes!', isError: false);
     }
+  }
+
+  /// Barra inferior com "História" e "Sair".
+  Widget _buildBottomBar() {
+    return SafeArea(
+      top: false,
+      child: Container(
+        decoration: const BoxDecoration(
+          color: AppColors.navyMedium,
+          border: Border(
+            top: BorderSide(
+              color: AppColors.gold,
+              width: 0.3,
+            ),
+          ),
+        ),
+        child: Row(
+          children: [
+            // ── História ──────────────────────────────
+            Expanded(
+              child: InkWell(
+                onTap: _showStorySheet,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  child: const Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.menu_book, color: AppColors.gold, size: 22),
+                      SizedBox(height: 4),
+                      Text(
+                        'História',
+                        style: TextStyle(
+                          color: AppColors.gold,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            // ── Sair ─────────────────────────────────
+            Expanded(
+              child: InkWell(
+                onTap: _confirmLogout,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  child: const Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.logout, color: Colors.redAccent, size: 22),
+                      SizedBox(height: 4),
+                      Text(
+                        'Sair',
+                        style: TextStyle(
+                          color: Colors.redAccent,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Modal de confirmação antes de sair do painel admin.
+  Future<void> _confirmLogout() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.navyMedium,
+        title: const Text('Sair do painel admin?',
+            style: TextStyle(color: AppColors.gold)),
+        content: const Text(
+          'Você será desconectado e o app voltará para a tela de login.',
+          style: TextStyle(color: AppColors.ivory),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancelar',
+                style: TextStyle(color: AppColors.ivoryMuted)),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.redAccent,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Sair'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      await _logout();
+    }
+  }
+
+  /// Abre a história do jogo em um modal inferior (somente leitura).
+  void _showStorySheet() {
+    final story = _status?.story ?? '';
+    final hasStory = story.trim().isNotEmpty;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => DraggableScrollableSheet(
+        initialChildSize: 0.85,
+        minChildSize: 0.4,
+        maxChildSize: 0.95,
+        builder: (ctx, scrollController) => Container(
+          decoration: const BoxDecoration(
+            color: AppColors.navyMedium,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+          child: Column(
+            children: [
+              // ── Handle ────────────────────────────────
+              Container(
+                margin: const EdgeInsets.only(top: 10),
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: AppColors.ivoryMuted.withValues(alpha: 0.3),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              // ── Título ────────────────────────────────
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                child: Row(
+                  children: [
+                    Icon(Icons.menu_book, color: AppColors.gold, size: 22),
+                    SizedBox(width: 10),
+                    Text(
+                      'História',
+                      style: TextStyle(
+                        color: AppColors.gold,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Divider(height: 1, color: AppColors.ivoryMuted),
+              // ── Conteúdo ──────────────────────────────
+              Expanded(
+                child: hasStory
+                    ? SingleChildScrollView(
+                        controller: scrollController,
+                        padding: const EdgeInsets.all(20),
+                        child: HtmlWidget(
+                          story,
+                          textStyle: const TextStyle(
+                            fontSize: 15,
+                            height: 1.7,
+                            color: AppColors.ivory,
+                          ),
+                        ),
+                      )
+                    : const Center(
+                        child: Padding(
+                          padding: EdgeInsets.all(32),
+                          child: Text(
+                            'Nenhuma história cadastrada.',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontStyle: FontStyle.italic,
+                              color: AppColors.ivoryMuted,
+                            ),
+                          ),
+                        ),
+                      ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   Widget _buildTeams() {
