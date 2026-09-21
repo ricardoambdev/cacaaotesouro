@@ -39,6 +39,5 @@ $username = (string) ($old['username'] ?? '');
 
     <div class="auth-links">
         <p><a href="/recuperar">Esqueci minha senha</a></p>
-        <p>Ainda não tem conta? <a href="/register">Cadastre-se</a></p>
     </div>
 </div>

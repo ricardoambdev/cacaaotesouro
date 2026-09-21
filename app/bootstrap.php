@@ -108,8 +108,9 @@ $app->get('/', [DashboardController::class, 'index'])->add($mw['authRequired']);
 $app->get('/login', [AuthController::class, 'showLogin'])->add($mw['guestOnly']);
 $app->post('/login', [AuthController::class, 'login'])->add($mw['guestOnly']);
 
-$app->get('/register', [AuthController::class, 'showRegister'])->add($mw['guestOnly']);
-$app->post('/register', [AuthController::class, 'register'])->add($mw['guestOnly']);
+// NÃO existe autocadastro: as contas são fixas (admin + equipes + master).
+// (As rotas /register foram removidas — criavam um usuário do painel e
+// entravam automaticamente, o que permitia qualquer pessoa virar admin.)
 
 $app->post('/logout', [AuthController::class, 'logout'])->add($mw['authRequired']);
 

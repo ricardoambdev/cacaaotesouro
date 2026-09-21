@@ -93,82 +93,6 @@ final class AuthController
     }
 
     // ------------------------------------------------------------------
-    // Registro
-    // ------------------------------------------------------------------
-
-    public function showRegister(Request $request, Response $response): Response
-    {
-        if (isset($_SESSION['user'])) {
-            redirect('/');
-        }
-
-        $old = $_SESSION['old'] ?? ['name' => '', 'username' => ''];
-        unset($_SESSION['old']);
-
-        $content = View::render('register', [
-            'error' => null,
-            'old'   => $old,
-        ]);
-
-        $response->getBody()->write($this->renderAuthLayout($content));
-
-        return $response;
-    }
-
-    public function register(Request $request, Response $response): Response
-    {
-        $body = (array) $request->getParsedBody();
-
-        $name = trim((string) ($body['name'] ?? ''));
-        $username = strtolower(trim((string) ($body['username'] ?? '')));
-        $password = (string) ($body['password'] ?? '');
-        $passwordConfirm = (string) ($body['password_confirm'] ?? '');
-
-        $errors = [];
-
-        if (mb_strlen($name) < 2) {
-            $errors[] = 'O nome deve ter pelo menos 2 caracteres.';
-        }
-
-        if (!preg_match('/^[a-z0-9_]{3,30}$/', $username)) {
-            $errors[] = 'Usuário deve ter de 3 a 30 caracteres (letras, números ou _).';
-        } elseif (UserRepository::findByUsername($username) !== null) {
-            $errors[] = 'Este usuário já está cadastrado.';
-        }
-
-        if (strlen($password) < 6) {
-            $errors[] = 'A senha deve ter pelo menos 6 caracteres.';
-        }
-
-        if ($password !== $passwordConfirm) {
-            $errors[] = 'As senhas não conferem.';
-        }
-
-        if ($errors !== []) {
-            flash_set('error', implode(' ', $errors));
-            $_SESSION['old'] = ['name' => $name, 'username' => $username];
-            redirect('/register');
-        }
-
-        $userId = UserRepository::create([
-            'name'          => $name,
-            'username'      => $username,
-            'password_hash' => password_hash($password, PASSWORD_DEFAULT),
-        ]);
-
-        session_regenerate_id(true);
-
-        $_SESSION['user'] = [
-            'id'       => $userId,
-            'name'     => $name,
-            'username' => $username,
-        ];
-
-        flash_set('success', 'Conta criada com sucesso!');
-        redirect('/');
-    }
-
-    // ------------------------------------------------------------------
     // Logout
     // ------------------------------------------------------------------
 
@@ -267,12 +191,15 @@ final class AuthController
                 // Sem e-mail cadastrado: apenas loga o link no servidor.
                 error_log('[Caça ao Tesouro] Link de recuperação para ' . $username . ': ' . $link);
             }
-
-            redirect('/recuperar?enviado=1');
+        } else {
+            // Desenvolvimento: também não mostra o token na tela.
+            error_log('[Caça ao Tesouro][dev] Link de recuperação para ' . $username . ': ' . $link);
         }
 
-        // Ambiente de desenvolvimento: o link é exibido na própria tela.
-        redirect('/recuperar?enviado=1&dev=' . $token);
+        // SEGURANÇA: o token NUNCA volta para a URL/tela. Antes, em ambiente
+        // 'dev', ele era devolvido em ?dev=<token>, permitindo que qualquer
+        // pessoa redefinisse a senha de outro usuário (inclusive do admin).
+        redirect('/recuperar?enviado=1');
     }
 
     public function showReset(Request $request, Response $response): Response
