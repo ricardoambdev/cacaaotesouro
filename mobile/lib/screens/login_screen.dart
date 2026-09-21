@@ -88,8 +88,13 @@ class _LoginScreenState extends State<LoginScreen> {
 
       if (!mounted) return;
 
-      // Admin login: limpar credenciais (admin não usa auto-login)
-      await deviceService.clearCredentials();
+      // Login com sucesso — salvar ou limpar credenciais (igual à equipe)
+      if (_autoLogin) {
+        await deviceService.saveCredentials(username, password);
+        await deviceService.setAutoLogin(true);
+      } else {
+        await deviceService.clearCredentials();
+      }
 
       Navigator.pushReplacement(
         context,
