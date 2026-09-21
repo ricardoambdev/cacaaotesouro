@@ -1,0 +1,1326 @@
+<?php
+
+/**
+ * Página PÚBLICA do COFRE (GET /cofre) — autônoma, sem sidebar/login.
+ *
+ * A equipe digita os 9 dígitos encontrados no mundo físico.
+ * Se acertar, o cofre abre e revela a senha do desafio final.
+ *
+ * @var string $siteName Nome do sistema (título)
+ * @var string $appUrl   URL base da aplicação
+ */
+
+$siteName = $siteName ?? 'Caça ao Tesouro';
+$appUrl = $appUrl ?? '';
+?><!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cofre da Gincana — <?= e($siteName) ?></title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Pirata+One&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        html, body {
+            height: 100%;
+            overflow-x: hidden;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #050B12;
+            color: #f7ecd4;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 20px;
+            background-image:
+                radial-gradient(ellipse at 50% 30%, rgba(249, 115, 22, 0.06) 0%, transparent 60%),
+                radial-gradient(ellipse at 50% 80%, rgba(14, 31, 48, 0.8) 0%, transparent 60%);
+        }
+
+        /* ============================================================
+           HEADER
+           ============================================================ */
+        .vault-header {
+            text-align: center;
+            margin-bottom: 36px;
+            animation: fadeInUp 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+
+        .vault-title {
+            font-family: 'Pirata One', Georgia, cursive;
+            font-size: 2.4rem;
+            color: #F97316;
+            letter-spacing: 0.02em;
+            text-shadow: 0 2px 12px rgba(249, 115, 22, 0.3);
+            margin-bottom: 8px;
+        }
+
+        .vault-subtitle {
+            font-size: 1rem;
+            color: rgba(247, 236, 212, 0.55);
+            font-weight: 400;
+            max-width: 340px;
+            margin: 0 auto;
+            line-height: 1.5;
+        }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(24px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ============================================================
+           SAFE BODY (CSS)
+           ============================================================ */
+        .safe-wrapper {
+            position: relative;
+            width: 360px;
+            max-width: 100%;
+            animation: fadeInUp 0.8s cubic-bezier(0.22, 1, 0.36, 1) 0.15s both;
+        }
+
+        .safe {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 1 / 1.05;
+            background: linear-gradient(160deg, #1a2a3d 0%, #0f1c2c 40%, #0a1520 100%);
+            border-radius: 24px;
+            border: 3px solid rgba(249, 115, 22, 0.25);
+            box-shadow:
+                0 20px 60px rgba(0, 0, 0, 0.6),
+                0 4px 16px rgba(0, 0, 0, 0.4),
+                inset 0 1px 0 rgba(255, 255, 255, 0.04),
+                inset 0 -2px 0 rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+            transition: transform 0.3s ease, border-color 0.4s ease, box-shadow 0.4s ease;
+        }
+
+        .safe.error-shake {
+            animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+            border-color: rgba(192, 57, 43, 0.7);
+            box-shadow:
+                0 20px 60px rgba(192, 57, 43, 0.3),
+                0 4px 16px rgba(0, 0, 0, 0.4),
+                inset 0 1px 0 rgba(255, 255, 255, 0.04);
+        }
+
+        @keyframes shake {
+            10%, 90% { transform: translateX(-2px); }
+            20%, 80% { transform: translateX(3px); }
+            30%, 50%, 70% { transform: translateX(-5px); }
+            40%, 60% { transform: translateX(5px); }
+        }
+
+        /* Corner bolts */
+        .safe-bolt {
+            position: absolute;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 40% 35%, #3a4f66 0%, #1a2a3d 70%);
+            border: 1.5px solid rgba(249, 115, 22, 0.3);
+            box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.5), 0 1px 3px rgba(0, 0, 0, 0.3);
+            z-index: 5;
+        }
+
+        .safe-bolt::after {
+            content: '+';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 10px;
+            color: rgba(249, 115, 22, 0.4);
+            font-weight: 900;
+            line-height: 1;
+        }
+
+        .safe-bolt--tl { top: 14px; left: 14px; }
+        .safe-bolt--tr { top: 14px; right: 14px; }
+        .safe-bolt--bl { bottom: 14px; left: 14px; }
+        .safe-bolt--br { bottom: 14px; right: 14px; }
+
+        /* Inner door panel */
+        .safe-door {
+            position: absolute;
+            inset: 20px;
+            border-radius: 14px;
+            background: linear-gradient(160deg, #14222f 0%, #0c1a28 60%, #081320 100%);
+            border: 2px solid rgba(249, 115, 22, 0.15);
+            box-shadow:
+                inset 0 2px 8px rgba(0, 0, 0, 0.4),
+                inset 0 0 20px rgba(0, 0, 0, 0.2);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            transition: transform 0.8s cubic-bezier(0.22, 1, 0.36, 1),
+                        opacity 0.5s ease;
+        }
+
+        /* Door open animation */
+        .safe.opened .safe-door {
+            transform: perspective(600px) rotateY(-85deg);
+            transform-origin: left center;
+            opacity: 0;
+        }
+
+        .safe.opened {
+            border-color: rgba(249, 115, 22, 0.6);
+            box-shadow:
+                0 20px 80px rgba(249, 115, 22, 0.3),
+                0 0 60px rgba(249, 115, 22, 0.15),
+                0 4px 16px rgba(0, 0, 0, 0.4);
+        }
+
+        .safe.opened::after {
+            content: '';
+            position: absolute;
+            inset: -2px;
+            border-radius: 24px;
+            background: radial-gradient(circle at center, rgba(249, 115, 22, 0.2) 0%, transparent 70%);
+            pointer-events: none;
+            animation: glowPulse 2s ease-in-out infinite;
+        }
+
+        @keyframes glowPulse {
+            0%, 100% { opacity: 0.6; }
+            50%      { opacity: 1; }
+        }
+
+        /* Handle / wheel */
+        .safe-handle {
+            width: 72px;
+            height: 72px;
+            border-radius: 50%;
+            border: 3px solid rgba(249, 115, 22, 0.4);
+            background: radial-gradient(circle at 40% 35%, #2a3f55 0%, #15253a 60%, #0c1a28 100%);
+            box-shadow:
+                0 4px 12px rgba(0, 0, 0, 0.4),
+                inset 0 2px 4px rgba(255, 255, 255, 0.05),
+                inset 0 -2px 4px rgba(0, 0, 0, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+            position: relative;
+            transition: transform 0.6s ease, border-color 0.4s ease;
+        }
+
+        .safe.opened .safe-handle {
+            transform: rotate(180deg);
+            border-color: rgba(249, 115, 22, 0.7);
+        }
+
+        .safe-handle::before {
+            content: '';
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: 2px solid rgba(249, 115, 22, 0.25);
+            background: radial-gradient(circle at 40% 35%, #1e3248 0%, #0c1a28 100%);
+        }
+
+        .safe-handle::after {
+            content: '';
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 40% 35%, #F97316 0%, #c0620e 100%);
+            box-shadow: 0 0 8px rgba(249, 115, 22, 0.5);
+        }
+
+        /* Hinges */
+        .safe-hinge {
+            position: absolute;
+            left: -4px;
+            width: 8px;
+            height: 24px;
+            background: linear-gradient(90deg, #1a2a3d, #2a3f55, #1a2a3d);
+            border-radius: 3px;
+            border: 1px solid rgba(249, 115, 22, 0.2);
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+            z-index: 2;
+        }
+
+        .safe-hinge--top { top: 60px; }
+        .safe-hinge--bottom { bottom: 60px; }
+
+        /* Keyhole */
+        .safe-keyhole {
+            width: 18px;
+            height: 24px;
+            margin-bottom: 16px;
+            position: relative;
+        }
+
+        .safe-keyhole::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 40% 35%, #0a0f14 0%, #050810 100%);
+            border: 1.5px solid rgba(249, 115, 22, 0.3);
+        }
+
+        .safe-keyhole::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 6px;
+            height: 12px;
+            background: #050810;
+            border-radius: 0 0 3px 3px;
+            border: 1px solid rgba(249, 115, 22, 0.2);
+            border-top: none;
+        }
+
+        /* Lock bars */
+        .safe-lockbar {
+            position: absolute;
+            right: -2px;
+            width: 6px;
+            height: 30px;
+            background: linear-gradient(180deg, #2a3f55, #1a2a3d);
+            border-radius: 3px;
+            border: 1px solid rgba(249, 115, 22, 0.25);
+            z-index: 3;
+            transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+
+        .safe-lockbar--top { top: 70px; }
+        .safe.locked .safe-lockbar--top { transform: translateX(2px); }
+        .safe.opened .safe-lockbar--top { transform: translateX(-10px); }
+
+        .safe-lockbar--bottom { bottom: 70px; }
+        .safe.locked .safe-lockbar--bottom { transform: translateX(2px); }
+        .safe.opened .safe-lockbar--bottom { transform: translateX(-10px); }
+
+        /* ============================================================
+           STATUS / INPUT AREA (below the safe)
+           ============================================================ */
+        .vault-status {
+            text-align: center;
+            margin-top: 28px;
+            animation: fadeInUp 0.8s cubic-bezier(0.22, 1, 0.36, 1) 0.3s both;
+        }
+
+        .vault-status-msg {
+            font-size: 0.92rem;
+            color: rgba(247, 236, 212, 0.55);
+            margin-bottom: 4px;
+            min-height: 24px;
+            transition: all 0.3s ease;
+        }
+
+        .vault-status-msg.error { color: #f5a6a0; }
+        .vault-status-msg.success { color: #5fd99f; }
+        .vault-status-msg.warning { color: #F97316; }
+
+        .vault-attempts {
+            font-size: 0.82rem;
+            color: rgba(247, 236, 212, 0.4);
+            margin-bottom: 18px;
+        }
+
+        /* Digit input */
+        .digit-input-area {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            margin-bottom: 20px;
+            flex-wrap: nowrap;
+        }
+
+        .digit-box {
+            width: 36px;
+            height: 48px;
+            background: rgba(5, 11, 18, 0.7);
+            border: 2px solid rgba(247, 236, 212, 0.15);
+            border-radius: 10px;
+            color: #F97316;
+            font-family: 'Inter', sans-serif;
+            font-size: 1.3rem;
+            font-weight: 800;
+            text-align: center;
+            outline: none;
+            transition: all 150ms cubic-bezier(0.22, 1, 0.36, 1);
+            caret-color: #F97316;
+            padding: 0;
+        }
+
+        .digit-box::placeholder {
+            color: rgba(247, 236, 212, 0.12);
+            font-weight: 400;
+        }
+
+        .digit-box:focus {
+            border-color: #F97316;
+            box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.25);
+            background: rgba(5, 11, 18, 0.9);
+        }
+
+        .digit-box.filled {
+            border-color: rgba(249, 115, 22, 0.5);
+        }
+
+        /* Submit button */
+        .vault-submit {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 14px 36px;
+            border-radius: 12px;
+            font-family: 'Inter', sans-serif;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            border: none;
+            background: linear-gradient(135deg, #F97316 0%, #EA580C 100%);
+            color: #050B12;
+            box-shadow: 0 4px 20px rgba(249, 115, 22, 0.35);
+            transition: all 150ms cubic-bezier(0.22, 1, 0.36, 1);
+            width: 100%;
+            max-width: 320px;
+            letter-spacing: 0.02em;
+        }
+
+        .vault-submit:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 28px rgba(249, 115, 22, 0.5);
+        }
+
+        .vault-submit:active:not(:disabled) {
+            transform: translateY(0);
+        }
+
+        .vault-submit:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .vault-submit svg {
+            width: 18px;
+            height: 18px;
+        }
+
+        /* ============================================================
+           PASSWORD REVEAL
+           ============================================================ */
+        .password-reveal {
+            display: none;
+            text-align: center;
+            margin-top: 28px;
+            animation: fadeInUp 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+
+        .password-reveal.visible {
+            display: block;
+        }
+
+        .password-reveal-label {
+            font-size: 0.82rem;
+            color: rgba(247, 236, 212, 0.5);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            font-weight: 600;
+            margin-bottom: 12px;
+        }
+
+        .password-reveal-value {
+            font-family: 'Courier New', monospace;
+            font-size: 2rem;
+            font-weight: 800;
+            color: #F97316;
+            letter-spacing: 0.12em;
+            background: rgba(249, 115, 22, 0.08);
+            border: 2px solid rgba(249, 115, 22, 0.3);
+            border-radius: 12px;
+            padding: 16px 24px;
+            margin-bottom: 16px;
+            display: inline-block;
+            min-width: 200px;
+            text-shadow: 0 2px 8px rgba(249, 115, 22, 0.3);
+            word-break: break-all;
+        }
+
+        .password-reveal-value .char {
+            display: inline-block;
+            opacity: 0;
+            transform: translateY(-8px);
+            transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+
+        .password-reveal-value .char.revealed {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .password-reveal-value .char.masked {
+            opacity: 0.2;
+            transform: none;
+        }
+
+        .copy-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 10px 24px;
+            border-radius: 10px;
+            border: 1.5px solid rgba(249, 115, 22, 0.35);
+            background: rgba(249, 115, 22, 0.1);
+            color: #F97316;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.88rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 150ms cubic-bezier(0.22, 1, 0.36, 1);
+        }
+
+        .copy-btn:hover {
+            background: rgba(249, 115, 22, 0.2);
+            border-color: #F97316;
+        }
+
+        .copy-btn.copied {
+            background: rgba(39, 174, 96, 0.15);
+            border-color: rgba(39, 174, 96, 0.4);
+            color: #5fd99f;
+        }
+
+        .copy-btn svg {
+            width: 16px;
+            height: 16px;
+        }
+
+        /* ============================================================
+           BLOCKED STATE
+           ============================================================ */
+        .blocked-banner {
+            display: none;
+            text-align: center;
+            padding: 20px 24px;
+            background: rgba(192, 57, 43, 0.1);
+            border: 1px solid rgba(192, 57, 43, 0.3);
+            border-radius: 14px;
+            margin-top: 20px;
+            animation: fadeInUp 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+
+        .blocked-banner.visible {
+            display: block;
+        }
+
+        .blocked-icon {
+            font-size: 2.5rem;
+            margin-bottom: 8px;
+        }
+
+        .blocked-title {
+            font-family: 'Pirata One', Georgia, cursive;
+            font-size: 1.3rem;
+            color: #f5a6a0;
+            margin-bottom: 6px;
+        }
+
+        .blocked-countdown {
+            font-size: 1.6rem;
+            font-weight: 800;
+            color: #c0392b;
+            font-variant-numeric: tabular-nums;
+            margin-bottom: 4px;
+        }
+
+        .blocked-hint {
+            font-size: 0.82rem;
+            color: rgba(247, 236, 212, 0.45);
+        }
+
+        /* ============================================================
+           NOT CONFIGURED STATE
+           ============================================================ */
+        .not-configured {
+            display: none;
+            text-align: center;
+            padding: 40px 28px;
+            background: rgba(14, 31, 48, 0.6);
+            border: 1.5px dashed rgba(247, 236, 212, 0.15);
+            border-radius: 16px;
+            margin-top: 20px;
+            animation: fadeInUp 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+
+        .not-configured.visible {
+            display: block;
+        }
+
+        .not-configured-icon {
+            font-size: 3rem;
+            margin-bottom: 12px;
+            opacity: 0.4;
+        }
+
+        .not-configured-text {
+            color: rgba(247, 236, 212, 0.5);
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+
+        /* ============================================================
+           CONFIRM MODAL
+           ============================================================ */
+        .confirm-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.85);
+            z-index: 9000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            backdrop-filter: blur(6px);
+        }
+
+        .confirm-overlay.open {
+            display: flex;
+        }
+
+        .confirm-card {
+            background: #0A1724;
+            border: 1px solid rgba(249, 115, 22, 0.3);
+            border-radius: 18px;
+            max-width: 400px;
+            width: 100%;
+            padding: 32px 28px 24px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+            text-align: center;
+            animation: modalIn 0.2s ease;
+        }
+
+        @keyframes modalIn {
+            from { opacity: 0; transform: translateY(16px) scale(0.96); }
+            to   { opacity: 1; transform: none; }
+        }
+
+        .confirm-icon {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: rgba(249, 115, 22, 0.12);
+            border: 2px solid rgba(249, 115, 22, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 16px;
+        }
+
+        .confirm-icon svg {
+            width: 28px;
+            height: 28px;
+            color: #F97316;
+        }
+
+        .confirm-title {
+            font-family: 'Pirata One', Georgia, cursive;
+            font-size: 1.3rem;
+            color: #F97316;
+            margin-bottom: 12px;
+        }
+
+        .confirm-message {
+            color: rgba(247, 236, 212, 0.7);
+            font-size: 0.92rem;
+            line-height: 1.7;
+            margin-bottom: 24px;
+        }
+
+        .confirm-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        .confirm-btn {
+            padding: 12px 24px;
+            border-radius: 10px;
+            border: none;
+            font-family: 'Inter', sans-serif;
+            font-weight: 700;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: transform 0.12s;
+        }
+
+        .confirm-btn:hover { transform: translateY(-1px); }
+
+        .confirm-btn.cancel {
+            background: rgba(247, 236, 212, 0.08);
+            color: #f7ecd4;
+            border: 1px solid rgba(247, 236, 212, 0.18);
+        }
+
+        .confirm-btn.ok {
+            background: linear-gradient(135deg, #F97316, #EA580C);
+            color: #fff;
+        }
+
+        /* ============================================================
+           TOAST MESSAGE
+           ============================================================ */
+        .toast {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10060;
+            padding: 12px 22px;
+            border-radius: 10px;
+            font-size: 0.88rem;
+            font-family: 'Inter', sans-serif;
+            color: #f7ecd4;
+            max-width: 90vw;
+            text-align: center;
+            line-height: 1.5;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+            opacity: 0;
+            transition: opacity 0.2s;
+            pointer-events: none;
+        }
+
+        .toast.visible { opacity: 1; }
+
+        .toast.error {
+            background: rgba(192, 57, 43, 0.96);
+            border: 1px solid rgba(239, 68, 68, 0.6);
+        }
+
+        .toast.success {
+            background: rgba(22, 138, 58, 0.96);
+            border: 1px solid rgba(34, 197, 94, 0.55);
+        }
+
+        /* ============================================================
+           LOADING SPINNER
+           ============================================================ */
+        .spinner {
+            display: inline-block;
+            width: 18px;
+            height: 18px;
+            border: 2.5px solid rgba(5, 11, 18, 0.3);
+            border-top-color: #050B12;
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+            vertical-align: middle;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* ============================================================
+           RESPONSIVE
+           ============================================================ */
+        @media (max-width: 420px) {
+            .safe-wrapper {
+                width: 300px;
+            }
+
+            .vault-title {
+                font-size: 1.8rem;
+            }
+
+            .digit-box {
+                width: 30px;
+                height: 42px;
+                font-size: 1.1rem;
+            }
+
+            .password-reveal-value {
+                font-size: 1.5rem;
+                padding: 12px 16px;
+            }
+        }
+
+        @media (max-width: 340px) {
+            .safe-wrapper {
+                width: 260px;
+            }
+
+            .digit-input-area {
+                gap: 5px;
+            }
+
+            .digit-box {
+                width: 25px;
+                height: 38px;
+                font-size: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ============================================================
+         HEADER
+         ============================================================ -->
+    <div class="vault-header">
+        <h1 class="vault-title">Cofre da Gincana</h1>
+        <p class="vault-subtitle">Digite os 9 dígitos encontrados para abrir o cofre</p>
+    </div>
+
+    <!-- ============================================================
+         SAFE
+         ============================================================ -->
+    <div class="safe-wrapper" id="safe-wrapper">
+        <div class="safe locked" id="safe">
+            <!-- Corner bolts -->
+            <div class="safe-bolt safe-bolt--tl"></div>
+            <div class="safe-bolt safe-bolt--tr"></div>
+            <div class="safe-bolt safe-bolt--bl"></div>
+            <div class="safe-bolt safe-bolt--br"></div>
+
+            <!-- Hinges -->
+            <div class="safe-hinge safe-hinge--top"></div>
+            <div class="safe-hinge safe-hinge--bottom"></div>
+
+            <!-- Lock bars -->
+            <div class="safe-lockbar safe-lockbar--top"></div>
+            <div class="safe-lockbar safe-lockbar--bottom"></div>
+
+            <!-- Door -->
+            <div class="safe-door">
+                <div class="safe-keyhole"></div>
+                <div class="safe-handle"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================================
+         STATUS & INPUT
+         ============================================================ -->
+    <div class="vault-status" id="vault-status">
+        <div class="vault-status-msg" id="status-msg"></div>
+        <div class="vault-attempts" id="attempts-msg"></div>
+
+        <!-- Digit input -->
+        <div class="digit-input-area" id="digit-area">
+            <input type="text" class="digit-box" maxlength="1" inputmode="numeric" pattern="[0-9]" aria-label="Dígito 1" data-idx="0">
+            <input type="text" class="digit-box" maxlength="1" inputmode="numeric" pattern="[0-9]" aria-label="Dígito 2" data-idx="1">
+            <input type="text" class="digit-box" maxlength="1" inputmode="numeric" pattern="[0-9]" aria-label="Dígito 3" data-idx="2">
+            <input type="text" class="digit-box" maxlength="1" inputmode="numeric" pattern="[0-9]" aria-label="Dígito 4" data-idx="3">
+            <input type="text" class="digit-box" maxlength="1" inputmode="numeric" pattern="[0-9]" aria-label="Dígito 5" data-idx="4">
+            <input type="text" class="digit-box" maxlength="1" inputmode="numeric" pattern="[0-9]" aria-label="Dígito 6" data-idx="5">
+            <input type="text" class="digit-box" maxlength="1" inputmode="numeric" pattern="[0-9]" aria-label="Dígito 7" data-idx="6">
+            <input type="text" class="digit-box" maxlength="1" inputmode="numeric" pattern="[0-9]" aria-label="Dígito 8" data-idx="7">
+            <input type="text" class="digit-box" maxlength="1" inputmode="numeric" pattern="[0-9]" aria-label="Dígito 9" data-idx="8">
+        </div>
+
+        <!-- Submit -->
+        <button type="button" class="vault-submit" id="submit-btn" disabled>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            Abrir o cofre
+        </button>
+    </div>
+
+    <!-- ============================================================
+         PASSWORD REVEAL (hidden until correct)
+         ============================================================ -->
+    <div class="password-reveal" id="password-reveal">
+        <div class="password-reveal-label">Senha do Desafio Final</div>
+        <div class="password-reveal-value" id="password-value"></div>
+        <button type="button" class="copy-btn" id="copy-btn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            Copiar senha
+        </button>
+    </div>
+
+    <!-- ============================================================
+         BLOCKED BANNER
+         ============================================================ -->
+    <div class="blocked-banner" id="blocked-banner">
+        <div class="blocked-icon">🔒</div>
+        <div class="blocked-title">Cofre bloqueado</div>
+        <div class="blocked-countdown" id="blocked-countdown">--:--</div>
+        <div class="blocked-hint">Aguarde o tempo de bloqueio para tentar novamente.</div>
+    </div>
+
+    <!-- ============================================================
+         NOT CONFIGURED
+         ============================================================ -->
+    <div class="not-configured" id="not-configured">
+        <div class="not-configured-icon">🔐</div>
+        <div class="not-configured-text">
+            O cofre ainda não foi configurado pelo organizador.<br>
+            Aguarde a liberação da gincana.
+        </div>
+    </div>
+
+    <!-- ============================================================
+         CONFIRM MODAL
+         ============================================================ -->
+    <div class="confirm-overlay" id="confirm-overlay">
+        <div class="confirm-card">
+            <div class="confirm-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/>
+                    <line x1="12" y1="8" x2="12" y2="12"/>
+                    <line x1="12" y1="16" x2="12.01" y2="16"/>
+                </svg>
+            </div>
+            <div class="confirm-title">Atenção!</div>
+            <div class="confirm-message">
+                A senha do desafio final será revelada na tela.<br><br>
+                Confirme que nenhum membro da <strong>OUTRA equipe</strong> está vendo.
+                Só continue quando estiverem sozinhos.
+            </div>
+            <div class="confirm-actions">
+                <button type="button" class="confirm-btn cancel" id="confirm-cancel">Cancelar</button>
+                <button type="button" class="confirm-btn ok" id="confirm-ok">OK / Revelar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================================
+         TOAST
+         ============================================================ -->
+    <div class="toast" id="toast"></div>
+
+    <!-- ============================================================
+         JS
+         ============================================================ -->
+    <script>
+    (function () {
+        'use strict';
+
+        /* ---- DOM ---- */
+        var safe = document.getElementById('safe');
+        var digitBoxes = document.querySelectorAll('.digit-box');
+        var submitBtn = document.getElementById('submit-btn');
+        var statusMsg = document.getElementById('status-msg');
+        var attemptsMsg = document.getElementById('attempts-msg');
+        var digitArea = document.getElementById('digit-area');
+        var passwordReveal = document.getElementById('password-reveal');
+        var passwordValue = document.getElementById('password-value');
+        var copyBtn = document.getElementById('copy-btn');
+        var blockedBanner = document.getElementById('blocked-banner');
+        var blockedCountdown = document.getElementById('blocked-countdown');
+        var notConfigured = document.getElementById('not-configured');
+        var confirmOverlay = document.getElementById('confirm-overlay');
+        var confirmCancel = document.getElementById('confirm-cancel');
+        var confirmOk = document.getElementById('confirm-ok');
+        var toastEl = document.getElementById('toast');
+
+        var currentPassword = '';
+        var isSubmitting = false;
+        var blockedUntilTs = null;  /* timestamp of block end */
+        var countdownTimer = null;
+
+        /* ============================================================
+           DIGIT INPUT
+           ============================================================ */
+        var boxes = Array.prototype.slice.call(digitBoxes);
+
+        boxes.forEach(function (box, idx) {
+            box.addEventListener('input', function () {
+                var val = box.value.replace(/[^0-9]/g, '');
+                box.value = val;
+                box.classList.toggle('filled', !!val);
+
+                if (val && idx < boxes.length - 1) {
+                    boxes[idx + 1].focus();
+                }
+                updateSubmitState();
+            });
+
+            box.addEventListener('keydown', function (e) {
+                if (e.key === 'Backspace' && !box.value && idx > 0) {
+                    e.preventDefault();
+                    boxes[idx - 1].focus();
+                    boxes[idx - 1].value = '';
+                    boxes[idx - 1].classList.remove('filled');
+                    updateSubmitState();
+                }
+                if (e.key === 'Enter' && !submitBtn.disabled) {
+                    submitBtn.click();
+                }
+            });
+
+            box.addEventListener('paste', function (e) {
+                e.preventDefault();
+                var text = (e.clipboardData || window.clipboardData).getData('text').replace(/[^0-9]/g, '');
+                if (!text) return;
+                for (var j = 0; j < text.length && (idx + j) < boxes.length; j++) {
+                    boxes[idx + j].value = text[j];
+                    boxes[idx + j].classList.add('filled');
+                }
+                var nextIdx = Math.min(idx + text.length, boxes.length - 1);
+                boxes[nextIdx].focus();
+                updateSubmitState();
+            });
+
+            box.addEventListener('focus', function () {
+                box.select();
+            });
+        });
+
+        function getCode() {
+            var code = '';
+            boxes.forEach(function (b) { code += b.value; });
+            return code;
+        }
+
+        function updateSubmitState() {
+            submitBtn.disabled = getCode().length !== 9 || isSubmitting;
+        }
+
+        /* ============================================================
+           TOAST
+           ============================================================ */
+        function showToast(msg, type) {
+            toastEl.textContent = msg;
+            toastEl.className = 'toast ' + (type || 'error');
+            requestAnimationFrame(function () { toastEl.classList.add('visible'); });
+            setTimeout(function () {
+                toastEl.classList.remove('visible');
+            }, 3500);
+        }
+
+        /* ============================================================
+           FETCH STATUS ON LOAD
+           ============================================================ */
+        function loadStatus() {
+            fetch('/api/cofre?t=' + Date.now(), { cache: 'no-store' })
+                .then(function (r) {
+                    if (!r.ok) throw new Error('HTTP ' + r.status);
+                    return r.json();
+                })
+                .then(function (data) {
+                    if (!data.success) {
+                        showNotConfigured();
+                        return;
+                    }
+
+                    if (!data.configured) {
+                        showNotConfigured();
+                        return;
+                    }
+
+                    if (data.blocked) {
+                        showBlocked(data.blocked_until);
+                    } else {
+                        hideBlocked();
+                        showNormal();
+                    }
+                })
+                .catch(function () {
+                    showToast('Erro ao verificar o cofre. Verifique sua conexão.', 'error');
+                });
+        }
+
+        function showNotConfigured() {
+            notConfigured.classList.add('visible');
+            digitArea.style.display = 'none';
+            submitBtn.style.display = 'none';
+            statusMsg.textContent = '';
+            attemptsMsg.textContent = '';
+        }
+
+        function showNormal() {
+            notConfigured.classList.remove('visible');
+            digitArea.style.display = '';
+            submitBtn.style.display = '';
+            blockedBanner.classList.remove('visible');
+            updateSubmitState();
+        }
+
+        function showBlocked(blockedUntil) {
+            if (!blockedUntil) {
+                hideBlocked();
+                return;
+            }
+            blockedBanner.classList.add('visible');
+            digitArea.style.display = 'none';
+            submitBtn.style.display = 'none';
+            notConfigured.classList.remove('visible');
+            statusMsg.textContent = '';
+            attemptsMsg.textContent = '';
+
+            /* Parse blocked_until as local time */
+            var parts = blockedUntil.split(/[- :]/);
+            blockedUntilTs = new Date(
+                parseInt(parts[0], 10),
+                parseInt(parts[1], 10) - 1,
+                parseInt(parts[2], 10),
+                parseInt(parts[3], 10),
+                parseInt(parts[4], 10),
+                parseInt(parts[5], 10)
+            ).getTime();
+
+            if (countdownTimer) clearInterval(countdownTimer);
+            updateCountdown();
+            countdownTimer = setInterval(updateCountdown, 1000);
+        }
+
+        function hideBlocked() {
+            blockedBanner.classList.remove('visible');
+            blockedUntilTs = null;
+            if (countdownTimer) {
+                clearInterval(countdownTimer);
+                countdownTimer = null;
+            }
+        }
+
+        function updateCountdown() {
+            if (!blockedUntilTs) return;
+            var now = Date.now();
+            var diff = blockedUntilTs - now;
+
+            if (diff <= 0) {
+                hideBlocked();
+                showNormal();
+                loadStatus();
+                return;
+            }
+
+            var totalSec = Math.floor(diff / 1000);
+            var min = Math.floor(totalSec / 60);
+            var sec = totalSec % 60;
+            blockedCountdown.textContent =
+                String(min).padStart(2, '0') + ':' + String(sec).padStart(2, '0');
+        }
+
+        /* ============================================================
+           SUBMIT — shows confirm modal first
+           ============================================================ */
+        submitBtn.addEventListener('click', function () {
+            var code = getCode();
+            if (code.length !== 9) return;
+            openConfirmModal();
+        });
+
+        /* ============================================================
+           CONFIRM MODAL
+           ============================================================ */
+        function openConfirmModal() {
+            confirmOverlay.classList.add('open');
+        }
+
+        function closeConfirmModal() {
+            confirmOverlay.classList.remove('open');
+        }
+
+        confirmCancel.addEventListener('click', closeConfirmModal);
+
+        confirmOverlay.addEventListener('click', function (e) {
+            if (e.target === confirmOverlay) closeConfirmModal();
+        });
+
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape' && confirmOverlay.classList.contains('open')) {
+                closeConfirmModal();
+            }
+        });
+
+        confirmOk.addEventListener('click', function () {
+            closeConfirmModal();
+            sendCode();
+        });
+
+        /* ============================================================
+           SEND CODE TO API
+           ============================================================ */
+        function sendCode() {
+            if (isSubmitting) return;
+            isSubmitting = true;
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="spinner"></span> Verificando...';
+
+            fetch('/api/cofre', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ code: getCode() })
+            })
+            .then(function (r) {
+                return r.json().then(function (data) {
+                    return { status: r.status, data: data };
+                });
+            })
+            .then(function (result) {
+                isSubmitting = false;
+                submitBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> Abrir o cofre';
+                updateSubmitState();
+
+                var data = result.data;
+                var status = result.status;
+
+                /* 423 = blocked */
+                if (status === 423) {
+                    showBlocked(data.blocked_until);
+                    showToast(data.error || 'O cofre está bloqueado.', 'error');
+                    return;
+                }
+
+                /* 400 = validation error */
+                if (status === 400) {
+                    showToast(data.error || 'Erro de validação.', 'error');
+                    return;
+                }
+
+                /* success */
+                if (data.success && data.correct) {
+                    /* CORRECT — open the safe! */
+                    currentPassword = data.password || '';
+                    openSafe();
+                } else if (data.success && !data.correct) {
+                    /* WRONG */
+                    triggerError();
+                    var attempts = data.attempts_left;
+                    statusMsg.textContent = 'Código incorreto';
+                    statusMsg.className = 'vault-status-msg error';
+                    if (attempts !== undefined) {
+                        attemptsMsg.textContent = 'Tentativas restantes: ' + attempts;
+                    }
+                    if (data.blocked) {
+                        showBlocked(data.blocked_until);
+                        showToast('Número de tentativas esgotado. Cofre bloqueado.', 'error');
+                    }
+                }
+            })
+            .catch(function () {
+                isSubmitting = false;
+                submitBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> Abrir o cofre';
+                updateSubmitState();
+                showToast('Erro de conexão. Verifique sua rede e tente novamente.', 'error');
+            });
+        }
+
+        /* ============================================================
+           ERROR ANIMATION
+           ============================================================ */
+        function triggerError() {
+            safe.classList.remove('opened');
+            safe.classList.add('error-shake');
+            setTimeout(function () {
+                safe.classList.remove('error-shake');
+            }, 600);
+            clearDigits();
+        }
+
+        function clearDigits() {
+            boxes.forEach(function (b) {
+                b.value = '';
+                b.classList.remove('filled');
+            });
+            boxes[0].focus();
+        }
+
+        /* ============================================================
+           OPEN SAFE (correct!) + SLOW PASSWORD REVEAL
+           ============================================================ */
+        function openSafe() {
+            safe.classList.remove('locked');
+            safe.classList.add('opened');
+
+            /* Hide input, show password reveal */
+            digitArea.style.display = 'none';
+            submitBtn.style.display = 'none';
+            statusMsg.textContent = '';
+            attemptsMsg.textContent = '';
+            blockedBanner.classList.remove('visible');
+            notConfigured.classList.remove('visible');
+
+            /* Build password characters */
+            var pwd = currentPassword;
+            passwordValue.innerHTML = '';
+
+            for (var i = 0; i < pwd.length; i++) {
+                var span = document.createElement('span');
+                span.className = 'char masked';
+                span.textContent = pwd[i];
+                passwordValue.appendChild(span);
+            }
+
+            passwordReveal.classList.add('visible');
+
+            /* Reveal one character at a time with delay */
+            var chars = passwordValue.querySelectorAll('.char');
+            chars.forEach(function (ch, idx) {
+                setTimeout(function () {
+                    ch.classList.remove('masked');
+                    ch.classList.add('revealed');
+                }, 800 + idx * 600);
+            });
+        }
+
+        /* ============================================================
+           COPY BUTTON
+           ============================================================ */
+        copyBtn.addEventListener('click', function () {
+            if (!currentPassword) return;
+
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(currentPassword).then(function () {
+                    showCopyFeedback();
+                }).catch(function () {
+                    fallbackCopy();
+                });
+            } else {
+                fallbackCopy();
+            }
+        });
+
+        function fallbackCopy() {
+            var ta = document.createElement('textarea');
+            ta.value = currentPassword;
+            ta.style.position = 'fixed';
+            ta.style.left = '-9999px';
+            document.body.appendChild(ta);
+            ta.select();
+            try {
+                document.execCommand('copy');
+                showCopyFeedback();
+            } catch (e) { /* silent */ }
+            document.body.removeChild(ta);
+        }
+
+        function showCopyFeedback() {
+            var original = copyBtn.innerHTML;
+            copyBtn.classList.add('copied');
+            copyBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Copiado!';
+            setTimeout(function () {
+                copyBtn.classList.remove('copied');
+                copyBtn.innerHTML = original;
+            }, 2000);
+        }
+
+        /* ============================================================
+           INIT
+           ============================================================ */
+        loadStatus();
+
+        /* Focus first box on load */
+        setTimeout(function () {
+            if (boxes.length) boxes[0].focus();
+        }, 300);
+
+    })();
+    </script>
+</body>
+</html>
