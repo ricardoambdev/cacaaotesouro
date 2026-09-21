@@ -3,6 +3,7 @@ import '../theme.dart';
 import '../models/treasure.dart';
 import '../models/game_state.dart';
 import '../services/api_service.dart';
+import '../services/device_service.dart';
 import 'login_screen.dart';
 import 'game_config_screen.dart';
 import 'team_detail_screen.dart';
@@ -104,6 +105,7 @@ class _AdminScreenState extends State<AdminScreen> {
 
   Future<void> _logout() async {
     await _apiService.adminLogout();
+    await DeviceService().clearCredentials();
     if (!mounted) return;
     Navigator.pushReplacement(
       context,

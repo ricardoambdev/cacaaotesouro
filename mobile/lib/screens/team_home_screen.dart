@@ -602,6 +602,7 @@ class _TeamHomeScreenState extends State<TeamHomeScreen> {
     if (confirmed != true || !mounted) return;
 
     await _apiService.teamLogout();
+    await DeviceService().clearCredentials();
     if (!mounted) return;
     Navigator.pushReplacement(
       context,

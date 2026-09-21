@@ -278,10 +278,13 @@ class ApiService {
       return body['team'] as Map<String, dynamic>;
     }
 
-    if (response.statusCode == 409) {
-      throw ApiException(
-        body['error'] as String? ??
+    if (response.statusCode == 409 || body['code'] == 'team_busy') {
+      throw TeamBusyException(
+        message: body['error'] as String? ??
             'Outro membro da equipe já está logado no aplicativo.',
+        team: body['team'] as Map<String, dynamic>? ?? {},
+        story: body['story'] as String? ?? '',
+        storyVersion: body['story_version'] as int? ?? 0,
       );
     }
 
@@ -906,4 +909,18 @@ class ApiException implements Exception {
 
   @override
   String toString() => 'ApiException: $message';
+}
+
+/// Exceção lançada quando outro aparelho já está logado com a equipe (409).
+class TeamBusyException extends ApiException {
+  final Map<String, dynamic> team;
+  final String story;
+  final int storyVersion;
+
+  TeamBusyException({
+    required String message,
+    required this.team,
+    required this.story,
+    required this.storyVersion,
+  }) : super(message);
 }

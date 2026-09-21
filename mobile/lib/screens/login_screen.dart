@@ -4,6 +4,7 @@ import '../services/api_service.dart';
 import '../services/device_service.dart';
 import 'admin_screen.dart';
 import 'story_screen.dart';
+import 'team_busy_screen.dart';
 import 'team_home_screen.dart';
 
 /// Tela unificada de login — auto-detecção admin/equipe pelo usuário/senha.
@@ -13,7 +14,7 @@ import 'team_home_screen.dart';
 /// 2. Se sucesso → AdminScreen.
 /// 3. Se falha → tenta teamLogin(username, password, deviceId):
 ///    - Sucesso → StoryScreen ou TeamHomeScreen.
-///    - 409 → mensagem "Outro membro...".
+///    - 409 → TeamBusyScreen (outra conta logada).
 ///    - 401 → "Usuário ou senha inválidos."
 /// 4. Se ambos falharem → "Usuário ou senha inválidos."
 class LoginScreen extends StatefulWidget {
@@ -31,6 +32,36 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _senhaVisivel = false;
   bool _isLoading = false;
   String? _errorMessage;
+  bool _autoLogin = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSavedCredentials();
+  }
+
+  Future<void> _loadSavedCredentials() async {
+    final deviceService = DeviceService();
+    final autoLogin = await deviceService.getAutoLogin();
+    final credentials = await deviceService.getSavedCredentials();
+
+    if (!mounted) return;
+
+    setState(() {
+      _autoLogin = autoLogin;
+    });
+
+    if (autoLogin && credentials != null) {
+      _usuarioController.text = credentials['username']!;
+      _senhaController.text = credentials['password']!;
+      // Pequeno delay para garantir que a tela foi renderizada
+      Future.delayed(const Duration(milliseconds: 300), () {
+        if (mounted && !_isLoading) {
+          _onEntrar();
+        }
+      });
+    }
+  }
 
   @override
   void dispose() {
@@ -49,12 +80,16 @@ class _LoginScreenState extends State<LoginScreen> {
 
     final username = _usuarioController.text.trim();
     final password = _senhaController.text;
+    final deviceService = DeviceService();
 
     // ── 1. Tentar login admin ───────────────────────────
     try {
       await _apiService.adminLogin(username, password);
 
       if (!mounted) return;
+
+      // Admin login: limpar credenciais (admin não usa auto-login)
+      await deviceService.clearCredentials();
 
       Navigator.pushReplacement(
         context,
@@ -73,8 +108,15 @@ class _LoginScreenState extends State<LoginScreen> {
 
       if (!mounted) return;
 
+      // Login com sucesso — salvar ou limpar credenciais
+      if (_autoLogin) {
+        await deviceService.saveCredentials(username, password);
+        await deviceService.setAutoLogin(true);
+      } else {
+        await deviceService.clearCredentials();
+      }
+
       // Obter estado do jogo (inclui storyVersion e story)
-      final deviceService = DeviceService();
       final state = await _apiService.teamState();
       final storedVersion = await deviceService.getStoryVersion();
 
@@ -102,18 +144,33 @@ class _LoginScreenState extends State<LoginScreen> {
         );
       }
       return;
-    } on ApiException catch (e) {
+    } on TeamBusyException catch (e) {
       if (!mounted) return;
 
-      // Verificar se é erro 409 (outro membro logado)
-      final msg = e.message.toLowerCase();
-      if (msg.contains('outro membro') || msg.contains('já está logado')) {
-        setState(() {
-          _errorMessage = e.message;
-          _isLoading = false;
-        });
-        return;
+      // Salvar credenciais se auto-login ativo (para a tela de espera usar)
+      if (_autoLogin) {
+        await deviceService.saveCredentials(username, password);
+        await deviceService.setAutoLogin(true);
+      } else {
+        await deviceService.clearCredentials();
       }
+
+      // Navegar para tela de espera — NÃO mostrar erro
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (_) => TeamBusyScreen(
+            teamData: e.team,
+            story: e.story,
+            storyVersion: e.storyVersion,
+            username: username,
+            password: password,
+          ),
+        ),
+      );
+      return;
+    } on ApiException catch (_) {
+      if (!mounted) return;
 
       // Credenciais erradas no team → ambos falharam
       setState(() {
@@ -182,10 +239,19 @@ class _LoginScreenState extends State<LoginScreen> {
                     senhaVisivel: _senhaVisivel,
                     isLoading: _isLoading,
                     errorMessage: _errorMessage,
+                    autoLogin: _autoLogin,
                     onToggleSenha: () {
                       setState(() {
                         _senhaVisivel = !_senhaVisivel;
                       });
+                    },
+                    onToggleAutoLogin: (value) {
+                      setState(() {
+                        _autoLogin = value;
+                      });
+                      if (!value) {
+                        DeviceService().clearCredentials();
+                      }
                     },
                     onEntrar: _onEntrar,
                   ),
@@ -207,7 +273,9 @@ class _LoginCard extends StatelessWidget {
   final bool senhaVisivel;
   final bool isLoading;
   final String? errorMessage;
+  final bool autoLogin;
   final VoidCallback onToggleSenha;
+  final ValueChanged<bool> onToggleAutoLogin;
   final VoidCallback onEntrar;
 
   const _LoginCard({
@@ -217,7 +285,9 @@ class _LoginCard extends StatelessWidget {
     required this.senhaVisivel,
     required this.isLoading,
     required this.errorMessage,
+    required this.autoLogin,
     required this.onToggleSenha,
+    required this.onToggleAutoLogin,
     required this.onEntrar,
   });
 
@@ -263,167 +333,189 @@ class _LoginCard extends StatelessWidget {
             ),
             const SizedBox(height: 16),
 
-              // ── Mensagem de erro ────────────────────────
-              if (errorMessage != null) ...[
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: Colors.redAccent.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(
-                      color: Colors.redAccent.withValues(alpha: 0.4),
-                    ),
+            // ── Mensagem de erro ────────────────────────
+            if (errorMessage != null) ...[
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: Colors.redAccent.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: Colors.redAccent.withValues(alpha: 0.4),
                   ),
-                  child: Row(
-                    children: [
-                      const Icon(
-                        Icons.error_outline,
-                        color: Colors.redAccent,
-                        size: 18,
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          errorMessage!,
-                          style: const TextStyle(
-                            color: Colors.redAccent,
-                            fontSize: 12,
-                          ),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.error_outline,
+                      color: Colors.redAccent,
+                      size: 18,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        errorMessage!,
+                        style: const TextStyle(
+                          color: Colors.redAccent,
+                          fontSize: 12,
                         ),
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 12),
-              ],
-
-              // ── Campo Usuário ───────────────────────────
-              TextFormField(
-                controller: usuarioController,
-                style: const TextStyle(color: AppColors.ivory),
-                keyboardType: TextInputType.text,
-                textInputAction: TextInputAction.next,
-                enabled: !isLoading,
-                decoration: const InputDecoration(
-                  labelText: 'Usuário',
-                  prefixIcon: Icon(Icons.person_outline),
-                  contentPadding:
-                      EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                ),
-                validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return 'Usuário é obrigatório';
-                  }
-                  return null;
-                },
               ),
               const SizedBox(height: 12),
-
-              // ── Campo Senha + Botão Entrar ──────────────
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Campo senha (expandido)
-                  Expanded(
-                    child: TextFormField(
-                      controller: senhaController,
-                      style: const TextStyle(
-                          color: AppColors.ivory, fontSize: 16),
-                      obscureText: !senhaVisivel,
-                      keyboardType: TextInputType.visiblePassword,
-                      textInputAction: TextInputAction.done,
-                      enabled: !isLoading,
-                      onFieldSubmitted: (_) => onEntrar(),
-                      decoration: InputDecoration(
-                        labelText: 'Senha',
-                        prefixIcon: const Icon(Icons.lock_outline, size: 22),
-                        suffixIcon: IconButton(
-                          iconSize: 22,
-                          icon: Icon(
-                            senhaVisivel
-                                ? Icons.visibility_off_outlined
-                                : Icons.visibility_outlined,
-                            color: AppColors.ivoryMuted,
-                          ),
-                          onPressed: onToggleSenha,
-                        ),
-                        contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 12),
-                      ),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Senha é obrigatória';
-                        }
-                        return null;
-                      },
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-
-                  // Botão Entrar
-                  Padding(
-                    padding: const EdgeInsets.only(top: 0),
-                    child: SizedBox(
-                      height: 48,
-                      width: 48,
-                      child: DecoratedBox(
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: isLoading
-                                ? [
-                                    AppColors.ivoryMuted,
-                                    AppColors.ivoryMuted
-                                  ]
-                                : [AppColors.gold, AppColors.goldDark],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                          ),
-                          borderRadius: BorderRadius.circular(12),
-                          boxShadow: [
-                            BoxShadow(
-                              color: (isLoading
-                                      ? AppColors.ivoryMuted
-                                      : AppColors.gold)
-                                  .withValues(alpha: 0.3),
-                              blurRadius: 8,
-                              offset: const Offset(0, 3),
-                            ),
-                          ],
-                        ),
-                        child: ElevatedButton(
-                          onPressed: isLoading ? null : onEntrar,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.transparent,
-                            shadowColor: Colors.transparent,
-                            foregroundColor: AppColors.navyDark,
-                            disabledBackgroundColor: Colors.transparent,
-                            disabledForegroundColor:
-                                AppColors.navyDark.withValues(alpha: 0.5),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            padding: EdgeInsets.zero,
-                          ),
-                          child: isLoading
-                              ? const SizedBox(
-                                  width: 22,
-                                  height: 22,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2.5,
-                                    color: AppColors.navyDark,
-                                  ),
-                                )
-                              : const Icon(Icons.login, size: 22),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
             ],
-          ),
+
+            // ── Campo Usuário ───────────────────────────
+            TextFormField(
+              controller: usuarioController,
+              style: const TextStyle(color: AppColors.ivory),
+              keyboardType: TextInputType.text,
+              textInputAction: TextInputAction.next,
+              enabled: !isLoading,
+              decoration: const InputDecoration(
+                labelText: 'Usuário',
+                prefixIcon: Icon(Icons.person_outline),
+                contentPadding:
+                    EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              ),
+              validator: (value) {
+                if (value == null || value.trim().isEmpty) {
+                  return 'Usuário é obrigatório';
+                }
+                return null;
+              },
+            ),
+            const SizedBox(height: 12),
+
+            // ── Campo Senha + Botão Entrar ──────────────
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Campo senha (expandido)
+                Expanded(
+                  child: TextFormField(
+                    controller: senhaController,
+                    style: const TextStyle(
+                        color: AppColors.ivory, fontSize: 16),
+                    obscureText: !senhaVisivel,
+                    keyboardType: TextInputType.visiblePassword,
+                    textInputAction: TextInputAction.done,
+                    enabled: !isLoading,
+                    onFieldSubmitted: (_) => onEntrar(),
+                    decoration: InputDecoration(
+                      labelText: 'Senha',
+                      prefixIcon: const Icon(Icons.lock_outline, size: 22),
+                      suffixIcon: IconButton(
+                        iconSize: 22,
+                        icon: Icon(
+                          senhaVisivel
+                              ? Icons.visibility_off_outlined
+                              : Icons.visibility_outlined,
+                          color: AppColors.ivoryMuted,
+                        ),
+                        onPressed: onToggleSenha,
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 12),
+                    ),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Senha é obrigatória';
+                      }
+                      return null;
+                    },
+                  ),
+                ),
+                const SizedBox(width: 10),
+
+                // Botão Entrar
+                Padding(
+                  padding: const EdgeInsets.only(top: 0),
+                  child: SizedBox(
+                    height: 48,
+                    width: 48,
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: isLoading
+                              ? [
+                                  AppColors.ivoryMuted,
+                                  AppColors.ivoryMuted
+                                ]
+                              : [AppColors.gold, AppColors.goldDark],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: (isLoading
+                                    ? AppColors.ivoryMuted
+                                    : AppColors.gold)
+                                .withValues(alpha: 0.3),
+                            blurRadius: 8,
+                            offset: const Offset(0, 3),
+                          ),
+                        ],
+                      ),
+                      child: ElevatedButton(
+                        onPressed: isLoading ? null : onEntrar,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.transparent,
+                          shadowColor: Colors.transparent,
+                          foregroundColor: AppColors.navyDark,
+                          disabledBackgroundColor: Colors.transparent,
+                          disabledForegroundColor:
+                              AppColors.navyDark.withValues(alpha: 0.5),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          padding: EdgeInsets.zero,
+                        ),
+                        child: isLoading
+                            ? const SizedBox(
+                                width: 22,
+                                height: 22,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2.5,
+                                  color: AppColors.navyDark,
+                                ),
+                              )
+                            : const Icon(Icons.login, size: 22),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 8),
+
+            // ── Checkbox auto-login ─────────────────────
+            CheckboxListTile(
+              value: autoLogin,
+              onChanged: isLoading
+                  ? null
+                  : (value) => onToggleAutoLogin(value ?? false),
+              controlAffinity: ListTileControlAffinity.leading,
+              contentPadding: EdgeInsets.zero,
+              dense: true,
+              activeColor: AppColors.gold,
+              checkColor: AppColors.navyDark,
+              title: const Text(
+                'Salvar e entrar automaticamente',
+                style: TextStyle(
+                  fontSize: 13,
+                  color: AppColors.ivoryMuted,
+                ),
+              ),
+            ),
+          ],
         ),
+      ),
     );
   }
 }

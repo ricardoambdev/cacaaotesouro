@@ -9,6 +9,9 @@ class DeviceService {
   static const String _keyDeviceId = 'device_id';
   static const String _keyStoryVersion = 'story_version';
   static const String _keyLastMessageId = 'last_message_id';
+  static const String _keySavedUsername = 'saved_username';
+  static const String _keySavedPassword = 'saved_password';
+  static const String _keyAutoLogin = 'auto_login';
 
   // ── Singleton ──────────────────────────────────────────────
   static final DeviceService _instance = DeviceService._internal();
@@ -55,6 +58,46 @@ class DeviceService {
   Future<void> setLastMessageId(int id) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setInt(_keyLastMessageId, id);
+  }
+
+  // ── Credenciais salvas (auto-login) ────────────────────
+
+  /// Salva username e password para auto-login.
+  Future<void> saveCredentials(String username, String password) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_keySavedUsername, username);
+    await prefs.setString(_keySavedPassword, password);
+  }
+
+  /// Retorna as credenciais salvas ou null se não houver.
+  Future<Map<String, String>?> getSavedCredentials() async {
+    final prefs = await SharedPreferences.getInstance();
+    final username = prefs.getString(_keySavedUsername);
+    final password = prefs.getString(_keySavedPassword);
+    if (username != null && username.isNotEmpty && password != null) {
+      return {'username': username, 'password': password};
+    }
+    return null;
+  }
+
+  /// Limpa as credenciais salvas.
+  Future<void> clearCredentials() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_keySavedUsername);
+    await prefs.remove(_keySavedPassword);
+    await prefs.setBool(_keyAutoLogin, false);
+  }
+
+  /// Retorna se o auto-login está habilitado (padrão true).
+  Future<bool> getAutoLogin() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_keyAutoLogin) ?? true;
+  }
+
+  /// Define se o auto-login está habilitado.
+  Future<void> setAutoLogin(bool value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_keyAutoLogin, value);
   }
 
   /// Gera um UUID v4 sem pacotes externos.
