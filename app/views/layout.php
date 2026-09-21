@@ -206,8 +206,13 @@ if (count($parts) >= 2) {
                 </a>
 
                 <a href="/desafio-final" class="sidebar-link <?= $active === 'desafio-final' ? 'active' : '' ?>">
-                    <?= icon('lock', 20, 'sidebar-link-icon') ?>
+                    <?= icon('emoji_events', 20, 'sidebar-link-icon') ?>
                     Desafio Final
+                </a>
+
+                <a href="/cofre/config" class="sidebar-link <?= $active === 'cofre' ? 'active' : '' ?>">
+                    <?= icon('lock', 20, 'sidebar-link-icon') ?>
+                    Cofre
                 </a>
             </nav>
 

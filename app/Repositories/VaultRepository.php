@@ -134,6 +134,29 @@ final class VaultRepository
     }
 
     /**
+     * Lista dos IPs bloqueados no momento (para o painel do cofre).
+     *
+     * @return array<int, array{ip: string, blocked_until: string, blocks: int}>
+     */
+    public static function blockedList(): array
+    {
+        $stmt = Database::get()->prepare(
+            'SELECT ip, blocked_until, blocks FROM vault_attempts '
+            . 'WHERE blocked_until IS NOT NULL AND blocked_until > :now '
+            . 'ORDER BY blocked_until ASC'
+        );
+        $stmt->execute([':now' => date('Y-m-d H:i:s')]);
+
+        return array_map(static function (array $row): array {
+            return [
+                'ip'            => (string) $row['ip'],
+                'blocked_until' => (string) $row['blocked_until'],
+                'blocks'        => (int) $row['blocks'],
+            ];
+        }, $stmt->fetchAll(PDO::FETCH_ASSOC));
+    }
+
+    /**
      * Limpa o controle de tentativas (usado ao reconfigurar/limpar o jogo).
      */
     public static function clearAll(): void

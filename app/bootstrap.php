@@ -140,6 +140,10 @@ $app->get('/historia', [GameController::class, 'history'])->add($mw['authRequire
 $app->post('/historia', [GameController::class, 'history'])->add($mw['authRequired']);
 $app->get('/desafio-final', [GameController::class, 'finalChallenge'])->add($mw['authRequired']);
 $app->post('/desafio-final', [GameController::class, 'finalChallenge'])->add($mw['authRequired']);
+
+// Cofre da gincana — CONFIGURAÇÃO no painel (a página pública é /cofre)
+$app->get('/cofre/config', [GameController::class, 'vaultConfig'])->add($mw['authRequired']);
+$app->post('/cofre/config', [GameController::class, 'vaultConfig'])->add($mw['authRequired']);
 $app->post('/limpar', [GameController::class, 'resetGame'])->add($mw['authRequired']);
 $app->post('/limpar/leve', [GameController::class, 'cleanGameLight'])->add($mw['authRequired']);
 $app->post('/iniciar-jogo', [GameController::class, 'startGame'])->add($mw['authRequired']);

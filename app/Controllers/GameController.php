@@ -73,13 +73,6 @@ final class GameController
             $finalCorrectPoints = trim((string) ($body['finalCorrectPoints'] ?? ''));
             $finalWrongPenalty = trim((string) ($body['finalWrongPenalty'] ?? ''));
 
-            // ── Cofre da gincana (página pública /cofre) ──
-            // Só os dígitos interessam; vazio = cofre desativado.
-            $vaultCode = preg_replace('/\D/', '', (string) ($body['vaultCode'] ?? ''));
-            $vaultMaxAttempts = trim((string) ($body['vaultMaxAttempts'] ?? ''));
-            $vaultBlockMinutes = trim((string) ($body['vaultBlockMinutes'] ?? ''));
-            $vaultBlockNextDay = isset($body['vaultBlockNextDay']) ? '1' : '0';
-
             $errors = [];
 
             if ($finalAnswer === '') {
@@ -98,21 +91,6 @@ final class GameController
                 $errors[] = 'Os pontos perdidos por erro devem ser um inteiro entre 0 e 1000.';
             }
 
-            if ($vaultCode !== '' && strlen((string) $vaultCode) !== 9) {
-                $errors[] = 'O código do cofre deve ter exatamente 9 dígitos '
-                    . '(deixe vazio para desativar o cofre).';
-            }
-
-            if ($vaultMaxAttempts === '' || !ctype_digit($vaultMaxAttempts)
-                || (int) $vaultMaxAttempts < 1 || (int) $vaultMaxAttempts > 20) {
-                $errors[] = 'As tentativas do cofre devem ser um inteiro entre 1 e 20.';
-            }
-
-            if ($vaultBlockMinutes === '' || !ctype_digit($vaultBlockMinutes)
-                || (int) $vaultBlockMinutes < 1 || (int) $vaultBlockMinutes > 1440) {
-                $errors[] = 'O tempo de bloqueio do cofre deve ser entre 1 e 1440 minutos (24h).';
-            }
-
             if ($errors !== []) {
                 flash_set('error', implode(' ', $errors));
                 $_SESSION['old'] = [
@@ -120,34 +98,18 @@ final class GameController
                     'finalAnswer'        => $finalAnswer,
                     'finalCorrectPoints' => $finalCorrectPoints,
                     'finalWrongPenalty'  => $finalWrongPenalty,
-                    'vaultCode'          => $vaultCode,
-                    'vaultMaxAttempts'   => $vaultMaxAttempts,
-                    'vaultBlockMinutes'  => $vaultBlockMinutes,
-                    'vaultBlockNextDay'  => $vaultBlockNextDay,
                 ];
                 redirect('/desafio-final');
             }
-
-            $codeChanged = $vaultCode !== (string) SettingsRepository::get('vaultCode', '');
 
             SettingsRepository::update([
                 'finalClue'          => $finalClue,
                 'finalAnswer'        => $finalAnswer,
                 'finalCorrectPoints' => (string) (int) $finalCorrectPoints,
                 'finalWrongPenalty'  => (string) (int) $finalWrongPenalty,
-                'vaultCode'          => (string) $vaultCode,
-                'vaultMaxAttempts'   => (string) (int) $vaultMaxAttempts,
-                'vaultBlockMinutes'  => (string) (int) $vaultBlockMinutes,
-                'vaultBlockNextDay'  => $vaultBlockNextDay,
             ]);
 
-            // Trocou o código do cofre? Zera os bloqueios, para ninguém ficar
-            // travado por tentativas da configuração anterior.
-            if ($codeChanged) {
-                VaultRepository::clearAll();
-            }
-
-            flash_set('success', 'Desafio final e cofre salvos com sucesso.');
+            flash_set('success', 'Desafio final salvo com sucesso.');
             redirect('/desafio-final');
         }
 
@@ -159,11 +121,6 @@ final class GameController
             'finalAnswer'        => (string) ($old['finalAnswer'] ?? SettingsRepository::get('finalAnswer', '')),
             'finalCorrectPoints' => (string) ($old['finalCorrectPoints'] ?? SettingsRepository::get('finalCorrectPoints', '100')),
             'finalWrongPenalty'  => (string) ($old['finalWrongPenalty'] ?? SettingsRepository::get('finalWrongPenalty', '20')),
-            // Cofre da gincana
-            'vaultCode'          => (string) ($old['vaultCode'] ?? SettingsRepository::get('vaultCode', '')),
-            'vaultMaxAttempts'   => (string) ($old['vaultMaxAttempts'] ?? SettingsRepository::get('vaultMaxAttempts', '3')),
-            'vaultBlockMinutes'  => (string) ($old['vaultBlockMinutes'] ?? SettingsRepository::get('vaultBlockMinutes', '5')),
-            'vaultBlockNextDay'  => (string) ($old['vaultBlockNextDay'] ?? SettingsRepository::get('vaultBlockNextDay', '0')),
         ]);
 
         $response->getBody()->write($this->renderLayout($content, $user, 'desafio-final'));
@@ -237,6 +194,99 @@ final class GameController
         ]);
 
         $response->getBody()->write($html);
+
+        return $response;
+    }
+
+    /**
+     * GET/POST /cofre/config — COFRE da gincana (configuração no painel).
+     *
+     * Página própria do cofre: define o código de 9 dígitos encontrado no
+     * mundo físico, as regras de tentativas/bloqueio e mostra o link público
+     * (/cofre) com QR code.
+     */
+    public function vaultConfig(Request $request, Response $response): Response
+    {
+        /** @var array{id: int, name: string} $user */
+        $user = $_SESSION['user'];
+
+        if (strtoupper($request->getMethod()) === 'POST') {
+            $body = (array) $request->getParsedBody();
+
+            // Liberar os bloqueios (tira todo mundo que ficou travado).
+            if ((string) ($body['action'] ?? '') === 'unblock') {
+                VaultRepository::clearAll();
+                flash_set('success', 'Bloqueios do cofre liberados — todos podem tentar novamente.');
+                redirect('/cofre/config');
+            }
+
+            // Só os dígitos interessam; vazio = cofre desativado.
+            $vaultCode = preg_replace('/\D/', '', (string) ($body['vaultCode'] ?? ''));
+            $vaultMaxAttempts = trim((string) ($body['vaultMaxAttempts'] ?? ''));
+            $vaultBlockMinutes = trim((string) ($body['vaultBlockMinutes'] ?? ''));
+            $vaultBlockNextDay = isset($body['vaultBlockNextDay']) ? '1' : '0';
+
+            $errors = [];
+
+            if ($vaultCode !== '' && strlen((string) $vaultCode) !== 9) {
+                $errors[] = 'O código do cofre deve ter exatamente 9 dígitos '
+                    . '(deixe vazio para desativar o cofre).';
+            }
+
+            if ($vaultMaxAttempts === '' || !ctype_digit($vaultMaxAttempts)
+                || (int) $vaultMaxAttempts < 1 || (int) $vaultMaxAttempts > 20) {
+                $errors[] = 'As tentativas do cofre devem ser um inteiro entre 1 e 20.';
+            }
+
+            if ($vaultBlockMinutes === '' || !ctype_digit($vaultBlockMinutes)
+                || (int) $vaultBlockMinutes < 1 || (int) $vaultBlockMinutes > 1440) {
+                $errors[] = 'O tempo de bloqueio do cofre deve ser entre 1 e 1440 minutos (24h).';
+            }
+
+            if ($errors !== []) {
+                flash_set('error', implode(' ', $errors));
+                $_SESSION['old'] = [
+                    'vaultCode'         => $vaultCode,
+                    'vaultMaxAttempts'  => $vaultMaxAttempts,
+                    'vaultBlockMinutes' => $vaultBlockMinutes,
+                    'vaultBlockNextDay' => $vaultBlockNextDay,
+                ];
+                redirect('/cofre/config');
+            }
+
+            $codeChanged = $vaultCode !== (string) SettingsRepository::get('vaultCode', '');
+
+            SettingsRepository::update([
+                'vaultCode'         => (string) $vaultCode,
+                'vaultMaxAttempts'  => (string) (int) $vaultMaxAttempts,
+                'vaultBlockMinutes' => (string) (int) $vaultBlockMinutes,
+                'vaultBlockNextDay' => $vaultBlockNextDay,
+            ]);
+
+            // Trocou o código? Zera os bloqueios, para ninguém ficar travado
+            // por causa da configuração anterior.
+            if ($codeChanged) {
+                VaultRepository::clearAll();
+            }
+
+            flash_set('success', 'Cofre salvo com sucesso.');
+            redirect('/cofre/config');
+        }
+
+        $old = $_SESSION['old'] ?? [];
+        unset($_SESSION['old']);
+
+        $content = View::render('cofre_config', [
+            'vaultCode'         => (string) ($old['vaultCode'] ?? SettingsRepository::get('vaultCode', '')),
+            'vaultMaxAttempts'  => (string) ($old['vaultMaxAttempts'] ?? SettingsRepository::get('vaultMaxAttempts', '3')),
+            'vaultBlockMinutes' => (string) ($old['vaultBlockMinutes'] ?? SettingsRepository::get('vaultBlockMinutes', '5')),
+            'vaultBlockNextDay' => (string) ($old['vaultBlockNextDay'] ?? SettingsRepository::get('vaultBlockNextDay', '0')),
+            'vaultUrl'          => rtrim((string) app_config('app.url', ''), '/') . '/cofre',
+            'finalAnswer'       => (string) SettingsRepository::get('finalAnswer', ''),
+            'blockedIps'        => VaultRepository::blockedList(),
+        ]);
+
+        $response->getBody()->write($this->renderLayout($content, $user, 'cofre'));
 
         return $response;
     }
