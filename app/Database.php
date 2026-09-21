@@ -166,6 +166,8 @@ final class Database
         self::ensureDisqualifiedColumn($pdo, $driver);
         self::ensureProgressBonusColumn($pdo, $driver, 'local_bonus');
         self::ensureProgressBonusColumn($pdo, $driver, 'first_bonus');
+        self::ensureMessageColumn($pdo, $driver, 'title', 'VARCHAR(120) NOT NULL DEFAULT \'\'');
+        self::ensureMessageColumn($pdo, $driver, 'kind', 'VARCHAR(20) NOT NULL DEFAULT \'info\'');
 
         self::seedDefaultTeams($pdo, $driver);
 
@@ -244,6 +246,8 @@ final class Database
             . 'id ' . $autoIncrement . ', '
             . 'team_id INT NOT NULL, '
             . 'message TEXT NOT NULL, '
+            . 'title VARCHAR(120) NOT NULL DEFAULT \'\', '
+            . 'kind VARCHAR(20) NOT NULL DEFAULT \'info\', '
             . 'read_at DATETIME NULL, '
             . 'created_at DATETIME NOT NULL'
             . ($driver === 'mysql' ? ', KEY idx_team_time (team_id, created_at)' : '')
@@ -420,6 +424,61 @@ final class Database
             }
         } catch (PDOException $e) {
             error_log('Database::ensureProgressBonusColumn(' . $column . '): ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Garante uma coluna em `team_messages` (migração idempotente).
+     *
+     * Usada por: `title` (título exibido no app) e `kind`
+     * ('info' | 'success' | 'error' — define a cor do aviso no app).
+     */
+    private static function ensureMessageColumn(PDO $pdo, string $driver, string $column, string $definition): void
+    {
+        // Coluna e definição são fixas (whitelist) — não vêm do usuário.
+        $allowed = [
+            'title' => 'VARCHAR(120) NOT NULL DEFAULT \'\'',
+            'kind'  => 'VARCHAR(20) NOT NULL DEFAULT \'info\'',
+        ];
+
+        if (!isset($allowed[$column]) || $allowed[$column] !== $definition) {
+            return;
+        }
+
+        try {
+            if ($driver === 'sqlite') {
+                $found = false;
+
+                foreach ($pdo->query('PRAGMA table_info(team_messages)') as $row) {
+                    if (strtolower((string) $row['name']) === $column) {
+                        $found = true;
+                        break;
+                    }
+                }
+
+                if (!$found) {
+                    $pdo->exec(
+                        'ALTER TABLE team_messages ADD COLUMN ' . $column . ' ' . $definition
+                    );
+                }
+
+                return;
+            }
+
+            $stmt = $pdo->prepare(
+                'SELECT COUNT(*) FROM information_schema.columns '
+                . 'WHERE table_schema = DATABASE() AND table_name = :table '
+                . 'AND column_name = :column'
+            );
+            $stmt->execute([':table' => 'team_messages', ':column' => $column]);
+
+            if ((int) $stmt->fetchColumn() === 0) {
+                $pdo->exec(
+                    'ALTER TABLE team_messages ADD COLUMN ' . $column . ' ' . $definition
+                );
+            }
+        } catch (PDOException $e) {
+            error_log('Database::ensureMessageColumn(' . $column . '): ' . $e->getMessage());
         }
     }
 

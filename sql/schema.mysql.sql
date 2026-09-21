@@ -259,6 +259,8 @@ CREATE TABLE IF NOT EXISTS team_messages (
     id         INT AUTO_INCREMENT PRIMARY KEY,
     team_id    INT          NOT NULL,
     message    TEXT         NOT NULL,
+    title      VARCHAR(120) NOT NULL DEFAULT '',
+    kind       VARCHAR(20)  NOT NULL DEFAULT 'info',
     read_at    DATETIME     NULL,
     created_at DATETIME     NOT NULL,
     KEY idx_team_time (team_id, created_at)

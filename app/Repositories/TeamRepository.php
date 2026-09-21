@@ -15,6 +15,39 @@ use PDO;
 final class TeamRepository
 {
     /**
+     * Insere uma mensagem para a equipe (aparece como popup no app).
+     *
+     * @param string $title Título exibido no app (ex.: "Pontos ganhos").
+     * @param string $kind  'info' | 'success' | 'error' — define a cor/ícone
+     *                      do aviso no app.
+     * @return int id da mensagem criada.
+     */
+    public static function addMessage(
+        int $teamId,
+        string $message,
+        string $title = '',
+        string $kind = 'info'
+    ): int {
+        if (!in_array($kind, ['info', 'success', 'error'], true)) {
+            $kind = 'info';
+        }
+
+        $stmt = Database::get()->prepare(
+            'INSERT INTO team_messages (team_id, message, title, kind, read_at, created_at) '
+            . 'VALUES (:team_id, :message, :title, :kind, NULL, :created_at)'
+        );
+        $stmt->execute([
+            ':team_id'    => $teamId,
+            ':message'    => $message,
+            ':title'      => $title,
+            ':kind'       => $kind,
+            ':created_at' => date('Y-m-d H:i:s'),
+        ]);
+
+        return (int) Database::get()->lastInsertId();
+    }
+
+    /**
      * Retorna todas as equipes, indexadas por id.
      *
      * Inclui `password` (senha em texto puro, para o admin visualizar/editar).

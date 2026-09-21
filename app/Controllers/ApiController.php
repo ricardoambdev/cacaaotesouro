@@ -1465,19 +1465,16 @@ final class ApiController
         TeamRepository::updateGameState($teamId, ['points' => $points]);
         GameRepository::logPoints($teamId, $delta, $reason);
 
-        // Avisa a equipe pelo app (aparece como mensagem/notificação):
+        // Avisa a equipe pelo app (aparece como popup, com título e cor):
         // ex.: "+10 pontos: acertou a charada extra".
         $notice = sprintf('%s%d pontos: %s', $delta > 0 ? '+' : '', $delta, $reason);
 
-        $stmt = Database::get()->prepare(
-            'INSERT INTO team_messages (team_id, message, read_at, created_at) '
-            . 'VALUES (:team_id, :message, NULL, :created_at)'
+        TeamRepository::addMessage(
+            $teamId,
+            $notice,
+            $delta > 0 ? 'Pontos ganhos' : 'Pontos perdidos',
+            $delta > 0 ? 'success' : 'error'
         );
-        $stmt->execute([
-            ':team_id'    => $teamId,
-            ':message'    => $notice,
-            ':created_at' => date('Y-m-d H:i:s'),
-        ]);
 
         return $this->json($response, [
             'success' => true,
@@ -1520,15 +1517,8 @@ final class ApiController
             ], 400);
         }
 
-        $stmt = Database::get()->prepare(
-            'INSERT INTO team_messages (team_id, message, read_at, created_at) '
-            . 'VALUES (:team_id, :message, NULL, :created_at)'
-        );
-        $stmt->execute([
-            ':team_id'    => $teamId,
-            ':message'    => $message,
-            ':created_at' => date('Y-m-d H:i:s'),
-        ]);
+        // Mensagem avulsa do admin → popup informativo (azul/dourado).
+        TeamRepository::addMessage($teamId, $message, 'Mensagem da organização', 'info');
 
         return $this->json($response, [
             'success' => true,
@@ -1555,18 +1545,13 @@ final class ApiController
             ], 400);
         }
 
-        $pdo = Database::get();
-        $stmt = $pdo->prepare(
-            'INSERT INTO team_messages (team_id, message, read_at, created_at) '
-            . 'VALUES (:team_id, :message, NULL, :created_at)'
-        );
-
         foreach (TeamRepository::all() as $team) {
-            $stmt->execute([
-                ':team_id'    => (int) $team['id'],
-                ':message'    => $message,
-                ':created_at' => date('Y-m-d H:i:s'),
-            ]);
+            TeamRepository::addMessage(
+                (int) $team['id'],
+                $message,
+                'Mensagem da organização',
+                'info'
+            );
         }
 
         return $this->json($response, [
@@ -2035,7 +2020,7 @@ final class ApiController
     private static function teamMessages(int $teamId, int $limit = 50): array
     {
         $stmt = Database::get()->prepare(
-            'SELECT id, message, created_at FROM team_messages '
+            'SELECT id, message, title, kind, created_at FROM team_messages '
             . 'WHERE team_id = :team_id AND read_at IS NULL '
             . 'ORDER BY created_at ASC, id ASC '
             . 'LIMIT ' . (int) $limit
@@ -2043,9 +2028,19 @@ final class ApiController
         $stmt->execute([':team_id' => $teamId]);
 
         return array_map(static function (array $row): array {
+            // `kind` define a cor/ícone do aviso no app:
+            // 'success' (verde) | 'error' (vermelho) | 'info' (azul).
+            $kind = (string) ($row['kind'] ?? 'info');
+
+            if (!in_array($kind, ['info', 'success', 'error'], true)) {
+                $kind = 'info';
+            }
+
             return [
                 'id'         => (int) $row['id'],
                 'message'    => (string) $row['message'],
+                'title'      => (string) ($row['title'] ?? ''),
+                'kind'       => $kind,
                 'created_at' => (string) $row['created_at'],
             ];
         }, $stmt->fetchAll(PDO::FETCH_ASSOC));

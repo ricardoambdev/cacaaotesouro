@@ -510,12 +510,6 @@ final class GameController
             redirect('/');
         }
 
-        $pdo = Database::get();
-        $stmt = $pdo->prepare(
-            'INSERT INTO team_messages (team_id, message, read_at, created_at) '
-            . 'VALUES (:team_id, :message, NULL, :created_at)'
-        );
-
         $teams = $target === 'todos'
             ? TeamRepository::all()
             : (($team = TeamRepository::byColor($target)) !== null ? [$team] : []);
@@ -526,11 +520,12 @@ final class GameController
         }
 
         foreach ($teams as $team) {
-            $stmt->execute([
-                ':team_id'    => (int) $team['id'],
-                ':message'    => $message,
-                ':created_at' => date('Y-m-d H:i:s'),
-            ]);
+            TeamRepository::addMessage(
+                (int) $team['id'],
+                $message,
+                'Mensagem da organização',
+                'info'
+            );
         }
 
         flash_set('success', 'Mensagem enviada (notificação disparada no app).');
