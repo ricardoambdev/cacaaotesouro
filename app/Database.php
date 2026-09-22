@@ -528,6 +528,7 @@ final class Database
             'vaultLat'         => '',   // coordenada onde o cofre físico está
             'vaultLng'         => '',
             'vaultRadius'      => '100', // raio (m) em que a página do cofre abre
+            'vaultSlug'        => '',    // sequência secreta da URL (/v/<slug>)
             'gameActive'       => '0',
             'winnerTeamId'     => '',
             // Regras do jogo (enforcement via ApiController::gameBlock)

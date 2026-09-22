@@ -997,10 +997,22 @@ $appUrl = $appUrl ?? '';
     </div>
 
     <!-- ============================================================
+         GEOFENCE — COFRE AINDA NÃO LIBERADO (sem coordenada)
+         ============================================================ -->
+    <div class="geofence-banner" id="geofence-not-released">
+        <div class="geofence-icon">
+            <span class="material-icons">lock_clock</span>
+        </div>
+        <div class="geofence-title">O cofre ainda não foi liberado</div>
+        <div class="geofence-text">
+            A organização precisa registrar o local do cofre. Tente novamente mais tarde.
+        </div>
+    </div>
+
+    <!-- ============================================================
          GEOFENCE — NO LOCATION PERMISSION
          ============================================================ -->
-    <div class="geofence-banner" id="geofence-no-location">
-        <div class="geofence-icon">
+    <div class="geofence-banner" id="geofence-no-location">        <div class="geofence-icon">
             <span class="material-icons">location_off</span>
         </div>
         <div class="geofence-title">Precisamos da sua localização</div>
@@ -1077,6 +1089,7 @@ $appUrl = $appUrl ?? '';
         /* Geofence DOM */
         var geofenceOutOfRange = document.getElementById('geofence-out-of-range');
         var geofenceNoLocation = document.getElementById('geofence-no-location');
+        var geofenceNotReleased = document.getElementById('geofence-not-released');
         var geofenceLoading = document.getElementById('geofence-loading');
         var geoRadiusEl = document.getElementById('geo-radius');
         var geoDistanceEl = document.getElementById('geo-distance-msg');
@@ -1116,7 +1129,18 @@ $appUrl = $appUrl ?? '';
         function hideAllGeofence() {
             geofenceOutOfRange.classList.remove('visible');
             geofenceNoLocation.classList.remove('visible');
+            if (geofenceNotReleased) geofenceNotReleased.classList.remove('visible');
             geofenceLoading.classList.remove('visible');
+        }
+
+        /* O cofre ainda não foi liberado (a organização não registrou o local) */
+        function showGeofenceNotReleased() {
+            hideAllGeofence();
+            if (geofenceNotReleased) geofenceNotReleased.classList.add('visible');
+            digitArea.style.display = 'none';
+            submitBtn.style.display = 'none';
+            statusMsg.textContent = '';
+            attemptsMsg.textContent = '';
         }
 
         function showGeofenceOutOfRange(radius, distance) {
@@ -1280,7 +1304,11 @@ $appUrl = $appUrl ?? '';
                     hasCoordinate = data.has_coordinate;
 
                     /* Check geofence */
-                    if (data.has_coordinate && !data.in_range) {
+                    if (!data.in_range) {
+                        if (data.range_reason === 'sem_coordenada') {
+                            showGeofenceNotReleased();
+                            return;
+                        }
                         if (data.range_reason === 'fora_do_raio') {
                             showGeofenceOutOfRange(data.radius, data.distance);
                             return;

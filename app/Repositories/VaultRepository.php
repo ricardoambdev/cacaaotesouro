@@ -134,6 +134,51 @@ final class VaultRepository
     }
 
     /**
+     * "Slug" secreto da página do cofre (sequência aleatória na URL).
+     *
+     * A página pública NÃO fica em /cofre (nome óbvio e fácil de adivinhar):
+     * fica em /v/<slug>. O slug é gerado na primeira vez e pode ser trocado
+     * pelo painel.
+     */
+    public static function slug(): string
+    {
+        $slug = trim((string) SettingsRepository::get('vaultSlug', ''));
+
+        if ($slug === '' || !preg_match('/^[a-zA-Z0-9]{8,40}$/', $slug)) {
+            $slug = self::generateSlug();
+            SettingsRepository::update(['vaultSlug' => $slug]);
+        }
+
+        return $slug;
+    }
+
+    /**
+     * Gera um slug novo (invalida o link antigo).
+     */
+    public static function generateSlug(): string
+    {
+        // Sem caracteres ambíguos (0/O, 1/l) para facilitar digitar.
+        $alphabet = 'abcdefghijkmnpqrstuvwxyz23456789';
+        $slug = '';
+
+        for ($i = 0; $i < 16; $i++) {
+            $slug .= $alphabet[random_int(0, strlen($alphabet) - 1)];
+        }
+
+        SettingsRepository::update(['vaultSlug' => $slug]);
+
+        return $slug;
+    }
+
+    /**
+     * URL pública secreta do cofre (ex.: https://.../v/ab12cd34ef56gh78).
+     */
+    public static function publicUrl(): string
+    {
+        return rtrim((string) app_config('app.url', ''), '/') . '/v/' . self::slug();
+    }
+
+    /**
      * Coordenada configurada para o cofre (onde ele está no mundo físico).
      *
      * @return array{lat: float, lng: float, radius: int}|null
@@ -158,8 +203,9 @@ final class VaultRepository
     /**
      * O visitante está dentro do raio permitido do cofre?
      *
-     * Sem coordenada configurada o cofre NÃO é bloqueado por localização
-     * (o organizador pode testar); com coordenada, exige estar no raio.
+     * O cofre só abre no LOCAL configurado (o colégio). Sem coordenada
+     * cadastrada ele NÃO abre em lugar nenhum — o organizador precisa
+     * capturar a coordenada pelo app do admin.
      *
      * @return array{ok: bool, reason: string, distance: ?float, radius: int}
      */
@@ -168,7 +214,7 @@ final class VaultRepository
         $coordinate = self::coordinate();
 
         if ($coordinate === null) {
-            return ['ok' => true, 'reason' => 'sem_coordenada', 'distance' => null, 'radius' => 0];
+            return ['ok' => false, 'reason' => 'sem_coordenada', 'distance' => null, 'radius' => 0];
         }
 
         if ($lat === null || $lng === null) {

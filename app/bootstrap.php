@@ -170,12 +170,13 @@ $app->get('/jogo', [GameController::class, 'status'])->add($mw['authRequired']);
 // portanto um GET é livre.
 $app->get('/telao', [GameController::class, 'telao']);
 
-// COFRE virtual da gincana — página PÚBLICA (sem login). As chamadas de
-// conferência usam a API pública /api/cofre (isenta de CSRF).
-$app->get('/cofre', [GameController::class, 'vaultPage']);
+// COFRE virtual da gincana — página PÚBLICA (sem login), em URL SECRETA:
+// /v/<slug>, onde o slug é uma sequência aleatória (não "/cofre").
+// As chamadas de conferência usam a API pública /api/cofre (isenta de CSRF).
+$app->get('/v/{slug}', [GameController::class, 'vaultPage']);
 
-// QR code (SVG) do link do cofre — público, usado no painel e no app.
-$app->get('/cofre/qr.svg', [GameController::class, 'vaultQr']);
+// QR code (SVG) do link secreto — usado no painel e no app do admin.
+$app->get('/v/{slug}/qr.svg', [GameController::class, 'vaultQr']);
 
 // ---------------------------------------------------------------------
 // API (JSON) — sem CSRF (ignorado para paths /api) e sem

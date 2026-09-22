@@ -199,7 +199,9 @@ $hasCoordinate = trim($vaultLat) !== '' && trim($vaultLng) !== '';
     </h2>
 
     <p class="form-help-text" style="margin-top: 0; margin-bottom: 14px;">
-        Compartilhe este link com as equipes. A página é pública — não precisa de login.
+        Este é o link <strong>secreto</strong> do cofre — o endereço é uma sequência aleatória
+        (não é "/cofre"), então ninguém abre por adivinhação. A página é pública (não precisa de login)
+        e <strong>só funciona no local do cofre</strong> (veja o card "Local do cofre").
         Quando o código estiver correto, a senha do desafio final
         (<code style="color:#F97316;"><?= e($finalAnswer) ?></code>)
         será revelada na tela.
@@ -217,17 +219,27 @@ $hasCoordinate = trim($vaultLat) !== '' && trim($vaultLng) !== '';
 
         <div style="text-align: center; flex-shrink: 0;">
             <div style="background: #fff; border-radius: 10px; padding: 8px; display: inline-block; border: 1px solid rgba(249,115,22,0.15);">
-                <img src="/cofre/qr.svg" alt="QR code do cofre" width="180" height="180">
+                <img src="/v/<?= e($vaultSlug ?? '') ?>/qr.svg" alt="QR code do cofre" width="180" height="180">
             </div>
             <div style="font-size: 0.72rem; color: rgba(247,236,212,0.4); margin-top: 6px;">QR Code do cofre</div>
         </div>
     </div>
 
-    <div style="margin-top: 16px;">
-        <a href="/cofre" target="_blank" rel="noopener" class="btn btn-primary btn-auto btn-sm" style="background:linear-gradient(135deg,#22C55E,#168a3a);">
+    <div style="margin-top: 16px; display:flex; gap:10px; flex-wrap:wrap;">
+        <a href="<?= e($vaultUrl) ?>" target="_blank" rel="noopener" class="btn btn-primary btn-auto btn-sm" style="background:linear-gradient(135deg,#22C55E,#168a3a);">
             <?= icon('open_in_new', 16) ?>
             Abrir a página do cofre
         </a>
+
+        <form method="post" action="/cofre/config" style="display:inline;">
+            <?= csrf_field() ?>
+            <input type="hidden" name="action" value="regenerate-slug">
+            <button type="submit" class="btn btn-ghost btn-sm btn-auto"
+                    data-confirm-modal="Gerar um novo link secreto?&#10;O endereço atual deixa de funcionar imediatamente (QTs impressos precisam ser refeitos).">
+                <?= icon('autorenew', 16) ?>
+                Gerar novo link
+            </button>
+        </form>
     </div>
 </div>
 

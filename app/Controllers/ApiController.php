@@ -1984,9 +1984,11 @@ final class ApiController
                 'range_reason' => $range['reason'],
                 'distance' => $range['distance'],
                 'radius'   => $range['radius'],
-                'error'    => $range['reason'] === 'sem_localizacao'
-                    ? 'Precisamos da sua localização para abrir o cofre. Autorize o acesso e tente novamente.'
-                    : 'Você precisa estar no local do cofre para abri-lo.',
+                'error'    => match ($range['reason']) {
+                    'sem_coordenada'  => 'O cofre ainda não foi liberado pela organização.',
+                    'sem_localizacao' => 'Precisamos da sua localização para abrir o cofre. Autorize o acesso e tente novamente.',
+                    default           => 'Você precisa estar no local do cofre para abri-lo.',
+                },
             ], 403);
         }
 
@@ -2061,7 +2063,7 @@ final class ApiController
             'attempts'     => (int) SettingsRepository::get('vaultMaxAttempts', '3'),
             'block_minutes'=> (int) SettingsRepository::get('vaultBlockMinutes', '5'),
             'block_next_day' => (string) SettingsRepository::get('vaultBlockNextDay', '0') === '1',
-            'url'          => rtrim((string) app_config('app.url', ''), '/') . '/cofre',
+            'url'          => VaultRepository::publicUrl(),
             'blocked'      => $blocked,
             // Coordenada onde o cofre físico está (capturada pelo app do admin)
             'lat'          => $coordinate['lat'] ?? null,

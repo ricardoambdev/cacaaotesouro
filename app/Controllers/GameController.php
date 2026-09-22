@@ -227,6 +227,13 @@ final class GameController
                 redirect('/cofre/config');
             }
 
+            // Gerar um NOVO link secreto (invalida o endereço antigo).
+            if ((string) ($body['action'] ?? '') === 'regenerate-slug') {
+                $slug = VaultRepository::generateSlug();
+                flash_set('success', 'Novo link gerado: /v/' . $slug . ' (o link antigo deixou de funcionar).');
+                redirect('/cofre/config');
+            }
+
             // Raio permitido (metros) — a coordenada em si é capturada pelo app.
             $vaultRadius = trim((string) ($body['vaultRadius'] ?? '100'));
 
@@ -299,7 +306,8 @@ final class GameController
             'vaultMaxAttempts'  => (string) ($old['vaultMaxAttempts'] ?? SettingsRepository::get('vaultMaxAttempts', '3')),
             'vaultBlockMinutes' => (string) ($old['vaultBlockMinutes'] ?? SettingsRepository::get('vaultBlockMinutes', '5')),
             'vaultBlockNextDay' => (string) ($old['vaultBlockNextDay'] ?? SettingsRepository::get('vaultBlockNextDay', '0')),
-            'vaultUrl'          => rtrim((string) app_config('app.url', ''), '/') . '/cofre',
+            'vaultUrl'          => VaultRepository::publicUrl(),
+            'vaultSlug'         => VaultRepository::slug(),
             'finalAnswer'       => (string) SettingsRepository::get('finalAnswer', ''),
             'blockedIps'        => VaultRepository::blockedList(),
             // Coordenada do cofre (capturada pelo app do admin) + raio
@@ -314,17 +322,24 @@ final class GameController
     }
 
     /**
-     * GET /cofre — COFRE virtual da gincana.
+     * GET /v/{slug} — COFRE virtual da gincana (página PÚBLICA, sem login).
      *
-     * Página PÚBLICA (sem login): a equipe digita os 9 dígitos encontrados
-     * no mundo físico e, se estiver certo, o cofre revela a senha do desafio
-     * final (a que estava prevista para o envelope dentro do cofre real).
+     * O endereço NÃO é /cofre (nome óbvio): é uma sequência aleatória
+     * (`vaultSlug`), para ninguém abrir o cofre por adivinhação. Além disso
+     * a página só funciona dentro do raio configurado (o colégio).
      */
-    public function vaultPage(Request $request, Response $response): Response
+    public function vaultPage(Request $request, Response $response, array $args = []): Response
     {
+        $slug = (string) ($args['slug'] ?? '');
+
+        if ($slug === '' || !hash_equals(VaultRepository::slug(), $slug)) {
+            return $response->withStatus(404);
+        }
+
         $html = View::render('cofre', [
             'siteName' => (string) app_config('app.name', 'Caça ao Tesouro'),
             'appUrl'   => rtrim((string) app_config('app.url', ''), '/'),
+            'vaultUrl' => VaultRepository::publicUrl(),
         ]);
 
         $response->getBody()->write($html);
@@ -767,14 +782,20 @@ final class GameController
     }
 
     /**
-     * GET /cofre/qr.svg — QR code (SVG) do link público do cofre.
+     * GET /v/{slug}/qr.svg — QR code (SVG) do link secreto do cofre.
      *
-     * PÚBLICO: usado tanto na página do cofre quanto no app da equipe,
-     * para a equipe abrir a página do cofre rapidamente no celular.
+     * PÚBLICO, mas exige o slug: sem ele ninguém descobre o endereço do
+     * cofre só pedindo o QR.
      */
-    public function vaultQr(Request $request, Response $response): Response
+    public function vaultQr(Request $request, Response $response, array $args = []): Response
     {
-        $url = rtrim((string) app_config('app.url', ''), '/') . '/cofre';
+        $slug = (string) ($args['slug'] ?? '');
+
+        if ($slug === '' || !hash_equals(VaultRepository::slug(), $slug)) {
+            return $response->withStatus(404);
+        }
+
+        $url = VaultRepository::publicUrl();
 
         $svg = '';
 
