@@ -1995,6 +1995,59 @@ final class ApiController
     }
 
     /**
+     * GET /api/admin/vault — situação do cofre para o app do admin.
+     *
+     * Devolve a configuração resumida (sem revelar o código) e a lista de
+     * bloqueios ativos, para o admin acompanhar pelo celular.
+     */
+    public function adminVaultStatus(Request $request, Response $response): Response
+    {
+        if ($this->requireAdmin() === null) {
+            return $this->unauthorized($response);
+        }
+
+        $blocked = [];
+
+        foreach (VaultRepository::blockedList() as $row) {
+            $blocked[] = [
+                'ip'            => (string) $row['ip'],
+                'blocked_until' => (string) $row['blocked_until'],
+                'blocks'        => (int) $row['blocks'],
+            ];
+        }
+
+        $code = preg_replace('/\D/', '', (string) SettingsRepository::get('vaultCode', ''));
+
+        return $this->json($response, [
+            'success'      => true,
+            'configured'   => $code !== '',
+            'code_digits'  => $code === '' ? 0 : strlen((string) $code),
+            'attempts'     => (int) SettingsRepository::get('vaultMaxAttempts', '3'),
+            'block_minutes'=> (int) SettingsRepository::get('vaultBlockMinutes', '5'),
+            'block_next_day' => (string) SettingsRepository::get('vaultBlockNextDay', '0') === '1',
+            'url'          => rtrim((string) app_config('app.url', ''), '/') . '/cofre',
+            'blocked'      => $blocked,
+        ]);
+    }
+
+    /**
+     * POST /api/admin/vault/unblock — libera todos os bloqueios do cofre.
+     */
+    public function adminVaultUnblock(Request $request, Response $response): Response
+    {
+        if ($this->requireAdmin() === null) {
+            return $this->unauthorized($response);
+        }
+
+        VaultRepository::clearAll();
+
+        return $this->json($response, [
+            'success' => true,
+            'message' => 'Bloqueios do cofre liberados.',
+        ]);
+    }
+
+    /**
      * GET /api/config — configuração pública do app.
      */
     public function config(Request $request, Response $response): Response

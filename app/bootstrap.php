@@ -158,6 +158,10 @@ $app->get('/admin/backup', [GameController::class, 'exportBackup'])->add($mw['au
 $app->post('/admin/import', [GameController::class, 'importBackup'])->add($mw['authRequired']);
 $app->get('/admin/apk-qr.svg', [GameController::class, 'apkQrDownload'])->add($mw['authRequired']);
 $app->post('/api/admin/team-message-all', [ApiController::class, 'adminTeamMessageAll']);
+
+// Cofre da gincana — acompanhamento e desbloqueio pelo app do admin.
+$app->get('/api/admin/vault', [ApiController::class, 'adminVaultStatus']);
+$app->post('/api/admin/vault/unblock', [ApiController::class, 'adminVaultUnblock']);
 $app->get('/jogo', [GameController::class, 'status'])->add($mw['authRequired']);
 
 // Telão (PÚBLICO — sem authRequired). Página autônoma que consome
