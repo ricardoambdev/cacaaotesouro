@@ -721,6 +721,121 @@ $appUrl = $appUrl ?? '';
         }
 
         /* ============================================================
+           GEOFENCE — out-of-range / no-location banners
+           ============================================================ */
+        .geofence-banner {
+            display: none;
+            text-align: center;
+            padding: 28px 24px;
+            background: rgba(14, 31, 48, 0.7);
+            border: 1.5px solid rgba(249, 115, 22, 0.3);
+            border-radius: 16px;
+            margin-top: 24px;
+            max-width: 420px;
+            width: 100%;
+            animation: fadeInUp 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+
+        .geofence-banner.visible {
+            display: block;
+        }
+
+        .geofence-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: rgba(249, 115, 22, 0.1);
+            border: 2px solid rgba(249, 115, 22, 0.25);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 14px;
+        }
+
+        .geofence-icon .material-icons {
+            font-size: 30px;
+            color: #F97316;
+        }
+
+        .geofence-title {
+            font-family: 'Pirata One', Georgia, cursive;
+            font-size: 1.25rem;
+            color: #F97316;
+            margin-bottom: 8px;
+        }
+
+        .geofence-text {
+            color: rgba(247, 236, 212, 0.65);
+            font-size: 0.9rem;
+            line-height: 1.7;
+            margin-bottom: 6px;
+        }
+
+        .geofence-distance {
+            font-size: 0.82rem;
+            color: rgba(247, 236, 212, 0.4);
+            margin-bottom: 18px;
+        }
+
+        .geofence-distance strong {
+            color: rgba(249, 115, 22, 0.8);
+            font-weight: 700;
+        }
+
+        .geofence-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 12px 28px;
+            border-radius: 10px;
+            border: none;
+            font-family: 'Inter', sans-serif;
+            font-weight: 700;
+            font-size: 0.88rem;
+            cursor: pointer;
+            background: linear-gradient(135deg, #F97316, #EA580C);
+            color: #fff;
+            transition: transform 0.12s, box-shadow 0.15s;
+        }
+
+        .geofence-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 16px rgba(249, 115, 22, 0.35);
+        }
+
+        .geofence-btn .material-icons {
+            font-size: 18px;
+        }
+
+        .geofence-loading {
+            display: none;
+            text-align: center;
+            margin-top: 24px;
+            animation: fadeInUp 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+
+        .geofence-loading.visible {
+            display: block;
+        }
+
+        .geofence-loading-text {
+            color: rgba(247, 236, 212, 0.5);
+            font-size: 0.88rem;
+            margin-top: 10px;
+        }
+
+        .geofence-spinner {
+            width: 32px;
+            height: 32px;
+            border: 3px solid rgba(249, 115, 22, 0.15);
+            border-top-color: #F97316;
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+            margin: 0 auto;
+        }
+
+        /* ============================================================
            RESPONSIVE
            ============================================================ */
         @media (max-width: 420px) {
@@ -863,6 +978,50 @@ $appUrl = $appUrl ?? '';
     </div>
 
     <!-- ============================================================
+         GEOFENCE — OUT OF RANGE
+         ============================================================ -->
+    <div class="geofence-banner" id="geofence-out-of-range">
+        <div class="geofence-icon">
+            <span class="material-icons">place</span>
+        </div>
+        <div class="geofence-title">Você não está no local do cofre</div>
+        <div class="geofence-text">
+            O cofre abre apenas num raio de <strong id="geo-radius">100</strong> m do local.
+            Aproxime-se e tente novamente.
+        </div>
+        <div class="geofence-distance" id="geo-distance-msg"></div>
+        <button type="button" class="geofence-btn" id="geo-retry-btn">
+            <span class="material-icons">my_location</span>
+            Verificar novamente
+        </button>
+    </div>
+
+    <!-- ============================================================
+         GEOFENCE — NO LOCATION PERMISSION
+         ============================================================ -->
+    <div class="geofence-banner" id="geofence-no-location">
+        <div class="geofence-icon">
+            <span class="material-icons">location_off</span>
+        </div>
+        <div class="geofence-title">Precisamos da sua localização</div>
+        <div class="geofence-text">
+            Autorize o acesso à localização no navegador para abrir o cofre.
+        </div>
+        <button type="button" class="geofence-btn" id="geo-allow-btn">
+            <span class="material-icons">location_on</span>
+            Permitir localização
+        </button>
+    </div>
+
+    <!-- ============================================================
+         GEOFENCE — LOADING
+         ============================================================ -->
+    <div class="geofence-loading" id="geofence-loading">
+        <div class="geofence-spinner"></div>
+        <div class="geofence-loading-text">Verificando sua localização...</div>
+    </div>
+
+    <!-- ============================================================
          CONFIRM MODAL
          ============================================================ -->
     <div class="confirm-overlay" id="confirm-overlay">
@@ -915,10 +1074,110 @@ $appUrl = $appUrl ?? '';
         var confirmOk = document.getElementById('confirm-ok');
         var toastEl = document.getElementById('toast');
 
+        /* Geofence DOM */
+        var geofenceOutOfRange = document.getElementById('geofence-out-of-range');
+        var geofenceNoLocation = document.getElementById('geofence-no-location');
+        var geofenceLoading = document.getElementById('geofence-loading');
+        var geoRadiusEl = document.getElementById('geo-radius');
+        var geoDistanceEl = document.getElementById('geo-distance-msg');
+        var geoRetryBtn = document.getElementById('geo-retry-btn');
+        var geoAllowBtn = document.getElementById('geo-allow-btn');
+
         var currentPassword = '';
         var isSubmitting = false;
         var blockedUntilTs = null;  /* timestamp of block end */
         var countdownTimer = null;
+
+        /* Geofence state */
+        var userLat = null;
+        var userLng = null;
+        var hasCoordinate = null;  /* from API: does vault have coords? */
+
+        /* ============================================================
+           GEOFENCE — GEOLOCATION
+           ============================================================ */
+        function requestLocation(callback) {
+            if (!navigator.geolocation) {
+                /* Geolocation not supported — treat as no permission */
+                callback(null, null);
+                return;
+            }
+            navigator.geolocation.getCurrentPosition(
+                function (pos) {
+                    callback(pos.coords.latitude, pos.coords.longitude);
+                },
+                function (err) {
+                    callback(null, null);
+                },
+                { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+            );
+        }
+
+        function hideAllGeofence() {
+            geofenceOutOfRange.classList.remove('visible');
+            geofenceNoLocation.classList.remove('visible');
+            geofenceLoading.classList.remove('visible');
+        }
+
+        function showGeofenceOutOfRange(radius, distance) {
+            hideAllGeofence();
+            geofenceOutOfRange.classList.add('visible');
+            geoRadiusEl.textContent = radius;
+            if (distance !== null && distance !== undefined) {
+                geoDistanceEl.innerHTML = 'Distância atual: <strong>~' + formatDistance(distance) + '</strong>';
+            } else {
+                geoDistanceEl.textContent = '';
+            }
+            /* Hide the vault UI */
+            digitArea.style.display = 'none';
+            submitBtn.style.display = 'none';
+            statusMsg.textContent = '';
+            attemptsMsg.textContent = '';
+        }
+
+        function showGeofenceNoLocation() {
+            hideAllGeofence();
+            geofenceNoLocation.classList.add('visible');
+            /* Hide the vault UI */
+            digitArea.style.display = 'none';
+            submitBtn.style.display = 'none';
+            statusMsg.textContent = '';
+            attemptsMsg.textContent = '';
+        }
+
+        function showGeofenceLoading() {
+            hideAllGeofence();
+            geofenceLoading.classList.add('visible');
+        }
+
+        function formatDistance(meters) {
+            if (meters >= 1000) {
+                return (meters / 1000).toFixed(1).replace('.', ',') + ' km';
+            }
+            return Math.round(meters) + ' m';
+        }
+
+        /* Retry / allow buttons */
+        geoRetryBtn.addEventListener('click', function () {
+            initGeofence();
+        });
+        geoAllowBtn.addEventListener('click', function () {
+            initGeofence();
+        });
+
+        /**
+         * Main geofence init: request location, then loadStatus with coords.
+         */
+        function initGeofence() {
+            hideAllGeofence();
+            showGeofenceLoading();
+
+            requestLocation(function (lat, lng) {
+                userLat = lat;
+                userLng = lng;
+                loadStatus();
+            });
+        }
 
         /* ============================================================
            DIGIT INPUT
@@ -991,15 +1250,22 @@ $appUrl = $appUrl ?? '';
         }
 
         /* ============================================================
-           FETCH STATUS ON LOAD
+           FETCH STATUS ON LOAD (with geolocation params)
            ============================================================ */
         function loadStatus() {
-            fetch('/api/cofre?t=' + Date.now(), { cache: 'no-store' })
+            var url = '/api/cofre?t=' + Date.now();
+            if (userLat !== null && userLng !== null) {
+                url += '&lat=' + encodeURIComponent(userLat) + '&lng=' + encodeURIComponent(userLng);
+            }
+
+            fetch(url, { cache: 'no-store' })
                 .then(function (r) {
                     if (!r.ok) throw new Error('HTTP ' + r.status);
                     return r.json();
                 })
                 .then(function (data) {
+                    hideAllGeofence();
+
                     if (!data.success) {
                         showNotConfigured();
                         return;
@@ -1010,6 +1276,23 @@ $appUrl = $appUrl ?? '';
                         return;
                     }
 
+                    /* Store whether vault has coordinates */
+                    hasCoordinate = data.has_coordinate;
+
+                    /* Check geofence */
+                    if (data.has_coordinate && !data.in_range) {
+                        if (data.range_reason === 'fora_do_raio') {
+                            showGeofenceOutOfRange(data.radius, data.distance);
+                            return;
+                        }
+                        if (data.range_reason === 'sem_localizacao') {
+                            showGeofenceNoLocation();
+                            return;
+                        }
+                    }
+
+                    /* All good — show vault */
+                    hideAllGeofence();
                     if (data.blocked) {
                         showBlocked(data.blocked_until);
                     } else {
@@ -1018,6 +1301,7 @@ $appUrl = $appUrl ?? '';
                     }
                 })
                 .catch(function () {
+                    hideAllGeofence();
                     showToast('Erro ao verificar o cofre. Verifique sua conexão.', 'error');
                 });
         }
@@ -1035,6 +1319,7 @@ $appUrl = $appUrl ?? '';
             digitArea.style.display = '';
             submitBtn.style.display = '';
             blockedBanner.classList.remove('visible');
+            hideAllGeofence();
             updateSubmitState();
         }
 
@@ -1049,6 +1334,7 @@ $appUrl = $appUrl ?? '';
             notConfigured.classList.remove('visible');
             statusMsg.textContent = '';
             attemptsMsg.textContent = '';
+            hideAllGeofence();
 
             /* Parse blocked_until as local time */
             var parts = blockedUntil.split(/[- :]/);
@@ -1132,7 +1418,7 @@ $appUrl = $appUrl ?? '';
         });
 
         /* ============================================================
-           SEND CODE TO API
+           SEND CODE TO API (with lat/lng)
            ============================================================ */
         function sendCode() {
             if (isSubmitting) return;
@@ -1140,10 +1426,16 @@ $appUrl = $appUrl ?? '';
             submitBtn.disabled = true;
             submitBtn.innerHTML = '<span class="spinner"></span> Verificando...';
 
+            var payload = { code: getCode() };
+            if (userLat !== null && userLng !== null) {
+                payload.lat = userLat;
+                payload.lng = userLng;
+            }
+
             fetch('/api/cofre', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ code: getCode() })
+                body: JSON.stringify(payload)
             })
             .then(function (r) {
                 return r.json().then(function (data) {
@@ -1157,6 +1449,17 @@ $appUrl = $appUrl ?? '';
 
                 var data = result.data;
                 var status = result.status;
+
+                /* 403 = out of range (geofence) */
+                if (status === 403 && data.out_of_range) {
+                    if (data.range_reason === 'fora_do_raio') {
+                        showGeofenceOutOfRange(data.radius, data.distance);
+                    } else if (data.range_reason === 'sem_localizacao') {
+                        showGeofenceNoLocation();
+                    }
+                    showToast(data.error || 'Você precisa estar no local do cofre.', 'error');
+                    return;
+                }
 
                 /* 423 = blocked */
                 if (status === 423) {
@@ -1234,6 +1537,7 @@ $appUrl = $appUrl ?? '';
             attemptsMsg.textContent = '';
             blockedBanner.classList.remove('visible');
             notConfigured.classList.remove('visible');
+            hideAllGeofence();
 
             /* Build password characters inside the safe */
             var pwd = currentPassword;
@@ -1257,14 +1561,9 @@ $appUrl = $appUrl ?? '';
         }
 
         /* ============================================================
-           INIT
+           INIT — start with geolocation flow
            ============================================================ */
-        loadStatus();
-
-        /* Focus first box on load */
-        setTimeout(function () {
-            if (boxes.length) boxes[0].focus();
-        }, 300);
+        initGeofence();
 
     })();
     </script>

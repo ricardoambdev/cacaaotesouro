@@ -12,6 +12,9 @@
  * @var string $vaultUrl          Link público do cofre
  * @var string $finalAnswer       Senha do desafio final (revelada pelo cofre)
  * @var array  $blockedIps        IPs bloqueados agora
+ * @var string $vaultLat          Latitude do cofre (capturada pelo app admin)
+ * @var string $vaultLng          Longitude do cofre
+ * @var string $vaultRadius       Raio permitido em metros (10–5000)
  */
 
 $vaultCode         = $vaultCode ?? '';
@@ -21,6 +24,12 @@ $vaultBlockNextDay = $vaultBlockNextDay ?? '0';
 $vaultUrl          = $vaultUrl ?? '';
 $finalAnswer       = $finalAnswer ?? '';
 $blockedIps        = $blockedIps ?? [];
+$vaultLat          = $vaultLat ?? '';
+$vaultLng          = $vaultLng ?? '';
+$vaultRadius       = $vaultRadius ?? '100';
+
+$hasCoordinate = trim($vaultLat) !== '' && trim($vaultLng) !== '';
+?>
 ?>
 <div class="page-header">
     <h1 class="page-title"><?= icon('lock', 28) ?> Cofre</h1>
@@ -88,6 +97,17 @@ $blockedIps        = $blockedIps ?? [];
                 <span class="toggle-slider"></span>
             </label>
         </div>
+
+        <div class="form-group" style="margin-top: 8px;">
+            <label for="vaultRadius">Raio permitido (metros)</label>
+            <input type="number" id="vaultRadius" name="vaultRadius" class="form-input"
+                   min="10" max="5000" step="1" value="<?= e($vaultRadius) ?>">
+            <div class="error-inline"></div>
+            <p class="form-help-text">
+                Distância máxima (em metros) que o visitante pode estar do cofre para abrir a página.
+                Valores entre 10 e 5.000. Padrão: 100 m.
+            </p>
+        </div>
     </div>
 
     <div class="settings-actions">
@@ -99,7 +119,78 @@ $blockedIps        = $blockedIps ?? [];
 </form>
 
 <!-- ═══════════════════════════════════════════════════════════════
-     CARD 2 — LINK PÚBLICO DO COFRE
+     CARD 2 — LOCAL DO COFRE (geofence)
+     ═══════════════════════════════════════════════════════════════ -->
+<div class="settings-card" style="animation-delay: 0.1s;">
+    <h2 class="settings-card-title">
+        <?= icon('place', 20) ?>
+        Local do cofre
+    </h2>
+
+    <?php if ($hasCoordinate): ?>
+        <p class="form-help-text" style="margin-top: 0; margin-bottom: 14px;">
+            O cofre só abre num raio do local abaixo. A coordenada é capturada
+            pelo <strong>app do admin</strong> (aba Cofre → botão <em>Capturar coordenada</em>).
+        </p>
+
+        <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 14px;">
+            <code style="
+                font-family: 'Courier New', monospace;
+                font-size: 0.92rem;
+                color: #F97316;
+                background: rgba(249,115,22,0.08);
+                padding: 8px 14px;
+                border-radius: 8px;
+                border: 1px solid rgba(249,115,22,0.2);
+                letter-spacing: 0.02em;
+            "><?= e($vaultLat) ?>, <?= e($vaultLng) ?></code>
+
+            <a href="https://www.google.com/maps?q=<?= e($vaultLat) ?>,<?= e($vaultLng) ?>"
+               target="_blank" rel="noopener"
+               class="btn btn-sm btn-auto"
+               style="background: rgba(249,115,22,0.12); border: 1px solid rgba(249,115,22,0.3); color: #F97316; text-decoration: none;">
+                <?= icon('open_in_new', 16) ?>
+                Abrir no mapa
+            </a>
+        </div>
+
+        <!-- Limpar coordenada -->
+        <form method="post" action="/cofre/config"
+              data-confirm-modal="Limpar a coordenada do cofre? O cofre passará a abrir em qualquer lugar.">
+            <?= csrf_field() ?>
+            <input type="hidden" name="action" value="clear-coordinate">
+            <button type="submit" class="btn btn-sm btn-auto"
+                    style="background: rgba(192,57,43,0.12); border: 1px solid rgba(192,57,43,0.3); color: #f5a6a0;">
+                <?= icon('delete', 16) ?>
+                Limpar coordenada
+            </button>
+        </form>
+
+    <?php else: ?>
+
+        <div style="
+            padding: 16px;
+            background: rgba(249,115,22,0.06);
+            border: 1px dashed rgba(249,115,22,0.25);
+            border-radius: 10px;
+            margin-bottom: 4px;
+        ">
+            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 6px;">
+                <?= icon('info', 18, '', 'style="color:#F97316;"') ?>
+                <span style="color: rgba(247,236,212,0.75); font-size: 0.9rem; font-weight: 600;">
+                    Nenhuma coordenada configurada — o cofre abre em qualquer lugar.
+                </span>
+            </div>
+            <p class="form-help-text" style="margin: 0;">
+                A coordenada é capturada pelo <strong>app do admin</strong> (aba Cofre → botão <em>Capturar coordenada</em>).
+            </p>
+        </div>
+
+    <?php endif; ?>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     CARD 3 — LINK PÚBLICO DO COFRE
      ═══════════════════════════════════════════════════════════════ -->
 <div class="settings-card" style="animation-delay: 0.15s;">
     <h2 class="settings-card-title">
@@ -141,7 +232,7 @@ $blockedIps        = $blockedIps ?? [];
 </div>
 
 <!-- ═══════════════════════════════════════════════════════════════
-     CARD 3 — BLOQUEIOS ATIVOS
+     CARD 4 — BLOQUEIOS ATIVOS
      ═══════════════════════════════════════════════════════════════ -->
 <div class="settings-card" style="animation-delay: 0.25s;">
     <h2 class="settings-card-title">
