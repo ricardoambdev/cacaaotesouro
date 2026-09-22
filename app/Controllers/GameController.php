@@ -220,6 +220,24 @@ final class GameController
                 redirect('/cofre/config');
             }
 
+            // Limpar a coordenada do cofre (volta a abrir em qualquer lugar).
+            if ((string) ($body['action'] ?? '') === 'clear-coordinate') {
+                SettingsRepository::update(['vaultLat' => '', 'vaultLng' => '']);
+                flash_set('success', 'Coordenada do cofre removida — a página volta a abrir em qualquer lugar.');
+                redirect('/cofre/config');
+            }
+
+            // Raio permitido (metros) — a coordenada em si é capturada pelo app.
+            $vaultRadius = trim((string) ($body['vaultRadius'] ?? '100'));
+
+            if ($vaultRadius === '' || !ctype_digit($vaultRadius)
+                || (int) $vaultRadius < 10 || (int) $vaultRadius > 5000) {
+                flash_set('error', 'O raio do cofre deve ser um inteiro entre 10 e 5000 metros.');
+                redirect('/cofre/config');
+            }
+
+            SettingsRepository::update(['vaultRadius' => (string) (int) $vaultRadius]);
+
             // Só os dígitos interessam; vazio = cofre desativado.
             $vaultCode = preg_replace('/\D/', '', (string) ($body['vaultCode'] ?? ''));
             $vaultMaxAttempts = trim((string) ($body['vaultMaxAttempts'] ?? ''));
@@ -284,6 +302,10 @@ final class GameController
             'vaultUrl'          => rtrim((string) app_config('app.url', ''), '/') . '/cofre',
             'finalAnswer'       => (string) SettingsRepository::get('finalAnswer', ''),
             'blockedIps'        => VaultRepository::blockedList(),
+            // Coordenada do cofre (capturada pelo app do admin) + raio
+            'vaultLat'          => (string) SettingsRepository::get('vaultLat', ''),
+            'vaultLng'          => (string) SettingsRepository::get('vaultLng', ''),
+            'vaultRadius'       => (string) SettingsRepository::get('vaultRadius', '100'),
         ]);
 
         $response->getBody()->write($this->renderLayout($content, $user, 'cofre'));
