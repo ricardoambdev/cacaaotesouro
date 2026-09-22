@@ -799,6 +799,46 @@ class ApiService {
   }
 
   // ════════════════════════════════════════════════════════════
+  //  ADMIN: VAULT (Cofre da Gincana)
+  // ════════════════════════════════════════════════════════════
+
+  /// GET /api/admin/vault → situação atual do cofre.
+  Future<Map<String, dynamic>> adminVaultStatus() async {
+    final response = await http.get(
+      Uri.parse('$baseUrl/admin/vault'),
+      headers: _adminHeaders,
+    );
+
+    _extractCookie(response);
+    _checkUnauthorized(response);
+
+    final body = _parseBody(response);
+    if (response.statusCode == 200 && body['success'] == true) {
+      return body;
+    }
+
+    throw ApiException(
+        body['error'] as String? ?? 'Erro ao obter status do cofre.');
+  }
+
+  /// POST /api/admin/vault/unblock → remove todos os bloqueios ativos.
+  Future<void> adminVaultUnblock() async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/admin/vault/unblock'),
+      headers: _adminHeaders,
+    );
+
+    _extractCookie(response);
+    _checkUnauthorized(response);
+
+    final body = _parseBody(response);
+    if (response.statusCode != 200 || body['success'] != true) {
+      throw ApiException(
+          body['error'] as String? ?? 'Erro ao desbloquear cofre.');
+    }
+  }
+
+  // ════════════════════════════════════════════════════════════
   //  ADMIN: TREASURE DETAIL / UPDATE
   // ════════════════════════════════════════════════════════════
 

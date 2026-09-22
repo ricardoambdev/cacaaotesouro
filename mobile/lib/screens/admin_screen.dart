@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_widget_from_html_core/flutter_widget_from_html_core.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 import '../theme.dart';
 import '../models/treasure.dart';
 import '../models/game_state.dart';
@@ -516,7 +518,7 @@ class _AdminScreenState extends State<AdminScreen> {
     }
   }
 
-  /// Barra inferior com "História" e "Sair".
+  /// Barra inferior com "História", "Cofre" e "Sair".
   Widget _buildBottomBar() {
     return SafeArea(
       top: false,
@@ -545,6 +547,30 @@ class _AdminScreenState extends State<AdminScreen> {
                       SizedBox(height: 4),
                       Text(
                         'História',
+                        style: TextStyle(
+                          color: AppColors.gold,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            // ── Cofre ────────────────────────────────
+            Expanded(
+              child: InkWell(
+                onTap: _showVaultSheet,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  child: const Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.lock, color: AppColors.gold, size: 22),
+                      SizedBox(height: 4),
+                      Text(
+                        'Cofre',
                         style: TextStyle(
                           color: AppColors.gold,
                           fontSize: 12,
@@ -751,6 +777,27 @@ class _AdminScreenState extends State<AdminScreen> {
               Expanded(child: content),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  /// Abre as informações do cofre em um modal inferior.
+  Future<void> _showVaultSheet() async {
+    if (!mounted) return;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => SizedBox(
+        height: MediaQuery.sizeOf(ctx).height * 0.85,
+        child: Container(
+          decoration: const BoxDecoration(
+            color: AppColors.navyMedium,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+          child: const _VaultSheetContent(),
         ),
       ),
     );
@@ -988,6 +1035,591 @@ class _AdminScreenState extends State<AdminScreen> {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// Conteúdo da folha do Cofre (carrega dados via API e exibe situação,
+/// link público, QR code e bloqueios ativos).
+class _VaultSheetContent extends StatefulWidget {
+  const _VaultSheetContent();
+
+  @override
+  State<_VaultSheetContent> createState() => _VaultSheetContentState();
+}
+
+class _VaultSheetContentState extends State<_VaultSheetContent> {
+  final _apiService = ApiService();
+  bool _isLoading = true;
+  String? _error;
+  Map<String, dynamic>? _vaultData;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadVault();
+  }
+
+  Future<void> _loadVault() async {
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+
+    try {
+      final data = await _apiService.adminVaultStatus();
+      if (!mounted) return;
+      setState(() {
+        _vaultData = data;
+        _isLoading = false;
+      });
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _error = e.message;
+        _isLoading = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _error = 'Erro ao carregar dados do cofre.';
+        _isLoading = false;
+      });
+    }
+  }
+
+  /// Formata uma string ISO 8601 em d/m/Y H:i.
+  String _formatDateTime(String? isoDate) {
+    if (isoDate == null || isoDate.isEmpty) return '—';
+    try {
+      final dt = DateTime.parse(isoDate);
+      return '${dt.day}/${dt.month}/${dt.year} '
+          '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
+    } catch (_) {
+      return isoDate;
+    }
+  }
+
+  Future<void> _unblockAll() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.navyMedium,
+        title: const Text('Liberar bloqueios?',
+            style: TextStyle(color: AppColors.gold)),
+        content: const Text(
+          'Todos os bloqueios ativos serão removidos. '
+          'Os IPs poderão tentar novamente.',
+          style: TextStyle(color: AppColors.ivory),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancelar',
+                style: TextStyle(color: AppColors.ivoryMuted)),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.green,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Liberar'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !mounted) return;
+
+    try {
+      await _apiService.adminVaultUnblock();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Todos os bloqueios foram liberados!'),
+          backgroundColor: AppColors.navyMedium,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      await _loadVault();
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(e.message),
+          backgroundColor: Colors.redAccent.withValues(alpha: 0.85),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Erro ao liberar bloqueios.'),
+          backgroundColor: Colors.redAccent.withValues(alpha: 0.85),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final bottomSafe = MediaQuery.viewPaddingOf(context).bottom;
+
+    return Column(
+      children: [
+        // ── Handle ────────────────────────────────
+        Container(
+          margin: const EdgeInsets.only(top: 10),
+          width: 40,
+          height: 4,
+          decoration: BoxDecoration(
+            color: AppColors.ivoryMuted.withValues(alpha: 0.3),
+            borderRadius: BorderRadius.circular(2),
+          ),
+        ),
+        // ── Título ────────────────────────────────
+        const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+          child: Row(
+            children: [
+              Icon(Icons.lock, color: AppColors.gold, size: 22),
+              SizedBox(width: 10),
+              Text(
+                'Cofre da Gincana',
+                style: TextStyle(
+                  color: AppColors.gold,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
+        ),
+        const Divider(height: 1, color: AppColors.ivoryMuted),
+        // ── Conteúdo ──────────────────────────────
+        Expanded(
+          child: _isLoading
+              ? const Center(
+                  child:
+                      CircularProgressIndicator(color: AppColors.gold))
+              : _error != null
+                  ? _buildError()
+                  : _buildVaultBody(bottomSafe),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildError() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.error_outline,
+                color: Colors.redAccent, size: 40),
+            const SizedBox(height: 14),
+            Text(
+              _error!,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                  color: AppColors.ivory, fontSize: 15),
+            ),
+            const SizedBox(height: 20),
+            ElevatedButton.icon(
+              onPressed: _loadVault,
+              icon: const Icon(Icons.refresh),
+              label: const Text('Tentar novamente'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.gold,
+                foregroundColor: AppColors.navyDark,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildVaultBody(double bottomSafe) {
+    final data = _vaultData!;
+    final bool configured = data['configured'] == true;
+    final int? codeDigits = data['code_digits'] as int?;
+    final int? attempts = data['attempts'] as int?;
+    final int? blockMinutes = data['block_minutes'] as int?;
+    final bool blockNextDay = data['block_next_day'] == true;
+    final String url = (data['url'] as String?) ?? '';
+    final List<dynamic> blockedRaw =
+        (data['blocked'] as List<dynamic>?) ?? [];
+
+    return RefreshIndicator(
+      onRefresh: _loadVault,
+      color: AppColors.gold,
+      backgroundColor: AppColors.navyMedium,
+      child: ListView(
+        padding: EdgeInsets.fromLTRB(20, 16, 20, 32 + bottomSafe),
+        children: [
+          // ── 1. Situação ─────────────────────────
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: configured
+                  ? Colors.green.withValues(alpha: 0.08)
+                  : Colors.orangeAccent.withValues(alpha: 0.08),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(
+                color: configured
+                    ? Colors.green.withValues(alpha: 0.25)
+                    : Colors.orangeAccent.withValues(alpha: 0.3),
+              ),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(
+                      configured ? Icons.check_circle : Icons.warning_amber,
+                      color: configured
+                          ? Colors.greenAccent
+                          : Colors.orangeAccent,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      'SITUAÇÃO',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 2,
+                        color: configured
+                            ? Colors.greenAccent
+                            : Colors.orangeAccent,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  configured
+                      ? 'Código de ${codeDigits ?? 9} dígitos configurado'
+                      : 'O cofre ainda não foi configurado no painel web',
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.ivory,
+                  ),
+                ),
+                if (configured) ...[
+                  const SizedBox(height: 10),
+                  _vaultInfoRow(
+                      'Tentativas antes de bloquear', '$attempts'),
+                  _vaultInfoRow(
+                      'Tempo de bloqueio', '$blockMinutes min'),
+                  _vaultInfoRow(
+                      'Bloqueia até o dia seguinte',
+                      blockNextDay ? 'Sim' : 'Não'),
+                ],
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 18),
+
+          // ── 2. Link público + QR ──────────────
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: AppColors.navyMedium,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(
+                color: AppColors.gold.withValues(alpha: 0.2),
+              ),
+            ),
+            child: Column(
+              children: [
+                Text(
+                  'LINK PÚBLICO DO COFRE',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 2,
+                    color: AppColors.gold.withValues(alpha: 0.7),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 14, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: AppColors.navyDark,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: AppColors.ivoryMuted.withValues(alpha: 0.15),
+                    ),
+                  ),
+                  child: SelectableText(
+                    url,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      color: AppColors.ivory,
+                      height: 1.4,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: () async {
+                      await Clipboard.setData(ClipboardData(text: url));
+                      if (!mounted) return;
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: const Text('Link copiado!'),
+                          backgroundColor: AppColors.navyMedium,
+                          behavior: SnackBarBehavior.floating,
+                          duration: const Duration(seconds: 2),
+                        ),
+                      );
+                    },
+                    icon: const Icon(Icons.copy, size: 18),
+                    label: const Text('Copiar link'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppColors.gold,
+                      side: BorderSide(
+                          color:
+                              AppColors.gold.withValues(alpha: 0.4)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      padding:
+                          const EdgeInsets.symmetric(vertical: 12),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                // QR Code
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(14),
+                    boxShadow: [
+                      BoxShadow(
+                        color:
+                            AppColors.gold.withValues(alpha: 0.12),
+                        blurRadius: 12,
+                        offset: const Offset(0, 3),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    children: [
+                      QrImageView(
+                        data: url,
+                        size: 180,
+                        backgroundColor: Colors.white,
+                        eyeStyle: const QrEyeStyle(
+                          eyeShape: QrEyeShape.square,
+                          color: AppColors.navyDark,
+                        ),
+                        dataModuleStyle: const QrDataModuleStyle(
+                          dataModuleShape: QrDataModuleShape.square,
+                          color: AppColors.navyDark,
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      const Text(
+                        'Escaneie para abrir o cofre',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.navyDark,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 18),
+
+          // ── 3. Bloqueios ativos ────────────────
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: AppColors.navyMedium,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(
+                color: AppColors.gold.withValues(alpha: 0.15),
+              ),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'BLOQUEIOS ATIVOS',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 2,
+                    color: AppColors.gold.withValues(alpha: 0.7),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                if (blockedRaw.isEmpty)
+                  Row(
+                    children: [
+                      const Icon(Icons.check_circle,
+                          color: Colors.greenAccent, size: 18),
+                      const SizedBox(width: 8),
+                      const Text(
+                        'Nenhum bloqueio ativo',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.greenAccent,
+                        ),
+                      ),
+                    ],
+                  )
+                else ...[
+                  ...blockedRaw.map((b) {
+                    final ip = b['ip'] as String? ?? '—';
+                    final blockedUntil =
+                        b['blocked_until'] as String?;
+                    final blocks = b['blocks'] as int? ?? 0;
+                    return Container(
+                      margin: const EdgeInsets.only(bottom: 8),
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color:
+                            Colors.redAccent.withValues(alpha: 0.08),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(
+                          color: Colors.redAccent
+                              .withValues(alpha: 0.25),
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.gpp_maybe,
+                              color: Colors.redAccent, size: 18),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment:
+                                  CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'IP: $ip',
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w700,
+                                    color: AppColors.ivory,
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  'Bloqueado até: ${_formatDateTime(blockedUntil)} · Tentativas: $blocks',
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    color: AppColors.ivoryMuted,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }),
+                  const SizedBox(height: 6),
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      onPressed: _unblockAll,
+                      icon: const Icon(Icons.lock_open, size: 18),
+                      label:
+                          const Text('Liberar todos os bloqueios'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: Colors.greenAccent,
+                        side: const BorderSide(
+                            color: Colors.greenAccent),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        padding: const EdgeInsets.symmetric(
+                            vertical: 12),
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 18),
+
+          // ── 4. Botão Atualizar ──────────────────
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: _loadVault,
+              icon: const Icon(Icons.refresh, size: 20),
+              label: const Text('Atualizar'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.gold,
+                foregroundColor: AppColors.navyDark,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                padding: const EdgeInsets.symmetric(vertical: 14),
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 8),
+        ],
+      ),
+    );
+  }
+
+  /// Linha informativa (rótulo: valor).
+  Widget _vaultInfoRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 4),
+      child: Row(
+        children: [
+          Text(
+            '$label: ',
+            style: const TextStyle(
+              fontSize: 13,
+              color: AppColors.ivoryMuted,
+            ),
+          ),
+          Text(
+            value,
+            style: const TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: AppColors.ivory,
+            ),
+          ),
+        ],
       ),
     );
   }

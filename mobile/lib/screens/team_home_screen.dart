@@ -656,8 +656,8 @@ class _TeamHomeScreenState extends State<TeamHomeScreen> {
         _gameState != null && _gameState!.finalAvailable;
     final List<Widget> tabPages = [
       _buildTreasureTab(),
-      if (showCofre) _buildVaultContent(),
       _buildStoryContent(),
+      if (showCofre) _buildVaultContent(),
       _buildLeaderboardContent(),
     ];
     final List<NavigationDestination> tabDestinations = [
@@ -668,17 +668,17 @@ class _TeamHomeScreenState extends State<TeamHomeScreen> {
             Icon(Icons.account_balance_wallet, color: AppColors.gold),
         label: 'Tesouro',
       ),
+      const NavigationDestination(
+        icon: Icon(Icons.info_outline, color: AppColors.ivoryMuted),
+        selectedIcon: Icon(Icons.info, color: AppColors.gold),
+        label: 'História',
+      ),
       if (showCofre)
         const NavigationDestination(
           icon: Icon(Icons.lock_outline, color: AppColors.ivoryMuted),
           selectedIcon: Icon(Icons.lock, color: AppColors.gold),
           label: 'Cofre',
         ),
-      const NavigationDestination(
-        icon: Icon(Icons.info_outline, color: AppColors.ivoryMuted),
-        selectedIcon: Icon(Icons.info, color: AppColors.gold),
-        label: 'História',
-      ),
       const NavigationDestination(
         icon: Icon(Icons.leaderboard_outlined,
             color: AppColors.ivoryMuted),
