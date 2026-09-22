@@ -146,3 +146,54 @@ foreach ($teams as $t) {
         </div>
     <?php endif; ?>
 </div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     TELÃO — LINK SECRETO (aberto numa única máquina, no evento)
+     ═══════════════════════════════════════════════════════════════ -->
+<div class="settings-card" style="margin-top: 24px;">
+    <h2 class="settings-card-title">
+        <?= icon('tv', 20) ?>
+        Telão do evento
+    </h2>
+
+    <p class="form-help-text" style="margin-top: 0; margin-bottom: 14px;">
+        Este é o link <strong>secreto</strong> do telão — o endereço é uma sequência aleatória
+        (não é "/telao"), para que só a organização o conheça.
+        Abra-o <strong>numa única máquina</strong> (a do telão/projetor) e deixe em tela cheia.
+    </p>
+
+    <div style="display: flex; gap: 20px; align-items: flex-start; flex-wrap: wrap;">
+        <div style="flex: 1; min-width: 220px;">
+            <div class="api-url-box" style="margin-bottom: 10px;">
+                <span class="url-text"><?= e($telaoUrl ?? '') ?></span>
+            </div>
+            <button type="button" class="btn btn-sm btn-copy" data-copy="<?= e($telaoUrl ?? '') ?>" style="margin-bottom: 8px;">
+                <?= icon('content_copy', 14) ?> Copiar link
+            </button>
+        </div>
+
+        <div style="text-align: center; flex-shrink: 0;">
+            <div style="background: #fff; border-radius: 10px; padding: 8px; display: inline-block; border: 1px solid rgba(249,115,22,0.15);">
+                <img src="/t/<?= e($telaoSlug ?? '') ?>/qr.svg" alt="QR code do telão" width="180" height="180">
+            </div>
+            <div style="font-size: 0.72rem; color: rgba(247,236,212,0.4); margin-top: 6px;">QR Code do telão</div>
+        </div>
+    </div>
+
+    <div style="margin-top: 16px; display:flex; gap:10px; flex-wrap:wrap;">
+        <a href="<?= e($telaoUrl ?? '') ?>" target="_blank" rel="noopener" class="btn btn-primary btn-auto btn-sm" style="background:linear-gradient(135deg,#22C55E,#168a3a);">
+            <?= icon('open_in_new', 16) ?>
+            Abrir o telão
+        </a>
+
+        <form method="post" action="/jogo" style="display:inline;">
+            <?= csrf_field() ?>
+            <input type="hidden" name="action" value="regenerate-telao">
+            <button type="submit" class="btn btn-ghost btn-sm btn-auto"
+                    data-confirm-modal="Gerar um novo link do telão?&#10;O endereço atual deixa de funcionar (você precisa abrir o novo no projetor).">
+                <?= icon('autorenew', 16) ?>
+                Gerar novo link
+            </button>
+        </form>
+    </div>
+</div>

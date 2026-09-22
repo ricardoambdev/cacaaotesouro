@@ -164,11 +164,17 @@ $app->get('/api/admin/vault', [ApiController::class, 'adminVaultStatus']);
 $app->post('/api/admin/vault/unblock', [ApiController::class, 'adminVaultUnblock']);
 $app->post('/api/admin/vault/coordinate', [ApiController::class, 'adminVaultSetCoordinate']);
 $app->get('/jogo', [GameController::class, 'status'])->add($mw['authRequired']);
+$app->post('/jogo', [GameController::class, 'status'])->add($mw['authRequired']);
 
 // Telão (PÚBLICO — sem authRequired). Página autônoma que consome
 // GET /api/telao; o CSRF global só atinge POST/PUT/DELETE/PATCH,
 // portanto um GET é livre.
-$app->get('/telao', [GameController::class, 'telao']);
+// TELÃO público — URL SECRETA (/t/<slug>), aberto numa única máquina
+// (a tela do evento). O endereço antigo /telao deixa de existir.
+$app->get('/t/{slug}', [GameController::class, 'telao']);
+
+// QR code (SVG) do link secreto do telão.
+$app->get('/t/{slug}/qr.svg', [GameController::class, 'telaoQr']);
 
 // COFRE virtual da gincana — página PÚBLICA (sem login), em URL SECRETA:
 // /v/<slug>, onde o slug é uma sequência aleatória (não "/cofre").

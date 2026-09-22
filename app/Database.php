@@ -529,6 +529,7 @@ final class Database
             'vaultLng'         => '',
             'vaultRadius'      => '100', // raio (m) em que a página do cofre abre
             'vaultSlug'        => '',    // sequência secreta da URL (/v/<slug>)
+            'telaoSlug'        => '',    // sequência secreta da URL do telão (/t/<slug>)
             'gameActive'       => '0',
             'winnerTeamId'     => '',
             // Regras do jogo (enforcement via ApiController::gameBlock)

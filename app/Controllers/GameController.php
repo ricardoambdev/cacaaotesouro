@@ -137,6 +137,18 @@ final class GameController
         /** @var array{id: int, name: string} $user */
         $user = $_SESSION['user'];
 
+        // Gerar um NOVO link secreto do telão (invalida o endereço antigo).
+        if (strtoupper($request->getMethod()) === 'POST') {
+            $body = (array) $request->getParsedBody();
+
+            if ((string) ($body['action'] ?? '') === 'regenerate-telao') {
+                $slug = VaultRepository::generateTelaoSlug();
+                flash_set('success', 'Novo link do telão: /t/' . $slug . ' (o link antigo deixou de funcionar).');
+            }
+
+            redirect('/jogo');
+        }
+
         $teams = array_map(static function (array $team): array {
             return [
                 'id'          => (int) $team['id'],
@@ -171,6 +183,9 @@ final class GameController
         $content = View::render('jogo', [
             'teams' => $teams,
             'game'  => $game,
+            // Link SECRETO do telão (aberto numa única máquina, no evento)
+            'telaoUrl'  => VaultRepository::telaoUrl(),
+            'telaoSlug' => VaultRepository::telaoSlug(),
         ]);
 
         $response->getBody()->write($this->renderLayout($content, $user, 'jogo'));
@@ -187,8 +202,20 @@ final class GameController
      * sidebar nem login. Consome os dados de GET /api/telao (público) e
      * é renderizada fora do layout autenticado.
      */
-    public function telao(Request $request, Response $response): Response
+    /**
+     * GET /t/{slug} — TELÃO público (tela do evento), em URL secreta.
+     *
+     * O endereço não é /telao: é uma sequência aleatória, para só a
+     * organização conhecer (é aberto numa única máquina, no telão).
+     */
+    public function telao(Request $request, Response $response, array $args = []): Response
     {
+        $slug = (string) ($args['slug'] ?? '');
+
+        if ($slug === '' || !hash_equals(VaultRepository::telaoSlug(), $slug)) {
+            return $response->withStatus(404);
+        }
+
         $html = View::render('telao', [
             'siteName' => (string) app_config('app.name', 'Caça ao Tesouro'),
         ]);
@@ -779,6 +806,37 @@ final class GameController
         return $response
             ->withHeader('Content-Type', 'image/svg+xml; charset=utf-8')
             ->withHeader('Content-Disposition', 'attachment; filename="qrcode-app.apk.svg"');
+    }
+
+    /**
+     * GET /t/{slug}/qr.svg — QR code (SVG) do link secreto do TELÃO.
+     */
+    public function telaoQr(Request $request, Response $response, array $args = []): Response
+    {
+        $slug = (string) ($args['slug'] ?? '');
+
+        if ($slug === '' || !hash_equals(VaultRepository::telaoSlug(), $slug)) {
+            return $response->withStatus(404);
+        }
+
+        $svg = '';
+
+        try {
+            $options = new \chillerlan\QRCode\QROptions([
+                'outputType'   => \chillerlan\QRCode\QRCode::OUTPUT_MARKUP_SVG,
+                'eccLevel'     => \chillerlan\QRCode\QRCode::ECC_M,
+                'scale'        => 10,
+                'addQuietzone' => true,
+                'imageBase64'  => false,
+            ]);
+            $svg = (new \chillerlan\QRCode\QRCode($options))->render(VaultRepository::telaoUrl());
+        } catch (\Throwable $e) {
+            error_log('telaoQr: ' . $e->getMessage());
+        }
+
+        $response->getBody()->write($svg);
+
+        return $response->withHeader('Content-Type', 'image/svg+xml; charset=utf-8');
     }
 
     /**
