@@ -1,44 +1,44 @@
 {
-  "name": "cofre-gincana",
-  "productName": "Cofre da Gincana",
-  "version": "1.0.0",
-  "description": "Abre a pagina do Cofre da Gincana em tela cheia (sem barra de enderecos).",
-  "main": "main.js",
-  "author": "Caca ao Tesouro",
-  "license": "MIT",
-  "private": true,
-  "scripts": {
-    "start": "electron .",
-    "dist": "electron-builder --win portable"
-  },
-  "devDependencies": {
-    "electron": "^33.2.0",
-    "electron-builder": "^25.1.8"
-  },
-  "build": {
-    "appId": "br.com.colegiohelena.cofre",
+    "name": "cofre-gincana",
     "productName": "Cofre da Gincana",
-    "files": [
-      "main.js",
-      "config.json",
-      "icon.png"
-    ],
-    "win": {
-      "target": [
-        {
-          "target": "portable",
-          "arch": [
-            "x64"
-          ]
+    "version": "1.0.0",
+    "description": "Cofre da Gincana — o cofre roda dentro do programa e fala com a API.",
+    "main": "main.js",
+    "author": "Caca ao Tesouro",
+    "license": "MIT",
+    "private": true,
+    "scripts": {
+        "start": "electron .",
+        "dist": "electron-builder --win portable"
+    },
+    "devDependencies": {
+        "electron": "^33.2.0",
+        "electron-builder": "^25.1.8"
+    },
+    "build": {
+        "appId": "br.com.colegiohelena.cofre",
+        "productName": "Cofre da Gincana",
+        "files": [
+            "main.js",
+            "preload.js",
+            "renderer/**/*"
+        ],
+        "win": {
+            "target": [
+                {
+                    "target": "portable",
+                    "arch": [
+                        "x64"
+                    ]
+                }
+            ],
+            "icon": "icon.png"
+        },
+        "portable": {
+            "artifactName": "Cofre-da-Gincana.exe"
+        },
+        "directories": {
+            "output": "dist"
         }
-      ],
-      "icon": "icon.png"
-    },
-    "portable": {
-      "artifactName": "Cofre-da-Gincana.exe"
-    },
-    "directories": {
-      "output": "dist"
     }
-  }
 }

@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Cofre da Gincana</title>
+  <link rel="stylesheet" href="icons.css">
+  <link rel="stylesheet" href="vault.css">
+</head>
+<body>
+
+    <!-- ============================================================
+         HEADER
+         ============================================================ -->
+    <div class="vault-header">
+        <h1 class="vault-title">Cofre</h1>
+    </div>
+
+    <!-- ============================================================
+         SAFE
+         ============================================================ -->
+    <div class="safe-wrapper" id="safe-wrapper">
+        <div class="safe locked" id="safe">
+            <!-- Corner bolts -->
+            <div class="safe-bolt safe-bolt--tl"></div>
+            <div class="safe-bolt safe-bolt--tr"></div>
+            <div class="safe-bolt safe-bolt--bl"></div>
+            <div class="safe-bolt safe-bolt--br"></div>
+
+            <!-- Hinges -->
+            <div class="safe-hinge safe-hinge--top"></div>
+            <div class="safe-hinge safe-hinge--bottom"></div>
+
+            <!-- Lock bars -->
+            <div class="safe-lockbar safe-lockbar--top"></div>
+            <div class="safe-lockbar safe-lockbar--bottom"></div>
+
+            <!-- Door -->
+            <div class="safe-door">
+                <div class="safe-keyhole"></div>
+                <div class="safe-handle"></div>
+            </div>
+
+            <!-- Interior: password revealed here -->
+            <div class="safe-interior">
+                <div class="safe-interior-label">Senha do Desafio Final</div>
+                <div class="safe-interior-value" id="safe-interior-value"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================================
+         STATUS & INPUT
+         ============================================================ -->
+    <div class="vault-status" id="vault-status">
+        <div class="vault-status-msg" id="status-msg"></div>
+        <div class="vault-attempts" id="attempts-msg"></div>
+
+        <!-- Digit input -->
+        <div class="digit-input-area" id="digit-area">
+            <input type="text" class="digit-box" maxlength="1" inputmode="numeric" pattern="[0-9]" aria-label="Dígito 1" data-idx="0">
+            <input type="text" class="digit-box" maxlength="1" inputmode="numeric" pattern="[0-9]" aria-label="Dígito 2" data-idx="1">
+            <input type="text" class="digit-box" maxlength="1" inputmode="numeric" pattern="[0-9]" aria-label="Dígito 3" data-idx="2">
+            <input type="text" class="digit-box" maxlength="1" inputmode="numeric" pattern="[0-9]" aria-label="Dígito 4" data-idx="3">
+            <input type="text" class="digit-box" maxlength="1" inputmode="numeric" pattern="[0-9]" aria-label="Dígito 5" data-idx="4">
+            <input type="text" class="digit-box" maxlength="1" inputmode="numeric" pattern="[0-9]" aria-label="Dígito 6" data-idx="5">
+            <input type="text" class="digit-box" maxlength="1" inputmode="numeric" pattern="[0-9]" aria-label="Dígito 7" data-idx="6">
+            <input type="text" class="digit-box" maxlength="1" inputmode="numeric" pattern="[0-9]" aria-label="Dígito 8" data-idx="7">
+            <input type="text" class="digit-box" maxlength="1" inputmode="numeric" pattern="[0-9]" aria-label="Dígito 9" data-idx="8">
+        </div>
+
+        <!-- Submit -->
+        <button type="button" class="vault-submit" id="submit-btn" disabled>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            Abrir o cofre
+        </button>
+    </div>
+
+    <!-- ============================================================
+         BLOCKED BANNER
+         ============================================================ -->
+    <div class="blocked-banner" id="blocked-banner">
+        <div class="blocked-icon">🔒</div>
+        <div class="blocked-title">Cofre bloqueado</div>
+        <div class="blocked-countdown" id="blocked-countdown">--:--</div>
+        <div class="blocked-hint">Aguarde o tempo de bloqueio para tentar novamente.</div>
+    </div>
+
+    <!-- ============================================================
+         NOT CONFIGURED
+         ============================================================ -->
+    <div class="not-configured" id="not-configured">
+        <div class="not-configured-icon">🔐</div>
+        <div class="not-configured-text">
+            O cofre ainda não foi configurado pelo organizador.<br>
+            Aguarde a liberação da gincana.
+        </div>
+    </div>
+
+    <!-- ============================================================
+         GEOFENCE — OUT OF RANGE
+         ============================================================ -->
+    <div class="geofence-banner" id="geofence-out-of-range">
+        <div class="geofence-icon">
+            <span class="material-icons">place</span>
+        </div>
+        <div class="geofence-title">Você não está no local do cofre</div>
+        <div class="geofence-text">
+            O cofre abre apenas num raio de <strong id="geo-radius">100</strong> m do local.
+            Aproxime-se e tente novamente.
+        </div>
+        <div class="geofence-distance" id="geo-distance-msg"></div>
+        <button type="button" class="geofence-btn" id="geo-retry-btn">
+            <span class="material-icons">my_location</span>
+            Verificar novamente
+        </button>
+    </div>
+
+    <!-- ============================================================
+         GEOFENCE — COFRE AINDA NÃO LIBERADO (sem coordenada)
+         ============================================================ -->
+    <div class="geofence-banner" id="geofence-not-released">
+        <div class="geofence-icon">
+            <span class="material-icons">lock_clock</span>
+        </div>
+        <div class="geofence-title">O cofre ainda não foi liberado</div>
+        <div class="geofence-text">
+            A organização precisa registrar o local do cofre. Tente novamente mais tarde.
+        </div>
+    </div>
+
+    <!-- ============================================================
+         GEOFENCE — NO LOCATION PERMISSION
+         ============================================================ -->
+    <div class="geofence-banner" id="geofence-no-location">        <div class="geofence-icon">
+            <span class="material-icons">location_off</span>
+        </div>
+        <div class="geofence-title">Precisamos da sua localização</div>
+        <div class="geofence-text">
+            Autorize o acesso à localização no navegador para abrir o cofre.
+        </div>
+        <button type="button" class="geofence-btn" id="geo-allow-btn">
+            <span class="material-icons">location_on</span>
+            Permitir localização
+        </button>
+    </div>
+
+    <!-- ============================================================
+         GEOFENCE — LOADING
+         ============================================================ -->
+    <div class="geofence-loading" id="geofence-loading">
+        <div class="geofence-spinner"></div>
+        <div class="geofence-loading-text">Verificando sua localização...</div>
+    </div>
+
+    <!-- ============================================================
+         CONFIRM MODAL
+         ============================================================ -->
+    <div class="confirm-overlay" id="confirm-overlay">
+        <div class="confirm-card">
+            <div class="confirm-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/>
+                    <line x1="12" y1="8" x2="12" y2="12"/>
+                    <line x1="12" y1="16" x2="12.01" y2="16"/>
+                </svg>
+            </div>
+            <div class="confirm-title">Atenção!</div>
+            <div class="confirm-message">
+                A senha do desafio final será revelada na tela.<br><br>
+                Confirme que nenhum membro da <strong>OUTRA equipe</strong> está vendo.
+                Só continue quando estiverem sozinhos.
+            </div>
+            <div class="confirm-actions">
+                <button type="button" class="confirm-btn cancel" id="confirm-cancel">Cancelar</button>
+                <button type="button" class="confirm-btn ok" id="confirm-ok">OK / Revelar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================================
+         TOAST
+         ============================================================ -->
+    <div class="toast" id="toast"></div>
+
+    <!-- ============================================================
+         JS
+         ============================================================ -->
+
+  <script src="vault.js"></script>
+</body>
+</html>

@@ -1,0 +1,39 @@
+/* Material Icons — embutido no app (sem depender de internet para o ícone) */
+@font-face {
+  font-family: 'Material Icons';
+  font-style: normal;
+  font-weight: 400;
+  font-display: block;
+  src: url('./fonts/material-icons.woff2') format('woff2'),
+       url('./fonts/material-icons.ttf') format('truetype');
+}
+.material-icons {
+  font-family: 'Material Icons';
+  font-weight: normal;
+  font-style: normal;
+  font-size: 20px;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  display: inline-block;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+  -webkit-font-feature-settings: 'liga';
+  font-feature-settings: 'liga';
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  vertical-align: middle;
+  color: currentColor;
+  -webkit-user-select: none;
+  user-select: none;
+}
+.material-icons.size-14 { font-size: 14px; }
+.material-icons.size-16 { font-size: 16px; }
+.material-icons.size-18 { font-size: 18px; }
+.material-icons.size-20 { font-size: 20px; }
+.material-icons.size-24 { font-size: 24px; }
+.material-icons.size-28 { font-size: 28px; }
+.material-icons.size-32 { font-size: 32px; }
+.material-icons.size-40 { font-size: 40px; }
+.material-icons.size-48 { font-size: 48px; }
