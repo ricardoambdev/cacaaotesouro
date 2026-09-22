@@ -134,6 +134,80 @@ final class VaultRepository
     }
 
     /**
+     * Coordenada configurada para o cofre (onde ele está no mundo físico).
+     *
+     * @return array{lat: float, lng: float, radius: int}|null
+     */
+    public static function coordinate(): ?array
+    {
+        $lat = trim((string) SettingsRepository::get('vaultLat', ''));
+        $lng = trim((string) SettingsRepository::get('vaultLng', ''));
+        $radius = (int) SettingsRepository::get('vaultRadius', '100');
+
+        if ($lat === '' || $lng === '' || !is_numeric($lat) || !is_numeric($lng)) {
+            return null;
+        }
+
+        return [
+            'lat'    => (float) $lat,
+            'lng'    => (float) $lng,
+            'radius' => $radius > 0 ? $radius : 100,
+        ];
+    }
+
+    /**
+     * O visitante está dentro do raio permitido do cofre?
+     *
+     * Sem coordenada configurada o cofre NÃO é bloqueado por localização
+     * (o organizador pode testar); com coordenada, exige estar no raio.
+     *
+     * @return array{ok: bool, reason: string, distance: ?float, radius: int}
+     */
+    public static function inRange(?float $lat, ?float $lng): array
+    {
+        $coordinate = self::coordinate();
+
+        if ($coordinate === null) {
+            return ['ok' => true, 'reason' => 'sem_coordenada', 'distance' => null, 'radius' => 0];
+        }
+
+        if ($lat === null || $lng === null) {
+            return [
+                'ok'       => false,
+                'reason'   => 'sem_localizacao',
+                'distance' => null,
+                'radius'   => $coordinate['radius'],
+            ];
+        }
+
+        $distance = haversine_meters($lat, $lng, $coordinate['lat'], $coordinate['lng']);
+
+        return [
+            'ok'       => $distance <= $coordinate['radius'],
+            'reason'   => $distance <= $coordinate['radius'] ? 'no_local' : 'fora_do_raio',
+            'distance' => round($distance, 1),
+            'radius'   => $coordinate['radius'],
+        ];
+    }
+
+    /**
+     * Grava a coordenada do cofre (capturada pelo app do admin).
+     */
+    public static function setCoordinate(float $lat, float $lng, ?int $radius = null): void
+    {
+        $data = [
+            'vaultLat' => (string) $lat,
+            'vaultLng' => (string) $lng,
+        ];
+
+        if ($radius !== null && $radius > 0) {
+            $data['vaultRadius'] = (string) $radius;
+        }
+
+        SettingsRepository::update($data);
+    }
+
+    /**
      * Lista dos IPs bloqueados no momento (para o painel do cofre).
      *
      * @return array<int, array{ip: string, blocked_until: string, blocks: int}>

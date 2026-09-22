@@ -1920,13 +1920,28 @@ final class ApiController
 
         $maxAttempts = max(1, (int) SettingsRepository::get('vaultMaxAttempts', '3'));
 
+        // Localização do visitante (a página envia por querystring). O cofre
+        // só abre estando perto da coordenada configurada.
+        $query = $request->getQueryParams();
+        $lat = isset($query['lat']) && is_numeric($query['lat']) ? (float) $query['lat'] : null;
+        $lng = isset($query['lng']) && is_numeric($query['lng']) ? (float) $query['lng'] : null;
+
+        $range = VaultRepository::inRange($lat, $lng);
+        $coordinate = VaultRepository::coordinate();
+
         return $this->json($response, [
-            'success'       => true,
-            'configured'    => trim((string) SettingsRepository::get('vaultCode', '')) !== '',
-            'blocked'       => $blockedUntil !== null,
-            'blocked_until' => $blockedUntil,
-            'attempts_left' => max(0, $maxAttempts - $state['wrong_streak']),
-            'max_attempts'  => $maxAttempts,
+            'success'        => true,
+            'configured'     => trim((string) SettingsRepository::get('vaultCode', '')) !== '',
+            'blocked'        => $blockedUntil !== null,
+            'blocked_until'  => $blockedUntil,
+            'attempts_left'  => max(0, $maxAttempts - $state['wrong_streak']),
+            'max_attempts'   => $maxAttempts,
+            // Regra de localização
+            'has_coordinate' => $coordinate !== null,
+            'in_range'       => $range['ok'],
+            'range_reason'   => $range['reason'],
+            'distance'       => $range['distance'],
+            'radius'         => $range['radius'],
         ]);
     }
 
@@ -1955,6 +1970,25 @@ final class ApiController
 
         $body = (array) $request->getParsedBody();
         $code = preg_replace('/\D/', '', (string) ($body['code'] ?? ''));
+
+        // ── Regra de LOCALIZAÇÃO: o cofre só abre perto da coordenada ──
+        $lat = isset($body['lat']) && is_numeric($body['lat']) ? (float) $body['lat'] : null;
+        $lng = isset($body['lng']) && is_numeric($body['lng']) ? (float) $body['lng'] : null;
+
+        $range = VaultRepository::inRange($lat, $lng);
+
+        if (!$range['ok']) {
+            return $this->json($response, [
+                'success'  => false,
+                'out_of_range' => true,
+                'range_reason' => $range['reason'],
+                'distance' => $range['distance'],
+                'radius'   => $range['radius'],
+                'error'    => $range['reason'] === 'sem_localizacao'
+                    ? 'Precisamos da sua localização para abrir o cofre. Autorize o acesso e tente novamente.'
+                    : 'Você precisa estar no local do cofre para abri-lo.',
+            ], 403);
+        }
 
         $vaultCode = preg_replace('/\D/', '', (string) SettingsRepository::get('vaultCode', ''));
 
@@ -2018,6 +2052,8 @@ final class ApiController
 
         $code = preg_replace('/\D/', '', (string) SettingsRepository::get('vaultCode', ''));
 
+        $coordinate = VaultRepository::coordinate();
+
         return $this->json($response, [
             'success'      => true,
             'configured'   => $code !== '',
@@ -2027,6 +2063,58 @@ final class ApiController
             'block_next_day' => (string) SettingsRepository::get('vaultBlockNextDay', '0') === '1',
             'url'          => rtrim((string) app_config('app.url', ''), '/') . '/cofre',
             'blocked'      => $blocked,
+            // Coordenada onde o cofre físico está (capturada pelo app do admin)
+            'lat'          => $coordinate['lat'] ?? null,
+            'lng'          => $coordinate['lng'] ?? null,
+            'radius'       => $coordinate['radius'] ?? (int) SettingsRepository::get('vaultRadius', '100'),
+        ]);
+    }
+
+    /**
+     * POST /api/admin/vault/coordinate — captura a coordenada do cofre.
+     *
+     * Body: { lat, lng, radius? } — a página pública só abre (e só confere o
+     * código) para quem estiver dentro desse raio.
+     */
+    public function adminVaultSetCoordinate(Request $request, Response $response): Response
+    {
+        if ($this->requireAdmin() === null) {
+            return $this->unauthorized($response);
+        }
+
+        $body = (array) $request->getParsedBody();
+
+        $lat = $body['lat'] ?? null;
+        $lng = $body['lng'] ?? null;
+
+        if (!is_numeric($lat) || !is_numeric($lng)
+            || (float) $lat < -90 || (float) $lat > 90
+            || (float) $lng < -180 || (float) $lng > 180) {
+            return $this->json($response, [
+                'success' => false,
+                'error'   => 'Coordenada inválida.',
+            ], 400);
+        }
+
+        $radius = isset($body['radius']) && is_numeric($body['radius'])
+            ? (int) $body['radius']
+            : null;
+
+        if ($radius !== null && ($radius < 10 || $radius > 5000)) {
+            return $this->json($response, [
+                'success' => false,
+                'error'   => 'O raio deve estar entre 10 e 5000 metros.',
+            ], 400);
+        }
+
+        VaultRepository::setCoordinate((float) $lat, (float) $lng, $radius);
+
+        return $this->json($response, [
+            'success' => true,
+            'lat'     => (float) $lat,
+            'lng'     => (float) $lng,
+            'radius'  => $radius ?? (int) SettingsRepository::get('vaultRadius', '100'),
+            'message' => 'Coordenada do cofre salva.',
         ]);
     }
 

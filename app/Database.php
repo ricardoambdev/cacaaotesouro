@@ -525,6 +525,9 @@ final class Database
             'vaultMaxAttempts' => '3',  // erros seguidos antes de bloquear
             'vaultBlockMinutes'=> '5',  // minutos de bloqueio
             'vaultBlockNextDay'=> '0',  // '1' = após 3 bloqueios, até o dia seguinte
+            'vaultLat'         => '',   // coordenada onde o cofre físico está
+            'vaultLng'         => '',
+            'vaultRadius'      => '100', // raio (m) em que a página do cofre abre
             'gameActive'       => '0',
             'winnerTeamId'     => '',
             // Regras do jogo (enforcement via ApiController::gameBlock)

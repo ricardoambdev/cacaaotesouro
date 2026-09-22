@@ -162,6 +162,7 @@ $app->post('/api/admin/team-message-all', [ApiController::class, 'adminTeamMessa
 // Cofre da gincana — acompanhamento e desbloqueio pelo app do admin.
 $app->get('/api/admin/vault', [ApiController::class, 'adminVaultStatus']);
 $app->post('/api/admin/vault/unblock', [ApiController::class, 'adminVaultUnblock']);
+$app->post('/api/admin/vault/coordinate', [ApiController::class, 'adminVaultSetCoordinate']);
 $app->get('/jogo', [GameController::class, 'status'])->add($mw['authRequired']);
 
 // Telão (PÚBLICO — sem authRequired). Página autônoma que consome
