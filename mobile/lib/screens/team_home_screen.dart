@@ -5,7 +5,6 @@ import 'package:flutter_widget_from_html_core/flutter_widget_from_html_core.dart
     show HtmlWidget;
 import 'package:geolocator/geolocator.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:qr_flutter/qr_flutter.dart';
 import '../theme.dart';
 import '../models/game_state.dart';
 import '../services/api_service.dart';
@@ -1746,15 +1745,10 @@ class _TeamHomeScreenState extends State<TeamHomeScreen> {
   // ════════════════════════════════════════════════════════════
 
   Widget _buildVaultContent() {
-    // Calcula a URL pública do cofre a partir do baseUrl da API.
-    // Ex.: https://cacaaotesouro.colegiohelena.com.br/api
-    //   →  https://cacaaotesouro.colegiohelena.com.br/cofre
-    final rawBase = ApiService.baseUrl;
-    final baseNoApi = rawBase.endsWith('/api')
-        ? rawBase.substring(0, rawBase.length - 4)
-        : rawBase;
-    final vaultUrl = '$baseNoApi/cofre';
-
+    // ── Cofre da Gincana ─────────────────────────────────────
+    // O link para abrir o cofre NÃO aparece aqui: só a organização/admin tem
+    // acesso a ele. A equipe é orientada a ir até o local do cofre (a página
+    // pública só abre num raio de 100 m de onde o cofre está).
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
       child: Column(
@@ -1809,9 +1803,9 @@ class _TeamHomeScreenState extends State<TeamHomeScreen> {
                 _vaultStep(1,
                     'Encontre o código de 9 dígitos escondido no mundo físico.'),
                 _vaultStep(2,
-                    'Abra a página do cofre no navegador do celular (ou escaneie o QR abaixo).'),
+                    'Vá até o LOCAL do cofre: a página do cofre só abre para quem estiver perto dele (no raio de 100 m).'),
                 _vaultStep(3,
-                    'Digite os 9 dígitos.'),
+                    'No local, acesse a página do cofre e digite os 9 dígitos.'),
                 _vaultStep(4,
                     'O cofre avisa que a senha final será revelada — só continue quando a outra equipe não estiver vendo.'),
                 _vaultStep(5,
@@ -1856,135 +1850,6 @@ class _TeamHomeScreenState extends State<TeamHomeScreen> {
             ),
           ),
 
-          const SizedBox(height: 20),
-
-          // ── Card: Link público ─────────────────────
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: AppColors.navyMedium,
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(
-                color: AppColors.gold.withValues(alpha: 0.2),
-              ),
-            ),
-            child: Column(
-              children: [
-                Text(
-                  'LINK PÚBLICO DO COFRE',
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 2,
-                    color: AppColors.gold.withValues(alpha: 0.7),
-                  ),
-                ),
-                const SizedBox(height: 10),
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 14, vertical: 10),
-                  decoration: BoxDecoration(
-                    color: AppColors.navyDark,
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(
-                      color: AppColors.ivoryMuted.withValues(alpha: 0.15),
-                    ),
-                  ),
-                  child: SelectableText(
-                    vaultUrl,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      fontSize: 13,
-                      color: AppColors.ivory,
-                      height: 1.4,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                SizedBox(
-                  width: double.infinity,
-                  child: OutlinedButton.icon(
-                    onPressed: () async {
-                      await Clipboard.setData(
-                          ClipboardData(text: vaultUrl));
-                      if (!mounted) return;
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content:
-                              const Text('Link copiado!'),
-                          backgroundColor: AppColors.navyMedium,
-                          behavior: SnackBarBehavior.floating,
-                          duration: const Duration(seconds: 2),
-                        ),
-                      );
-                    },
-                    icon: const Icon(Icons.copy, size: 18),
-                    label: const Text('Copiar link'),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: AppColors.gold,
-                      side: BorderSide(
-                          color:
-                              AppColors.gold.withValues(alpha: 0.4)),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      padding:
-                          const EdgeInsets.symmetric(vertical: 12),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: 20),
-
-          // ── QR Code ────────────────────────────────
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: [
-                BoxShadow(
-                  color: AppColors.gold.withValues(alpha: 0.15),
-                  blurRadius: 16,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: Column(
-              children: [
-                QrImageView(
-                  data: vaultUrl,
-                  size: 180,
-                  backgroundColor: Colors.white,
-                  eyeStyle: const QrEyeStyle(
-                    eyeShape: QrEyeShape.square,
-                    color: AppColors.navyDark,
-                  ),
-                  dataModuleStyle: const QrDataModuleStyle(
-                    dataModuleShape: QrDataModuleShape.square,
-                    color: AppColors.navyDark,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                const Text(
-                  'Escaneie para abrir o cofre',
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.navyDark,
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: 24),
         ],
       ),
     );

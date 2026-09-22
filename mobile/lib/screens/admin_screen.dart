@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_widget_from_html_core/flutter_widget_from_html_core.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import '../theme.dart';
 import '../models/treasure.dart';
@@ -1054,11 +1055,88 @@ class _VaultSheetContentState extends State<_VaultSheetContent> {
   bool _isLoading = true;
   String? _error;
   Map<String, dynamic>? _vaultData;
+  bool _isCapturing = false;
 
   @override
   void initState() {
     super.initState();
     _loadVault();
+  }
+
+  /// Captura a coordenada atual (GPS) e grava como o LOCAL do cofre.
+  ///
+  /// É a coordenada onde o cofre físico está: a página pública só abre
+  /// para quem estiver dentro do raio configurado (padrão 100 m).
+  Future<void> _captureCoordinate() async {
+    setState(() => _isCapturing = true);
+
+    try {
+      final permission = await Geolocator.checkPermission();
+
+      if (permission == LocationPermission.denied) {
+        await Geolocator.requestPermission();
+      }
+
+      if (!mounted) return;
+
+      final position = await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.high,
+          timeLimit: Duration(seconds: 15),
+        ),
+      );
+
+      if (!mounted) return;
+
+      final result = await _apiService.adminVaultSetCoordinate(
+        lat: position.latitude,
+        lng: position.longitude,
+      );
+
+      if (!mounted) return;
+
+      setState(() {
+        _isCapturing = false;
+        if (_vaultData != null) {
+          _vaultData!['lat'] = result['lat'];
+          _vaultData!['lng'] = result['lng'];
+          _vaultData!['radius'] = result['radius'];
+        }
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Coordenada salva: ${position.latitude.toStringAsFixed(6)}, '
+            '${position.longitude.toStringAsFixed(6)}',
+          ),
+          backgroundColor: AppColors.navyMedium,
+          behavior: SnackBarBehavior.floating,
+          duration: const Duration(seconds: 3),
+        ),
+      );
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      setState(() => _isCapturing = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(e.message),
+          backgroundColor: Colors.redAccent,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _isCapturing = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+              'Não foi possível obter o GPS. Autorize a localização e tente novamente.'),
+          backgroundColor: Colors.redAccent,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
   }
 
   Future<void> _loadVault() async {
@@ -1257,6 +1335,12 @@ class _VaultSheetContentState extends State<_VaultSheetContent> {
     final List<dynamic> blockedRaw =
         (data['blocked'] as List<dynamic>?) ?? [];
 
+    // Coordenada onde o cofre está (capturada aqui pelo admin).
+    final double? vaultLat = (data['lat'] as num?)?.toDouble();
+    final double? vaultLng = (data['lng'] as num?)?.toDouble();
+    final int vaultRadius = (data['radius'] as num?)?.toInt() ?? 100;
+    final bool hasCoordinate = vaultLat != null && vaultLng != null;
+
     return RefreshIndicator(
       onRefresh: _loadVault,
       color: AppColors.gold,
@@ -1332,7 +1416,100 @@ class _VaultSheetContentState extends State<_VaultSheetContent> {
 
           const SizedBox(height: 18),
 
-          // ── 2. Link público + QR ──────────────
+          // ── 2. Local do cofre (geofence) ───────
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: AppColors.navyMedium,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: AppColors.gold.withValues(alpha: 0.2),
+              ),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Row(
+                  children: [
+                    Icon(Icons.place, color: AppColors.gold, size: 20),
+                    SizedBox(width: 8),
+                    Text(
+                      'LOCAL DO COFRE',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 2,
+                        color: AppColors.gold,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  hasCoordinate
+                      ? '${vaultLat.toStringAsFixed(6)}, ${vaultLng.toStringAsFixed(6)}'
+                      : 'Nenhuma coordenada configurada.',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    fontFamily: 'monospace',
+                    color: hasCoordinate
+                        ? AppColors.ivory
+                        : Colors.orangeAccent,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  hasCoordinate
+                      ? 'A página do cofre só abre num raio de $vaultRadius m deste ponto.'
+                      : 'Sem coordenada, a página do cofre abre em qualquer lugar. '
+                          'Capture a coordenada no local onde o cofre físico está.',
+                  style: const TextStyle(
+                    fontSize: 13,
+                    height: 1.4,
+                    color: AppColors.ivoryMuted,
+                  ),
+                ),
+                const SizedBox(height: 14),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: _isCapturing ? null : _captureCoordinate,
+                    icon: _isCapturing
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: AppColors.navyDark,
+                            ),
+                          )
+                        : const Icon(Icons.my_location, size: 18),
+                    label: Text(
+                      _isCapturing
+                          ? 'Capturando...'
+                          : (hasCoordinate
+                              ? 'Atualizar coordenada'
+                              : 'Capturar coordenada'),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.gold,
+                      foregroundColor: AppColors.navyDark,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 16),
+
+          // ── 3. Link público + QR ──────────────
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(16),

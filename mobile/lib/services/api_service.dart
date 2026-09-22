@@ -838,6 +838,39 @@ class ApiService {
     }
   }
 
+  /// POST /api/admin/vault/coordinate → grava a coordenada onde o cofre está.
+  ///
+  /// A página pública do cofre só abre (e só confere o código) para quem
+  /// estiver dentro de [radius] metros dessa coordenada.
+  Future<Map<String, dynamic>> adminVaultSetCoordinate({
+    required double lat,
+    required double lng,
+    int? radius,
+  }) async {
+    final response = await http
+        .post(
+          Uri.parse('$baseUrl/admin/vault/coordinate'),
+          headers: _adminHeaders,
+          body: json.encode({
+            'lat': lat,
+            'lng': lng,
+            if (radius != null) 'radius': radius,
+          }),
+        )
+        .timeout(requestTimeout);
+
+    _extractCookie(response);
+    _checkUnauthorized(response);
+
+    final body = _parseBody(response);
+    if (response.statusCode != 200 || body['success'] != true) {
+      throw ApiException(
+          body['error'] as String? ?? 'Erro ao salvar a coordenada do cofre.');
+    }
+
+    return body;
+  }
+
   // ════════════════════════════════════════════════════════════
   //  ADMIN: TREASURE DETAIL / UPDATE
   // ════════════════════════════════════════════════════════════
