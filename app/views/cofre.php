@@ -55,20 +55,11 @@ $appUrl = $appUrl ?? '';
 
         .vault-title {
             font-family: 'Pirata One', Georgia, cursive;
-            font-size: 2.4rem;
+            font-size: clamp(2.4rem, 6vw, 3.5rem);
             color: #F97316;
             letter-spacing: 0.02em;
             text-shadow: 0 2px 12px rgba(249, 115, 22, 0.3);
-            margin-bottom: 8px;
-        }
-
-        .vault-subtitle {
-            font-size: 1rem;
-            color: rgba(247, 236, 212, 0.55);
-            font-weight: 400;
-            max-width: 340px;
-            margin: 0 auto;
-            line-height: 1.5;
+            margin-bottom: 0;
         }
 
         @keyframes fadeInUp {
@@ -171,6 +162,7 @@ $appUrl = $appUrl ?? '';
             transform: perspective(600px) rotateY(-85deg);
             transform-origin: left center;
             opacity: 0;
+            z-index: 1;
         }
 
         .safe.opened {
@@ -342,21 +334,21 @@ $appUrl = $appUrl ?? '';
         /* Digit input */
         .digit-input-area {
             display: flex;
-            gap: 8px;
+            gap: 10px;
             justify-content: center;
             margin-bottom: 20px;
             flex-wrap: nowrap;
         }
 
         .digit-box {
-            width: 36px;
-            height: 48px;
+            width: 52px;
+            height: 68px;
             background: rgba(5, 11, 18, 0.7);
             border: 2px solid rgba(247, 236, 212, 0.15);
-            border-radius: 10px;
+            border-radius: 12px;
             color: #F97316;
             font-family: 'Inter', sans-serif;
-            font-size: 1.3rem;
+            font-size: 2rem;
             font-weight: 800;
             text-align: center;
             outline: none;
@@ -419,95 +411,6 @@ $appUrl = $appUrl ?? '';
         .vault-submit svg {
             width: 18px;
             height: 18px;
-        }
-
-        /* ============================================================
-           PASSWORD REVEAL
-           ============================================================ */
-        .password-reveal {
-            display: none;
-            text-align: center;
-            margin-top: 28px;
-            animation: fadeInUp 0.6s cubic-bezier(0.22, 1, 0.36, 1);
-        }
-
-        .password-reveal.visible {
-            display: block;
-        }
-
-        .password-reveal-label {
-            font-size: 0.82rem;
-            color: rgba(247, 236, 212, 0.5);
-            text-transform: uppercase;
-            letter-spacing: 0.1em;
-            font-weight: 600;
-            margin-bottom: 12px;
-        }
-
-        .password-reveal-value {
-            font-family: 'Courier New', monospace;
-            font-size: 2rem;
-            font-weight: 800;
-            color: #F97316;
-            letter-spacing: 0.12em;
-            background: rgba(249, 115, 22, 0.08);
-            border: 2px solid rgba(249, 115, 22, 0.3);
-            border-radius: 12px;
-            padding: 16px 24px;
-            margin-bottom: 16px;
-            display: inline-block;
-            min-width: 200px;
-            text-shadow: 0 2px 8px rgba(249, 115, 22, 0.3);
-            word-break: break-all;
-        }
-
-        .password-reveal-value .char {
-            display: inline-block;
-            opacity: 0;
-            transform: translateY(-8px);
-            transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
-        }
-
-        .password-reveal-value .char.revealed {
-            opacity: 1;
-            transform: translateY(0);
-        }
-
-        .password-reveal-value .char.masked {
-            opacity: 0.2;
-            transform: none;
-        }
-
-        .copy-btn {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            padding: 10px 24px;
-            border-radius: 10px;
-            border: 1.5px solid rgba(249, 115, 22, 0.35);
-            background: rgba(249, 115, 22, 0.1);
-            color: #F97316;
-            font-family: 'Inter', sans-serif;
-            font-size: 0.88rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 150ms cubic-bezier(0.22, 1, 0.36, 1);
-        }
-
-        .copy-btn:hover {
-            background: rgba(249, 115, 22, 0.2);
-            border-color: #F97316;
-        }
-
-        .copy-btn.copied {
-            background: rgba(39, 174, 96, 0.15);
-            border-color: rgba(39, 174, 96, 0.4);
-            color: #5fd99f;
-        }
-
-        .copy-btn svg {
-            width: 16px;
-            height: 16px;
         }
 
         /* ============================================================
@@ -735,6 +638,89 @@ $appUrl = $appUrl ?? '';
         }
 
         /* ============================================================
+           OPENED STATE — full-screen takeover
+           ============================================================ */
+        body.opened .vault-header,
+        body.opened .vault-status,
+        body.opened .blocked-banner,
+        body.opened .not-configured {
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.6s ease;
+        }
+
+        body.opened .safe-wrapper {
+            position: fixed;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            max-width: 100%;
+            z-index: 100;
+            transform: scale(1.7);
+            transition: transform 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+
+        /* Safe interior — revealed when opened */
+        .safe-interior {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.6s ease 0.4s;
+            z-index: 10;
+            padding: 24px;
+        }
+
+        .safe.opened .safe-interior {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .safe-interior-label {
+            font-size: 0.72rem;
+            color: rgba(249, 115, 22, 0.6);
+            text-transform: uppercase;
+            letter-spacing: 0.14em;
+            font-weight: 700;
+            margin-bottom: 14px;
+        }
+
+        .safe-interior-value {
+            font-family: 'Courier New', monospace;
+            font-size: clamp(1.4rem, 4vw, 2.2rem);
+            font-weight: 800;
+            color: #F97316;
+            letter-spacing: 0.1em;
+            text-shadow: 0 2px 16px rgba(249, 115, 22, 0.5);
+            word-break: break-all;
+            text-align: center;
+            line-height: 1.4;
+        }
+
+        .safe-interior-value .char {
+            display: inline-block;
+            opacity: 0;
+            transform: translateY(-8px);
+            transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+
+        .safe-interior-value .char.revealed {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .safe-interior-value .char.masked {
+            opacity: 0.2;
+            transform: none;
+        }
+
+        /* ============================================================
            RESPONSIVE
            ============================================================ */
         @media (max-width: 420px) {
@@ -742,19 +728,22 @@ $appUrl = $appUrl ?? '';
                 width: 300px;
             }
 
-            .vault-title {
-                font-size: 1.8rem;
+            body.opened .safe-wrapper {
+                transform: scale(1.4);
             }
 
             .digit-box {
-                width: 30px;
-                height: 42px;
-                font-size: 1.1rem;
+                width: 32px;
+                height: 46px;
+                font-size: 1.4rem;
             }
 
-            .password-reveal-value {
-                font-size: 1.5rem;
-                padding: 12px 16px;
+            .digit-input-area {
+                gap: 6px;
+            }
+
+            .safe-interior-value {
+                font-size: clamp(1.1rem, 3.5vw, 1.6rem);
             }
         }
 
@@ -763,13 +752,21 @@ $appUrl = $appUrl ?? '';
                 width: 260px;
             }
 
+            body.opened .safe-wrapper {
+                transform: scale(1.3);
+            }
+
             .digit-input-area {
-                gap: 5px;
+                gap: 4px;
             }
 
             .digit-box {
-                width: 25px;
-                height: 38px;
+                width: 28px;
+                height: 40px;
+                font-size: 1.2rem;
+            }
+
+            .safe-interior-value {
                 font-size: 1rem;
             }
         }
@@ -781,8 +778,7 @@ $appUrl = $appUrl ?? '';
          HEADER
          ============================================================ -->
     <div class="vault-header">
-        <h1 class="vault-title">Cofre da Gincana</h1>
-        <p class="vault-subtitle">Digite os 9 dígitos encontrados para abrir o cofre</p>
+        <h1 class="vault-title">Cofre</h1>
     </div>
 
     <!-- ============================================================
@@ -808,6 +804,12 @@ $appUrl = $appUrl ?? '';
             <div class="safe-door">
                 <div class="safe-keyhole"></div>
                 <div class="safe-handle"></div>
+            </div>
+
+            <!-- Interior: password revealed here -->
+            <div class="safe-interior">
+                <div class="safe-interior-label">Senha do Desafio Final</div>
+                <div class="safe-interior-value" id="safe-interior-value"></div>
             </div>
         </div>
     </div>
@@ -836,18 +838,6 @@ $appUrl = $appUrl ?? '';
         <button type="button" class="vault-submit" id="submit-btn" disabled>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
             Abrir o cofre
-        </button>
-    </div>
-
-    <!-- ============================================================
-         PASSWORD REVEAL (hidden until correct)
-         ============================================================ -->
-    <div class="password-reveal" id="password-reveal">
-        <div class="password-reveal-label">Senha do Desafio Final</div>
-        <div class="password-reveal-value" id="password-value"></div>
-        <button type="button" class="copy-btn" id="copy-btn">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-            Copiar senha
         </button>
     </div>
 
@@ -916,9 +906,7 @@ $appUrl = $appUrl ?? '';
         var statusMsg = document.getElementById('status-msg');
         var attemptsMsg = document.getElementById('attempts-msg');
         var digitArea = document.getElementById('digit-area');
-        var passwordReveal = document.getElementById('password-reveal');
-        var passwordValue = document.getElementById('password-value');
-        var copyBtn = document.getElementById('copy-btn');
+        var safeInteriorValue = document.getElementById('safe-interior-value');
         var blockedBanner = document.getElementById('blocked-banner');
         var blockedCountdown = document.getElementById('blocked-countdown');
         var notConfigured = document.getElementById('not-configured');
@@ -1237,8 +1225,9 @@ $appUrl = $appUrl ?? '';
         function openSafe() {
             safe.classList.remove('locked');
             safe.classList.add('opened');
+            document.body.classList.add('opened');
 
-            /* Hide input, show password reveal */
+            /* Hide input, status */
             digitArea.style.display = 'none';
             submitBtn.style.display = 'none';
             statusMsg.textContent = '';
@@ -1246,68 +1235,25 @@ $appUrl = $appUrl ?? '';
             blockedBanner.classList.remove('visible');
             notConfigured.classList.remove('visible');
 
-            /* Build password characters */
+            /* Build password characters inside the safe */
             var pwd = currentPassword;
-            passwordValue.innerHTML = '';
+            safeInteriorValue.innerHTML = '';
 
             for (var i = 0; i < pwd.length; i++) {
                 var span = document.createElement('span');
                 span.className = 'char masked';
                 span.textContent = pwd[i];
-                passwordValue.appendChild(span);
+                safeInteriorValue.appendChild(span);
             }
 
-            passwordReveal.classList.add('visible');
-
             /* Reveal one character at a time with delay */
-            var chars = passwordValue.querySelectorAll('.char');
+            var chars = safeInteriorValue.querySelectorAll('.char');
             chars.forEach(function (ch, idx) {
                 setTimeout(function () {
                     ch.classList.remove('masked');
                     ch.classList.add('revealed');
                 }, 800 + idx * 600);
             });
-        }
-
-        /* ============================================================
-           COPY BUTTON
-           ============================================================ */
-        copyBtn.addEventListener('click', function () {
-            if (!currentPassword) return;
-
-            if (navigator.clipboard && navigator.clipboard.writeText) {
-                navigator.clipboard.writeText(currentPassword).then(function () {
-                    showCopyFeedback();
-                }).catch(function () {
-                    fallbackCopy();
-                });
-            } else {
-                fallbackCopy();
-            }
-        });
-
-        function fallbackCopy() {
-            var ta = document.createElement('textarea');
-            ta.value = currentPassword;
-            ta.style.position = 'fixed';
-            ta.style.left = '-9999px';
-            document.body.appendChild(ta);
-            ta.select();
-            try {
-                document.execCommand('copy');
-                showCopyFeedback();
-            } catch (e) { /* silent */ }
-            document.body.removeChild(ta);
-        }
-
-        function showCopyFeedback() {
-            var original = copyBtn.innerHTML;
-            copyBtn.classList.add('copied');
-            copyBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Copiado!';
-            setTimeout(function () {
-                copyBtn.classList.remove('copied');
-                copyBtn.innerHTML = original;
-            }, 2000);
         }
 
         /* ============================================================
