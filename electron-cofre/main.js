@@ -61,6 +61,33 @@ function resolveUrl() {
 
 let mainWindow = null;
 
+/**
+ * Página local mostrada quando o endereço do cofre não responde (404/403).
+ * Evita que quem opera a máquina veja a página de erro do servidor.
+ */
+function avisoHtml(code) {
+  const html = `<!DOCTYPE html>
+<html lang="pt-BR"><head><meta charset="utf-8"><title>Cofre da Gincana</title>
+<style>
+  html,body{height:100%;margin:0;background:#050B12;color:#F7ECD4;
+    font-family:system-ui,Segoe UI,sans-serif;display:flex;align-items:center;
+    justify-content:center;text-align:center}
+  .box{max-width:520px;padding:40px}
+  h1{color:#F97316;font-size:1.6rem;margin:0 0 12px}
+  p{color:rgba(247,236,212,.75);line-height:1.7;font-size:1rem;margin:0 0 8px}
+  code{background:rgba(249,115,22,.12);color:#F97316;padding:2px 6px;border-radius:4px}
+</style></head><body><div class="box">
+  <h1>Endereço do cofre indisponível</h1>
+  <p>O programa não conseguiu abrir a página do cofre (erro ${code}).</p>
+  <p>Confira o arquivo <code>config.json</code> na mesma pasta deste programa:
+     o link do cofre pode ter mudado.</p>
+  <p>Pegue o link atualizado no painel: <strong>Cofre &rarr; Copiar link</strong>.</p>
+  <p style="opacity:.6;font-size:.85rem;margin-top:20px">F5 tenta novamente</p>
+</div></body></html>`;
+
+  return 'data:text/html;charset=utf-8,' + encodeURIComponent(html);
+}
+
 function createWindow() {
   const { width, height } = screen.getPrimaryDisplay().workAreaSize;
 
@@ -114,6 +141,14 @@ function createWindow() {
         mainWindow.loadURL(validatedURL || resolveUrl());
       }
     }, 4000);
+  });
+
+  // Link inválido (404/403): em vez da página de erro do servidor, mostra
+  // um aviso claro para quem está operando a máquina.
+  mainWindow.webContents.on('did-navigate', (_e, _url, httpResponseCode) => {
+    if (httpResponseCode >= 400) {
+      mainWindow.loadURL(avisoHtml(httpResponseCode));
+    }
   });
 
   mainWindow.on('closed', () => {
