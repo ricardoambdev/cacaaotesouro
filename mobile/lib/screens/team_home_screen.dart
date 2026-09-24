@@ -771,6 +771,7 @@ class _TeamHomeScreenState extends State<TeamHomeScreen> {
     final List<Widget> tabPages = [
       _buildTreasureTab(),
       _buildStoryContent(),
+      _buildRulesContent(),
       if (showCofre) _buildVaultContent(),
       _buildLeaderboardContent(),
     ];
@@ -786,6 +787,11 @@ class _TeamHomeScreenState extends State<TeamHomeScreen> {
         icon: Icon(Icons.info_outline, color: AppColors.ivoryMuted),
         selectedIcon: Icon(Icons.info, color: AppColors.gold),
         label: 'História',
+      ),
+      const NavigationDestination(
+        icon: Icon(Icons.gavel_outlined, color: AppColors.ivoryMuted),
+        selectedIcon: Icon(Icons.gavel, color: AppColors.gold),
+        label: 'Regras',
       ),
       if (showCofre)
         const NavigationDestination(
@@ -2076,6 +2082,77 @@ class _TeamHomeScreenState extends State<TeamHomeScreen> {
                     : const Center(
                         child: Text(
                           'A história será revelada em breve...',
+                          style: TextStyle(
+                            fontStyle: FontStyle.italic,
+                            color: AppColors.ivoryMuted,
+                          ),
+                        ),
+                      ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ════════════════════════════════════════════════════════════
+  //  ABA REGRAS
+  // ════════════════════════════════════════════════════════════
+
+  Widget _buildRulesContent() {
+    final rules = _gameState?.rules ?? '';
+
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: AppColors.gold.withValues(alpha: 0.1),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.gavel, color: AppColors.gold, size: 32),
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'REGRAS DA GINCANA',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 3,
+                color: AppColors.gold,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Expanded(
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: AppColors.navyMedium,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(
+                    color: AppColors.gold.withValues(alpha: 0.15),
+                  ),
+                ),
+                child: rules.isNotEmpty
+                    ? SingleChildScrollView(
+                        child: HtmlWidget(
+                          rules,
+                          textStyle: const TextStyle(
+                            fontSize: 14,
+                            height: 1.7,
+                            color: AppColors.ivory,
+                          ),
+                        ),
+                      )
+                    : const Center(
+                        child: Text(
+                          'As regras serão publicadas em breve...',
                           style: TextStyle(
                             fontStyle: FontStyle.italic,
                             color: AppColors.ivoryMuted,

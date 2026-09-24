@@ -537,6 +537,7 @@ final class Database
             'adminUsername'    => 'admin',
             'adminPassword'    => 'admin1234',
             'historyContent'   => '',
+            'rulesContent'    => '',
             'storyVersion'     => '0',
             'finalClue'        => '',
             'finalAnswer'      => '',

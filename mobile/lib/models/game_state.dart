@@ -84,6 +84,8 @@ class GameState {
   final bool gameActive;
   final String story;
   final int storyVersion;
+  /// Regras da gincana (texto HTML) — aparece na aba "Regras".
+  final String rules;
   final GameTreasure? currentTreasure;
   final bool finalAvailable;
   final String finalClue;
@@ -101,6 +103,7 @@ class GameState {
     required this.gameActive,
     required this.story,
     this.storyVersion = 0,
+    this.rules = '',
     this.currentTreasure,
     required this.finalAvailable,
     required this.finalClue,
@@ -140,6 +143,7 @@ class GameState {
       gameActive: gameActive,
       story: (json['story'] as String?) ?? '',
       storyVersion: (json['story_version'] as num?)?.toInt() ?? 0,
+      rules: (json['rules'] as String?) ?? '',
       currentTreasure: currentTreasureData != null
           ? GameTreasure.fromJson(currentTreasureData)
           : null,
@@ -296,6 +300,8 @@ class AdminStatus {
   /// Conteúdo HTML quando há história.
   final String? story;
   final int storyVersion;
+  /// Regras da gincana (texto HTML) — null quando o servidor não envia.
+  final String? rules;
 
   const AdminStatus({
     required this.gameActive,
@@ -305,6 +311,7 @@ class AdminStatus {
     this.treasuresProgress,
     this.story,
     this.storyVersion = 0,
+    this.rules,
   });
 
   factory AdminStatus.fromJson(Map<String, dynamic> json) {
@@ -351,6 +358,7 @@ class AdminStatus {
       treasuresProgress: treasuresProgress,
       story: json['story'] as String?,
       storyVersion: (json['story_version'] as num?)?.toInt() ?? 0,
+      rules: json['rules'] as String?,
     );
   }
 }

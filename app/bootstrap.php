@@ -138,6 +138,10 @@ $app->post('/tesouros/reorder', [TreasureController::class, 'reorder'])->add($mw
 // Jogo (história, desafio final e estado geral)
 $app->get('/historia', [GameController::class, 'history'])->add($mw['authRequired']);
 $app->post('/historia', [GameController::class, 'history'])->add($mw['authRequired']);
+
+// Regras da gincana (mesma ideia da história; aparece no app das equipes e do admin)
+$app->get('/regras', [GameController::class, 'rules'])->add($mw['authRequired']);
+$app->post('/regras', [GameController::class, 'rules'])->add($mw['authRequired']);
 $app->get('/desafio-final', [GameController::class, 'finalChallenge'])->add($mw['authRequired']);
 $app->post('/desafio-final', [GameController::class, 'finalChallenge'])->add($mw['authRequired']);
 

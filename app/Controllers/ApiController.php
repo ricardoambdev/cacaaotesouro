@@ -260,6 +260,7 @@ final class ApiController
             'game_end_time'   => (string) SettingsRepository::get('gameEndTime', '17:00'),
             'story'           => (string) SettingsRepository::get('historyContent', ''),
             'story_version'   => (int) SettingsRepository::get('storyVersion', '0'),
+            'rules'           => (string) SettingsRepository::get('rulesContent', ''),
             'current_treasure'=> $currentTreasure,
             'final_available' => $finalAvailable,
             'leaderboard'     => $leaderboard,
@@ -1358,6 +1359,8 @@ final class ApiController
             // História do jogo — o app admin exibe na barra inferior.
             'story'             => (string) SettingsRepository::get('historyContent', ''),
             'story_version'     => (int) SettingsRepository::get('storyVersion', '0'),
+            // Regras da gincana — app admin e app das equipes.
+            'rules'             => (string) SettingsRepository::get('rulesContent', ''),
         ]);
     }
 

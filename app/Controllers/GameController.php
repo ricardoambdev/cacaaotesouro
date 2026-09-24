@@ -56,10 +56,47 @@ final class GameController
         return $response;
     }
 
+    /**
+     * GET/POST /regras — REGRAS da gincana (painel).
+     *
+     * Mesma ideia da história: um editor no painel e o conteúdo aparece no
+     * app das equipes e no app do admin (na barra inferior).
+     */
+    public function rules(Request $request, Response $response): Response
+    {
+        /** @var array{id: int, name: string} $user */
+        $user = $_SESSION['user'];
+
+        if (strtoupper($request->getMethod()) === 'POST') {
+            $body = (array) $request->getParsedBody();
+            $content = (string) ($body['rulesContent'] ?? '');
+
+            if (strlen($content) > 100000) {
+                flash_set('error', 'As regras são grandes demais (máximo 100.000 caracteres).');
+                $_SESSION['old'] = ['rulesContent' => $content];
+                redirect('/regras');
+            }
+
+            SettingsRepository::set('rulesContent', $content);
+            flash_set('success', 'Regras salvas com sucesso.');
+            redirect('/regras');
+        }
+
+        $old = $_SESSION['old'] ?? [];
+        unset($_SESSION['old']);
+
+        $content = View::render('regras', [
+            'rulesContent' => (string) ($old['rulesContent'] ?? SettingsRepository::get('rulesContent', '')),
+        ]);
+
+        $response->getBody()->write($this->renderLayout($content, $user, 'regras'));
+
+        return $response;
+    }
+
     // ------------------------------------------------------------------
     // Desafio final (GET/POST /desafio-final)
     // ------------------------------------------------------------------
-
     public function finalChallenge(Request $request, Response $response): Response
     {
         /** @var array{id: int, name: string} $user */

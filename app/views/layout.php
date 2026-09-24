@@ -214,6 +214,10 @@ if (count($parts) >= 2) {
                     <?= icon('lock', 20, 'sidebar-link-icon') ?>
                     Cofre
                 </a>
+                <a href="/regras" class="sidebar-link <?= $active === 'regras' ? 'active' : '' ?>">
+                    <?= icon('gavel', 20, 'sidebar-link-icon') ?>
+                    Regras
+                </a>
             </nav>
 
             <div class="sidebar-footer">

@@ -583,6 +583,30 @@ class _AdminScreenState extends State<AdminScreen> {
                 ),
               ),
             ),
+            // ── Regras ───────────────────────────────
+            Expanded(
+              child: InkWell(
+                onTap: _showRulesSheet,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  child: const Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.gavel, color: AppColors.gold, size: 22),
+                      SizedBox(height: 4),
+                      Text(
+                        'Regras',
+                        style: TextStyle(
+                          color: AppColors.gold,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
             // ── Sair ─────────────────────────────────
             Expanded(
               child: InkWell(
@@ -784,6 +808,137 @@ class _AdminScreenState extends State<AdminScreen> {
   }
 
   /// Abre as informações do cofre em um modal inferior.
+  /// Abre as REGRAS da gincana em um modal inferior (somente leitura).
+  Future<void> _showRulesSheet() async {
+    // Busca fresco: as regras podem ter sido editadas depois do load inicial.
+    AdminStatus? fresh;
+    try {
+      fresh = await _apiService.adminStatus();
+      if (mounted) setState(() => _status = fresh);
+    } catch (_) {
+      // Sem rede: usa o que já está em memória
+    }
+
+    final status = fresh ?? _status;
+    final rules = status?.rules; // String? — null = servidor sem o campo
+
+    if (!mounted) return;
+
+    final bottomSafe = MediaQuery.viewPaddingOf(context).bottom;
+
+    Widget content;
+
+    if (rules == null) {
+      content = const Center(
+        child: Padding(
+          padding: EdgeInsets.all(32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.info_outline, color: AppColors.gold, size: 48),
+              SizedBox(height: 16),
+              Text(
+                'Regras não disponíveis neste servidor.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.gold,
+                ),
+              ),
+              SizedBox(height: 10),
+              Text(
+                'O sistema em uso ainda não envia as regras para o aplicativo. '
+                'Atualize o sistema na hospedagem (git pull) e tente novamente.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 14,
+                  color: AppColors.ivoryMuted,
+                  height: 1.5,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    } else if (rules.trim().isEmpty) {
+      content = const Center(
+        child: Padding(
+          padding: EdgeInsets.all(32),
+          child: Text(
+            'Nenhuma regra cadastrada.',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 15,
+              fontStyle: FontStyle.italic,
+              color: AppColors.ivoryMuted,
+            ),
+          ),
+        ),
+      );
+    } else {
+      content = SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: EdgeInsets.fromLTRB(20, 20, 20, 32 + bottomSafe),
+        child: HtmlWidget(
+          rules,
+          textStyle: const TextStyle(
+            fontSize: 15,
+            height: 1.7,
+            color: AppColors.ivory,
+          ),
+        ),
+      );
+    }
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => SizedBox(
+        height: MediaQuery.sizeOf(ctx).height * 0.85,
+        child: Container(
+          decoration: const BoxDecoration(
+            color: AppColors.navyMedium,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+          child: Column(
+            children: [
+              Container(
+                margin: const EdgeInsets.only(top: 10),
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: AppColors.ivoryMuted.withValues(alpha: 0.3),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                child: Row(
+                  children: [
+                    Icon(Icons.gavel, color: AppColors.gold, size: 22),
+                    SizedBox(width: 10),
+                    Text(
+                      'Regras da Gincana',
+                      style: TextStyle(
+                        color: AppColors.gold,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Divider(height: 1, color: AppColors.ivoryMuted),
+              Expanded(child: content),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   Future<void> _showVaultSheet() async {
     if (!mounted) return;
 
