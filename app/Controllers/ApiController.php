@@ -128,8 +128,9 @@ final class ApiController
             ],
             // Nome já salvo NESTE aparelho ('' = nunca definido; o app pede).
             'device_name' => TeamRepository::deviceName($teamId, $deviceId),
-            // Nomes proibidos: o app bloqueia antes mesmo de enviar.
+            // Nomes proibidos e liberados: o app checa antes mesmo de enviar.
             'name_blacklist' => NameBlocklist::words(),
+            'name_whitelist' => NameBlocklist::whitelist(),
         ]);
     }
 

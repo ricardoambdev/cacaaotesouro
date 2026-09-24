@@ -502,7 +502,36 @@ $teamBlackPassword  = (string) ($teams['preta']['password']  ?? '');
                 <div class="error-inline"></div>
                 <p class="form-help-text">
                     Deixe <strong>vazio</strong> para usar a lista padrão do sistema
-                    (147 palavras). Também funciona separando por vírgula.
+                    (206 palavras). Também funciona separando por vírgula.
+                </p>
+            </div>
+        </div>
+
+        <!-- Card: Lista branca de nomes -->
+        <div class="settings-card">
+            <h2 class="settings-card-title" style="color:#22C55E;">
+                <?= icon('verified_user', 20) ?>
+                Lista branca de nomes
+            </h2>
+
+            <p class="form-help-text" style="margin-top:0;margin-bottom:14px;">
+                Nomes e sobrenomes <strong>liberados</strong>, mesmo que "escondam" uma
+                palavra da lista negra. Ex.: <strong>Matarazzo</strong> (tem "matar"),
+                <strong>Armando</strong> (tem "arma"), <strong>Santa Cruz</strong> (tem "santa").
+                <br>
+                <span style="color:rgba(247,236,212,0.55);">
+                    Vale só para o nome exato: <em>"Matarazzo"</em> entra, mas
+                    <em>"Matarazzo merda"</em> continua bloqueado.
+                </span>
+            </p>
+
+            <div class="form-group">
+                <label for="nameWhitelist">Nomes liberados (um por linha)</label>
+                <textarea id="nameWhitelist" name="nameWhitelist" class="form-input" rows="8"
+                          placeholder="Matarazzo&#10;Armando&#10;Rolando&#10;...(deixe vazio para usar a lista padrão)"><?= e($nameWhitelist ?? '') ?></textarea>
+                <div class="error-inline"></div>
+                <p class="form-help-text">
+                    Deixe <strong>vazio</strong> para usar a lista padrão do sistema.
                 </p>
             </div>
         </div>

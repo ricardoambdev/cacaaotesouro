@@ -9,6 +9,9 @@ class NameBlocklist {
   /// Palavras já normalizadas (minúsculas, sem acento).
   static List<String> _words = [];
 
+  /// Lista BRANCA: nomes liberados mesmo se "esconderem" palavra proibida.
+  static List<String> _whitelist = [];
+
   /// Guarda a lista recebida do servidor (ex.: no login).
   static void setWords(List<dynamic>? words) {
     _words = (words ?? [])
@@ -18,14 +21,40 @@ class NameBlocklist {
         .toList();
   }
 
+  /// Guarda a lista branca recebida do servidor (ex.: no login).
+  static void setWhitelist(List<dynamic>? words) {
+    _whitelist = (words ?? [])
+        .map((w) => normalize(w.toString()))
+        .where((w) => w.isNotEmpty)
+        .toSet()
+        .toList();
+  }
+
   static List<String> get words => List.unmodifiable(_words);
+
+  static List<String> get whitelist => List.unmodifiable(_whitelist);
+
+  /// Tira do nome os trechos liberados (lista branca).
+  ///
+  /// Assim "João Matarazzo" passa, mas "Matarazzo merda" continua bloqueado.
+  static String _withoutWhitelisted(String normalized) {
+    var result = normalized;
+
+    for (final allowed in _whitelist) {
+      if (allowed.isNotEmpty) {
+        result = result.replaceAll(allowed, ' ');
+      }
+    }
+
+    return result;
+  }
 
   /// O nome está bloqueado?
   static bool isBlocked(String name) => blockedWord(name) != '';
 
   /// Palavra bloqueada encontrada ('' quando o nome está livre).
   static String blockedWord(String name) {
-    final normalized = normalize(name);
+    final normalized = _withoutWhitelisted(normalize(name));
 
     if (normalized.isEmpty) return '';
 

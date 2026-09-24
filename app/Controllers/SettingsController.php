@@ -132,6 +132,16 @@ final class SettingsController
                     ? $saved
                     : implode("\n", \App\Services\NameBlocklist::defaultWords());
             })(),
+            // Lista BRANCA de nomes — liberados mesmo se "esconderem" palavra
+            // proibida (ex.: Matarazzo, Armando, Santa Cruz). Também mostra a
+            // lista PADRÃO quando ainda não foi personalizada.
+            'nameWhitelist' => (static function () use ($old): string {
+                $saved = trim((string) ($old['nameWhitelist'] ?? SettingsRepository::get('nameWhitelist', '')));
+
+                return $saved !== ''
+                    ? $saved
+                    : implode("\n", \App\Services\NameBlocklist::defaultWhitelist());
+            })(),
             'adminUsername' => (string) ($old['adminUsername'] ?? SettingsRepository::get('adminUsername', 'admin')),
         ]);
 
@@ -183,6 +193,7 @@ final class SettingsController
         $treasureOrder = (string) ($body['treasureOrder'] ?? 'estabelecida');
         // Lista negra de nomes (uma palavra por linha).
         $nameBlocklist = mb_substr((string) ($body['nameBlocklist'] ?? ''), 0, 20000);
+        $nameWhitelist = mb_substr((string) ($body['nameWhitelist'] ?? ''), 0, 20000);
         $adminUsername = strtolower(trim((string) ($body['adminUsername'] ?? '')));
         $adminPassword = (string) ($body['adminPassword'] ?? '');
 
@@ -283,6 +294,7 @@ final class SettingsController
         // adminPassword em branco mantém a senha atual.
         SettingsRepository::set('treasureOrder', $treasureOrder);
         SettingsRepository::set('nameBlocklist', $nameBlocklist);
+        SettingsRepository::set('nameWhitelist', $nameWhitelist);
         SettingsRepository::set('adminUsername', $adminUsername);
 
         if ($adminPassword !== '') {

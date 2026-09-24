@@ -598,6 +598,8 @@ final class Database
             'rulesContent'    => '',
             // Lista negra de NOMES (uma palavra por linha). Vazio = lista padrão.
             'nameBlocklist'   => '',
+            // Lista BRANCA de nomes (liberados mesmo se "esconderem" palavra proibida).
+            'nameWhitelist'   => '',
             'storyVersion'     => '0',
             'finalClue'        => '',
             'finalAnswer'      => '',

@@ -9,6 +9,7 @@ import '../theme.dart';
 import '../models/game_state.dart';
 import '../services/api_service.dart';
 import '../services/device_service.dart';
+import '../services/name_blocklist.dart';
 import '../services/sound_service.dart';
 import '../widgets/device_name_dialog.dart';
 import 'login_screen.dart';
@@ -691,19 +692,29 @@ class _TeamHomeScreenState extends State<TeamHomeScreen> {
 
     if (name.isEmpty || name == _deviceName) return;
 
-    await _deviceService.setDeviceName(name);
+    // BLOQUEIO: valida ANTES de gravar. Se o nome não for permitido, não
+    // salva aqui nem no aparelho — o modal já avisa e nada é atualizado.
+    if (NameBlocklist.isBlocked(name)) {
+      _showSnackBar('Esse nome não é permitido. Escolha outro.', isError: true);
+      return;
+    }
 
-    // Salva no servidor (é o que faz o nome aparecer no mapa da organização).
+    // Só grava no SERVIDOR primeiro; se ele recusar, nada muda no aparelho.
     try {
       await _apiService.teamSetName(name);
-    } catch (_) {
-      if (mounted) {
-        _showSnackBar('Nome salvo no aparelho. Sem conexão para enviar agora.',
-            isError: true);
-      }
+    } catch (e) {
+      if (!mounted) return;
+
+      _showSnackBar(
+        e is ApiException ? e.message : 'Não foi possível salvar o nome.',
+        isError: true,
+      );
+      return;
     }
 
     if (!mounted) return;
+
+    await _deviceService.setDeviceName(name);
 
     setState(() => _deviceName = name);
 

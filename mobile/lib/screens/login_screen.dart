@@ -118,6 +118,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
       // Lista negra de nomes (bloqueia palavrões/xingamentos na hora).
       NameBlocklist.setWords(teamData['name_blacklist'] as List<dynamic>?);
+      NameBlocklist.setWhitelist(teamData['name_whitelist'] as List<dynamic>?);
 
       if (!mounted) return;
 

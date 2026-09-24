@@ -19,6 +19,94 @@ use App\Repositories\SettingsRepository;
 final class NameBlocklist
 {
     /**
+     * Palavras que só bloqueiam quando são o nome INTEIRO.
+     *
+     * Muitas delas são também sobrenomes comuns (Santos, Santana, Cruz,
+     * Freitas, Capela...) — se valessem "escondidas", alunos de verdade
+     * ficariam de fora. Ex.: "santo" bloqueia o nome "Santo", mas deixa
+     * passar "Santos" e "Santana".
+     *
+     * @var array<int, string>
+     */
+    private const EXACT_ONLY = [
+        'santo', 'santa', 'cruz', 'anjo', 'frei', 'papa', 'capela',
+        'mago', 'maga', 'demo', 'senhor', 'sacristia', 'salvador',
+        'messias', 'profeta', 'apostolo', 'evangelista', 'crente',
+        'testemunha', 'sacerdote', 'pastor', 'pastora', 'bispo',
+    ];
+
+    /**
+     * LISTA BRANCA padrão: nomes/sobrenomes comuns que poderiam ser barrados
+     * por engano, porque "escondem" uma palavra proibida.
+     *
+     * Ex.: "Matarazzo" contém "matar"; "Armando" contém "arma";
+     *      "Rolando" contém "rola"; "Santa Cruz" contém "santa".
+     *
+     * @return array<int, string>
+     */
+    public static function defaultWhitelist(): array
+    {
+        return [
+            'matarazzo', 'matarazo',
+            'armando', 'armanda', 'armano',
+            'rolando', 'rolanda',
+            'picasso',
+            'vermelho', 'vermelha',
+            'bispo', 'pastor', 'pastora',
+            'santacruz', 'santa cruz',
+            'preto',
+            'mortari', 'mortensen',
+            'burroughs',
+            'vadinho',
+        ];
+    }
+
+    /**
+     * Nomes liberados (lista branca), já normalizados.
+     *
+     * @return array<int, string>
+     */
+    public static function whitelist(): array
+    {
+        $raw = (string) SettingsRepository::get('nameWhitelist', '');
+
+        if (trim($raw) === '') {
+            $raw = implode("\n", self::defaultWhitelist());
+        }
+
+        $list = [];
+
+        foreach (preg_split('/[\r\n,;]+/', $raw) ?: [] as $line) {
+            $word = self::normalize(trim($line));
+
+            if ($word !== '') {
+                $list[] = $word;
+            }
+        }
+
+        return array_values(array_unique($list));
+    }
+
+    /**
+     * Tira da checagem os trechos que estão na LISTA BRANCA.
+     *
+     * O nome liberado é removido antes de procurar palavras proibidas — então
+     * "João Matarazzo" passa, mas "Matarazzo merda" continua bloqueado.
+     */
+    private static function withoutWhitelisted(string $normalized): string
+    {
+        foreach (self::whitelist() as $allowed) {
+            if ($allowed === '') {
+                continue;
+            }
+
+            $normalized = str_replace($allowed, ' ', $normalized);
+        }
+
+        return $normalized;
+    }
+
+    /**
      * Palavras padrão (usadas no primeiro boot e no botão "restaurar").
      *
      * @return array<int, string>
@@ -57,8 +145,21 @@ final class NameBlocklist
             'analfabeto', 'analfabeta', 'fracassado', 'fracassada',
             // ── Ódio / política ────────────────────────────────────
             'nazista', 'hitler',
-            // ── Religião (usado como xingamento) ───────────────────
-            'demonio', 'satanas', 'capeta', 'diabo', 'feiticeira',
+            // ── Religião (termos e nomes usados como apelido/brincadeira) ──
+            // Obs.: nomes de pessoas comuns (Maria, José, João, Paulo...)
+            // NÃO entram, senão alunos de verdade ficariam de fora.
+            'deus', 'jesus', 'cristo', 'jesuscristo', 'meudeus', 'deusmeulivre',
+            'senhor', 'salvador', 'messias', 'profeta', 'santo', 'santa',
+            'santissimo', 'espiritosanto', 'espirito', 'alleluia', 'aleluia',
+            'amem', 'hospedeus', 'hospodese', 'nossosenhor', 'anjodaguarda',
+            'arcanjo', 'padre', 'pastor', 'pastora', 'bispo', 'papa',
+            'freira', 'sacerdote', 'crente', 'evangelico', 'igreja',
+            'hostia', 'biblia', 'terco',
+            'macumba', 'macumbeiro', 'macumbeira', 'candomble', 'umbanda',
+            'exu', 'ogum', 'iemanja', 'oxum', 'oxala', 'xango', 'axé', 'axe',
+            'feitico', 'feiticeiro', 'bruxa', 'bruxo',
+            'demonio', 'satanas', 'sata', 'capeta', 'diabo', 'demo', 'lucifer',
+            'inferno', 'encosto', 'assombracao', 'maluco', 'possesso',
             // ── Drogas e apostas ───────────────────────────────────
             'maconha', 'cocaina', 'crack', 'droga', 'drogado', 'traficante',
             'maconheiro', 'noia', 'bebida', 'cerveja', 'cachaca', 'bebado',
@@ -99,7 +200,7 @@ final class NameBlocklist
      */
     public static function isBlocked(string $name): bool
     {
-        $normalized = self::normalize($name);
+        $normalized = self::withoutWhitelisted(self::normalize($name));
 
         if ($normalized === '') {
             return false;
@@ -111,6 +212,11 @@ final class NameBlocklist
             // 1) palavra exata no nome (ex.: "cu" só bloqueia o nome "cu")
             if (in_array($word, $tokens, true)) {
                 return true;
+            }
+
+            // Sobrenomes comuns: só bloqueiam como nome inteiro
+            if (in_array($word, self::EXACT_ONLY, true)) {
+                continue;
             }
 
             // 2) palavra longa "escondida" no meio (ex.: "viado123", "seumerda")
@@ -127,7 +233,7 @@ final class NameBlocklist
      */
     public static function blockedWord(string $name): string
     {
-        $normalized = self::normalize($name);
+        $normalized = self::withoutWhitelisted(self::normalize($name));
 
         if ($normalized === '') {
             return '';
@@ -138,6 +244,10 @@ final class NameBlocklist
         foreach (self::words() as $word) {
             if (in_array($word, $tokens, true)) {
                 return $word;
+            }
+
+            if (in_array($word, self::EXACT_ONLY, true)) {
+                continue;
             }
 
             if (mb_strlen($word) >= 4 && str_contains($normalized, $word)) {
