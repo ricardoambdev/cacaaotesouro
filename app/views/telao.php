@@ -242,7 +242,7 @@ $siteName = $siteName ?? 'Caça ao Tesouro';
         .sb-device-btn:hover {
             border-color: #F97316;
             background: rgba(249, 115, 22, 0.15);
-            transform: translateX(2px);
+            color: #F97316;
         }
         .sb-device-dot {
             width: 8px;
