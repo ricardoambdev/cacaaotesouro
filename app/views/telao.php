@@ -201,6 +201,68 @@ $siteName = $siteName ?? 'Caça ao Tesouro';
         .sb-stat-label { color: rgba(247, 236, 212, 0.45); }
         .sb-stat-value { font-weight: 600; color: #f7ecd4; }
 
+        /* Dispositivos conectados (clique centraliza no mapa) */
+        .sb-devices {
+            margin-top: 14px;
+            width: 100%;
+            border-top: 1px solid rgba(247, 236, 212, 0.08);
+            padding-top: 10px;
+        }
+        .sb-devices-title {
+            font-size: 0.68rem;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            color: rgba(247, 236, 212, 0.45);
+            margin-bottom: 8px;
+        }
+        .sb-devices-list {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            max-height: 170px;
+            overflow-y: auto;
+        }
+        .sb-device-btn {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            width: 100%;
+            padding: 7px 10px;
+            border-radius: 8px;
+            border: 1px solid rgba(247, 236, 212, 0.12);
+            background: rgba(5, 11, 18, 0.5);
+            color: #f7ecd4;
+            font-family: inherit;
+            font-size: 0.82rem;
+            font-weight: 600;
+            text-align: left;
+            cursor: pointer;
+            transition: all .15s ease;
+        }
+        .sb-device-btn:hover {
+            border-color: #F97316;
+            background: rgba(249, 115, 22, 0.15);
+            transform: translateX(2px);
+        }
+        .sb-device-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+        .sb-device-btn.is-offline { opacity: 0.45; }
+        .sb-device-name {
+            flex: 1;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .sb-devices-empty {
+            font-size: 0.78rem;
+            color: rgba(247, 236, 212, 0.35);
+            font-style: italic;
+        }
+
         /* Selfies area */
         .sb-selfies {
             margin-top: auto;
@@ -463,6 +525,12 @@ $siteName = $siteName ?? 'Caça ao Tesouro';
                     <span class="sb-stat-label">Status</span>
                     <span class="sb-stat-value" id="sb-laranja-game-status">-</span>
                 </div>
+                <div class="sb-devices">
+                    <div class="sb-devices-title">Dispositivos conectados</div>
+                    <div class="sb-devices-list" id="sb-laranja-devices">
+                        <div class="sb-devices-empty">Ninguém conectado</div>
+                    </div>
+                </div>
                 <div class="sb-selfies" id="sb-laranja-selfies">
                     <div class="sb-selfies-title">Selfies</div>
                     <div class="sb-selfies-grid" id="sb-laranja-selfies-grid"></div>
@@ -490,6 +558,12 @@ $siteName = $siteName ?? 'Caça ao Tesouro';
                 <div class="sb-stat-row">
                     <span class="sb-stat-label">Status</span>
                     <span class="sb-stat-value" id="sb-preta-game-status">-</span>
+                </div>
+                <div class="sb-devices">
+                    <div class="sb-devices-title">Dispositivos conectados</div>
+                    <div class="sb-devices-list" id="sb-preta-devices">
+                        <div class="sb-devices-empty">Ninguém conectado</div>
+                    </div>
                 </div>
                 <div class="sb-selfies" id="sb-preta-selfies">
                     <div class="sb-selfies-title">Selfies</div>
@@ -586,6 +660,7 @@ $siteName = $siteName ?? 'Caça ao Tesouro';
                 errorEl.style.display = 'none';
                 renderTeams(data.teams || []);
                 renderDevices(data.devices || []);
+                renderDevicesList(data.devices || []);
                 renderSelfies(data.selfies || []);
 
                 /* Fit bounds on first load */
@@ -698,6 +773,78 @@ $siteName = $siteName ?? 'Caça ao Tesouro';
                 .replace(/</g, '&lt;')
                 .replace(/>/g, '&gt;')
                 .replace(/"/g, '&quot;');
+        }
+
+        /* ============================================================
+           LISTA DE DISPOSITIVOS (abaixo do status de cada equipe)
+           Clique no nome -> centraliza a posição dele no mapa
+           ============================================================ */
+        function renderDevicesList(devices) {
+            const lists = {
+                laranja: $('#sb-laranja-devices'),
+                preta:   $('#sb-preta-devices'),
+            };
+
+            const cores = { laranja: '#F97316', preta: '#94a3b8' };
+
+            // Agrupa por equipe
+            const porEquipe = { laranja: [], preta: [] };
+
+            (devices || []).forEach(dev => {
+                const key = (dev.color || '').toLowerCase();
+                if (porEquipe[key]) porEquipe[key].push(dev);
+            });
+
+            Object.keys(lists).forEach(key => {
+                const el = lists[key];
+                if (!el) return;
+
+                el.innerHTML = '';
+
+                const lista = porEquipe[key];
+
+                if (!lista || lista.length === 0) {
+                    el.innerHTML = '<div class="sb-devices-empty">Ninguém conectado</div>';
+                    return;
+                }
+
+                lista.forEach(dev => {
+                    const btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.className = 'sb-device-btn' + (dev.online ? '' : ' is-offline');
+                    btn.title = dev.online
+                        ? 'Clique para centralizar no mapa'
+                        : 'Sem posição no momento';
+
+                    const dot = document.createElement('span');
+                    dot.className = 'sb-device-dot';
+                    dot.style.background = cores[key] || '#F97316';
+
+                    const nome = document.createElement('span');
+                    nome.className = 'sb-device-name';
+                    nome.textContent = dev.name || 'Sem nome';
+
+                    btn.appendChild(dot);
+                    btn.appendChild(nome);
+
+                    // Clicou: centraliza o mapa na posição do aparelho
+                    btn.addEventListener('click', () => {
+                        const marker = teamMarkers[dev.device_id];
+
+                        if (dev.lat === null || dev.lng === null || !dev.online) {
+                            return;
+                        }
+
+                        map.setView([dev.lat, dev.lng], 18, { animate: true });
+
+                        if (marker) {
+                            setTimeout(() => marker.openPopup(), 350);
+                        }
+                    });
+
+                    el.appendChild(btn);
+                });
+            });
         }
 
         /* ============================================================
