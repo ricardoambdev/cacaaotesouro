@@ -699,7 +699,6 @@ $siteName = $siteName ?? 'Caça ao Tesouro';
                 .replace(/>/g, '&gt;')
                 .replace(/"/g, '&quot;');
         }
-        }
 
         /* ============================================================
            RENDER TREASURES (map markers)
