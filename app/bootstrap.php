@@ -17,6 +17,7 @@ declare(strict_types=1);
 use App\Controllers\ApiController;
 use App\Controllers\AuthController;
 use App\Controllers\DashboardController;
+use App\Controllers\DecoyQrController;
 use App\Controllers\GameController;
 use App\Controllers\SettingsController;
 use App\Controllers\TreasureController;
@@ -146,6 +147,11 @@ $app->get('/desafio-final', [GameController::class, 'finalChallenge'])->add($mw[
 $app->post('/desafio-final', [GameController::class, 'finalChallenge'])->add($mw['authRequired']);
 
 // Cofre da gincana — CONFIGURAÇÃO no painel (a página pública é /cofre)
+// QR CODES FALSOS (iscas) — mensagens que não identificam tesouros.
+$app->get('/qrcodes-falsos', [DecoyQrController::class, 'index'])->add($mw['authRequired']);
+$app->post('/qrcodes-falsos', [DecoyQrController::class, 'store'])->add($mw['authRequired']);
+$app->post('/qrcodes-falsos/{id}/excluir', [DecoyQrController::class, 'delete'])->add($mw['authRequired']);
+
 $app->get('/cofre/config', [GameController::class, 'vaultConfig'])->add($mw['authRequired']);
 $app->post('/cofre/config', [GameController::class, 'vaultConfig'])->add($mw['authRequired']);
 $app->post('/limpar', [GameController::class, 'resetGame'])->add($mw['authRequired']);

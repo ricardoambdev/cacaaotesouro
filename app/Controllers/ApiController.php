@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controllers;
 
 use App\Database;
+use App\Repositories\DecoyQrRepository;
 use App\Repositories\GameRepository;
 use App\Repositories\SettingsRepository;
 use App\Repositories\TeamRepository;
@@ -359,6 +360,20 @@ final class ApiController
                 'success' => false,
                 'error'   => 'Este tesouro ainda não tem coordenada definida.',
             ], 400);
+        }
+
+        // QR code FALSO ("isca"): mostra a mensagem cadastrada e a equipe
+        // volta para a tela inicial. Não identifica tesouro nenhum.
+        $decoy = DecoyQrRepository::findByContent($qrCode);
+
+        if ($decoy !== null) {
+            return $this->json($response, [
+                'success'  => false,
+                'code'     => 'decoy_qr',
+                'is_decoy' => true,
+                'message'  => (string) ($decoy['message'] ?? 'Você caiu numa armadilha!'),
+                'error'    => (string) ($decoy['message'] ?? 'Você caiu numa armadilha!'),
+            ], 200);
         }
 
         if ($qrCode === '' || $qrCode !== (string) $treasure['qr_content']) {

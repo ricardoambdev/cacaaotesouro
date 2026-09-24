@@ -389,6 +389,13 @@ class ApiService {
       return CheckinResult.fromJson(body);
     }
 
+    // QR code FALSO ("isca"): mensagem cadastrada pela organização.
+    if (body['is_decoy'] == true || body['code'] == 'decoy_qr') {
+      throw DecoyQrException(
+        (body['message'] as String?) ?? 'Você caiu numa armadilha!',
+      );
+    }
+
     throw ApiException(body['error'] as String? ?? 'Erro no checkin.');
   }
 
@@ -1040,6 +1047,14 @@ class ApiException implements Exception {
 
   @override
   String toString() => 'ApiException: $message';
+}
+
+/// Exceção lançada quando o QR lido é uma "isca" (QR code falso).
+///
+/// O app mostra a mensagem cadastrada pela organização e volta para a tela
+/// inicial — não é um erro de verdade.
+class DecoyQrException extends ApiException {
+  DecoyQrException(super.message);
 }
 
 /// Exceção lançada quando outro aparelho já está logado com a equipe (409).

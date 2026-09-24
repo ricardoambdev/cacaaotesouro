@@ -141,6 +141,13 @@ Quando isso está ligado:
 - O **motivo é obrigatório** e vira uma **mensagem para a equipe**
   (ex.: `-5 pontos: Saiu da área do jogo`).
 
+### 4.5 🎭 QR Codes Falsos (pegadinhas)
+A organização pode esconder **QR codes falsos** espalhados pelo caminho:
+- Eles **não identificam tesouro nenhum** e **não dão pontos**.
+- Ao ler um deles, o app mostra a **mensagem** cadastrada (ex.: *"Você caiu numa
+  armadilha do Quico!"*) e **volta para a tela inicial**.
+- Serve para divertir e despistar as equipes.
+
 ---
 
 ## 6. Tesouros: código, local e QR

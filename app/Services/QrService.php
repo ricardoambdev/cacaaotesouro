@@ -76,6 +76,57 @@ final class QrService
     }
 
     /**
+     * Gera o SVG do QR code com um NOME DE ARQUIVO próprio e retorna o
+     * caminho web (usado pelos QR codes falsos: falso_<id>.svg).
+     *
+     * @throws RuntimeException em caso de falha na geração.
+     */
+    public static function generateCustomSvg(string $content, string $filename): string
+    {
+        if (trim($content) === '') {
+            throw new RuntimeException('QR code: o conteúdo a codificar está vazio.');
+        }
+
+        $filename = basename($filename);
+
+        if ($filename === '') {
+            throw new RuntimeException('QR code: nome de arquivo inválido.');
+        }
+
+        $projectRoot = str_replace('\\', '/', dirname(__DIR__, 2));
+        $dir = $projectRoot . self::QR_DIR;
+
+        if (!is_dir($dir) && !mkdir($dir, 0775, true) && !is_dir($dir)) {
+            throw new RuntimeException('QR code: não foi possível criar a pasta ' . $dir . '.');
+        }
+
+        $filePath = $dir . '/' . $filename;
+
+        $options = new QROptions([
+            'eccLevel'    => QRCode::ECC_L,
+            'outputType'  => QROutputInterface::MARKUP_SVG,
+            'scale'       => 6,
+            'imageBase64' => false,
+        ]);
+
+        try {
+            (new QRCode($options))->render($content, $filePath);
+        } catch (Throwable $e) {
+            throw new RuntimeException(
+                'QR code: falha ao gerar o SVG. ' . $e->getMessage(),
+                0,
+                $e
+            );
+        }
+
+        if (!is_file($filePath)) {
+            throw new RuntimeException('QR code: o arquivo ' . $filePath . ' não foi criado.');
+        }
+
+        return '/uploads/qr/' . $filename;
+    }
+
+    /**
      * Gera o PNG do QR code (compatibilidade com fluxos antigos).
      *
      * Nome do arquivo: tesouro_<id>_<8 chars de hash>.png.

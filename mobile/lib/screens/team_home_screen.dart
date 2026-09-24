@@ -425,6 +425,64 @@ class _TeamHomeScreenState extends State<TeamHomeScreen> {
         _checkinResult = result;
         _flowState = TreasureFlowState.checkinSuccess;
       });
+    } on DecoyQrException catch (e) {
+      // QR code FALSO ("isca"): mostra a mensagem e volta para a tela inicial.
+      if (!mounted) return;
+
+      setState(() => _flowState = TreasureFlowState.viewingClue);
+
+      _soundService.playRisada();
+
+      await showDialog<void>(
+        context: context,
+        barrierDismissible: false,
+        builder: (ctx) => AlertDialog(
+          backgroundColor: AppColors.navyMedium,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+            side: const BorderSide(color: AppColors.gold, width: 2),
+          ),
+          title: Row(
+            children: const [
+              Icon(Icons.sentiment_very_dissatisfied,
+                  color: AppColors.gold, size: 28),
+              SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Pegadinha!',
+                  style: TextStyle(
+                    color: AppColors.gold,
+                    fontWeight: FontWeight.w900,
+                    fontSize: 20,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          content: Text(
+            e.message,
+            style: const TextStyle(
+              color: AppColors.ivory,
+              fontSize: 16,
+              height: 1.5,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          actions: [
+            ElevatedButton(
+              onPressed: () => Navigator.pop(ctx),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.gold,
+                foregroundColor: AppColors.navyDark,
+              ),
+              child: const Text(
+                'Voltar ao início',
+                style: TextStyle(fontWeight: FontWeight.w800),
+              ),
+            ),
+          ],
+        ),
+      );
     } on ApiException catch (e) {
       if (!mounted) return;
       setState(() => _flowState = TreasureFlowState.viewingClue);

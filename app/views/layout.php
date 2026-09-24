@@ -214,6 +214,11 @@ if (count($parts) >= 2) {
                     <?= icon('lock', 20, 'sidebar-link-icon') ?>
                     Cofre
                 </a>
+
+                <a href="/qrcodes-falsos" class="sidebar-link <?= $active === 'qrcodes-falsos' ? 'active' : '' ?>">
+                    <?= icon('qr_code_2', 20, 'sidebar-link-icon') ?>
+                    QR Codes Falsos
+                </a>
                 <a href="/regras" class="sidebar-link <?= $active === 'regras' ? 'active' : '' ?>">
                     <?= icon('gavel', 20, 'sidebar-link-icon') ?>
                     Regras

@@ -295,6 +295,21 @@ final class Database
             }
         }
 
+        // QR codes FALSOS ("iscas"): não identificam tesouro nenhum. Quando a
+        // equipe lê um deles, o app mostra a mensagem cadastrada e volta para
+        // a tela inicial.
+        $pdo->exec(
+            'CREATE TABLE IF NOT EXISTS decoy_qrs ('
+            . 'id ' . $autoIncrement . ', '
+            . 'content VARCHAR(64) NOT NULL, '
+            . 'message TEXT NOT NULL, '
+            . 'qr_svg_path VARCHAR(255) NOT NULL DEFAULT \'\', '
+            . 'created_at DATETIME NOT NULL, '
+            . 'updated_at DATETIME NULL'
+            . ($driver === 'mysql' ? ', UNIQUE KEY uniq_decoy_content (content)' : '')
+            . ')'
+        );
+
         // Tentativas no COFRE da gincana (página pública). Controla o
         // bloqueio por tentativas erradas seguidas, por IP.
         $pdo->exec(
