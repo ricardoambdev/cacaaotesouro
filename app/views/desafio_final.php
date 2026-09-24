@@ -54,11 +54,9 @@ $finalWrongPenalty = $finalWrongPenalty ?? '20';
         </div>
 
         <div class="form-group">
-            <label for="finalWrongPenalty">Pontos perdidos por erro</label>
-            <input type="number" id="finalWrongPenalty" name="finalWrongPenalty" class="form-input"
-                   min="0" max="1000" step="1" value="<?= e($finalWrongPenalty) ?>">
-            <div class="error-inline"></div>
-            <p class="form-help-text">Pontos descontados da equipe a cada tentativa errada do desafio final (0 a 1000).</p>
+            <?= icon('info', 14) ?>
+            <strong style="color:#22C55E;">Errar o desafio final NÃO tira pontos.</strong>
+            A equipe pode tentar quantas vezes quiser — só o acerto dá pontos.
         </div>
 
         <p class="form-help-text" style="margin-top: 8px; padding-top: 12px; border-top: 1px solid rgba(247,236,212,0.08);">

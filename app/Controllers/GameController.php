@@ -108,7 +108,6 @@ final class GameController
             $finalClue = trim((string) ($body['finalClue'] ?? ''));
             $finalAnswer = trim((string) ($body['finalAnswer'] ?? ''));
             $finalCorrectPoints = trim((string) ($body['finalCorrectPoints'] ?? ''));
-            $finalWrongPenalty = trim((string) ($body['finalWrongPenalty'] ?? ''));
 
             $errors = [];
 
@@ -123,18 +122,12 @@ final class GameController
                 $errors[] = 'Os pontos ao acertar o desafio final devem ser um inteiro entre 1 e 1000.';
             }
 
-            if ($finalWrongPenalty === '' || !ctype_digit($finalWrongPenalty)
-                || (int) $finalWrongPenalty < 0 || (int) $finalWrongPenalty > 1000) {
-                $errors[] = 'Os pontos perdidos por erro devem ser um inteiro entre 0 e 1000.';
-            }
-
             if ($errors !== []) {
                 flash_set('error', implode(' ', $errors));
                 $_SESSION['old'] = [
                     'finalClue'          => $finalClue,
                     'finalAnswer'        => $finalAnswer,
                     'finalCorrectPoints' => $finalCorrectPoints,
-                    'finalWrongPenalty'  => $finalWrongPenalty,
                 ];
                 redirect('/desafio-final');
             }
@@ -143,7 +136,8 @@ final class GameController
                 'finalClue'          => $finalClue,
                 'finalAnswer'        => $finalAnswer,
                 'finalCorrectPoints' => (string) (int) $finalCorrectPoints,
-                'finalWrongPenalty'  => (string) (int) $finalWrongPenalty,
+                // Errar o desafio final NÃO tira pontos (penalidade removida).
+                'finalWrongPenalty'  => '0',
             ]);
 
             flash_set('success', 'Desafio final salvo com sucesso.');

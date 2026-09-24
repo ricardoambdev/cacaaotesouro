@@ -280,6 +280,9 @@ final class ApiController
             'story'           => (string) SettingsRepository::get('historyContent', ''),
             'story_version'   => (int) SettingsRepository::get('storyVersion', '0'),
             'rules'           => (string) SettingsRepository::get('rulesContent', ''),
+            // Desafio final: pontos do acerto (errar NÃO tira pontos).
+            'final_correct_points' => (int) SettingsRepository::get('finalCorrectPoints', '100'),
+            'final_wrong_penalty'  => 0,
             'current_treasure'=> $currentTreasure,
             'final_available' => $finalAvailable,
             'leaderboard'     => $leaderboard,
@@ -289,7 +292,8 @@ final class ApiController
         if ($finalAvailable) {
             $data['final_clue'] = (string) SettingsRepository::get('finalClue', '');
             $data['final_correct_points'] = (int) SettingsRepository::get('finalCorrectPoints', '100');
-            $data['final_wrong_penalty'] = (int) SettingsRepository::get('finalWrongPenalty', '20');
+            // Errar o desafio final NÃO tira pontos (a penalidade foi removida).
+            $data['final_wrong_penalty'] = 0;
         }
 
         return $this->json($response, $data);

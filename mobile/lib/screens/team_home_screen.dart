@@ -2887,7 +2887,7 @@ class _FinalAnswerInputState extends State<_FinalAnswerInput> {
                 Expanded(
                   child: Text(
                     'Acertar vale +${widget.correctPoints} pontos. '
-                    'Errar custa -${widget.wrongPenalty} pontos.',
+                    'Errar NÃO tira pontos — pode tentar de novo!',
                     style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
