@@ -72,8 +72,10 @@ final class DecoyQrRepository
             . 'VALUES (:content, :message, \'\', :created_at)'
         );
         $stmt->execute([
-            // Código aleatório: não dá para adivinhar.
-            ':content'    => 'FALSO-' . strtoupper(random_alnum(16)),
+            // Código aleatório IGUAL ao dos tesouros (mesmo formato, sem
+            // nenhuma pista de que é uma isca): se alguém ler o QR com a
+            // câmera do celular, não descobre que é pegadinha.
+            ':content'    => random_alnum(20),
             ':message'    => $message,
             ':created_at' => $now,
         ]);
