@@ -1222,6 +1222,7 @@ final class ApiController
                 }
 
                 $devices[] = [
+                    'device_id' => (string) $deviceId,
                     'team_id'  => $teamId,
                     'color'    => (string) $team['color'],
                     'team'     => (string) $team['name'],

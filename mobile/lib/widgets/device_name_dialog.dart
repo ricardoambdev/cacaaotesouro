@@ -63,7 +63,7 @@ Future<String?> showDeviceNameDialog(
                 style: const TextStyle(color: AppColors.ivory),
                 decoration: const InputDecoration(
                   labelText: 'Seu nome',
-                  hintText: 'Ex.: Ricardo',
+                  hintText: 'Ex.: João',
                   prefixIcon: Icon(Icons.person, size: 20),
                 ),
                 validator: (value) {

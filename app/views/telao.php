@@ -401,8 +401,12 @@ $siteName = $siteName ?? 'Caça ao Tesouro';
             margin-bottom: 4px;
         }
         .team-pin-name {
-            font-size: 17px;
+            font-size: 16px;
             font-weight: 800;
+            max-width: 150px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
         }
         .team-pin-tail {
             position: absolute;
@@ -581,11 +585,12 @@ $siteName = $siteName ?? 'Caça ao Tesouro';
 
                 errorEl.style.display = 'none';
                 renderTeams(data.teams || []);
+                renderDevices(data.devices || []);
                 renderSelfies(data.selfies || []);
 
                 /* Fit bounds on first load */
                 if (firstLoad) {
-                    fitMapBounds(data.teams || []);
+                    fitMapBounds(data.devices || []);
                     firstLoad = false;
                 }
             } catch (err) {
@@ -597,10 +602,12 @@ $siteName = $siteName ?? 'Caça ao Tesouro';
         /* ============================================================
            FIT MAP BOUNDS
            ============================================================ */
-        function fitMapBounds(teams) {
+        function fitMapBounds(devices) {
             const pts = [];
-            teams.forEach(t => {
-                if (t.last_location) pts.push([t.last_location.lat, t.last_location.lng]);
+            devices.forEach(d => {
+                if (d.online && d.lat !== null && d.lng !== null) {
+                    pts.push([d.lat, d.lng]);
+                }
             });
             if (pts.length > 0) {
                 map.fitBounds(pts, { padding: [50, 50], maxZoom: 16 });
@@ -626,46 +633,72 @@ $siteName = $siteName ?? 'Caça ao Tesouro';
                 $(prefix + '-status').textContent = team.online ? '● ONLINE' : '○ OFFLINE';
                 $(prefix + '-status').className = 'sb-status ' + (team.online ? 'sb-online' : 'sb-offline');
                 $(prefix + '-game-status').textContent = statusText;
+            });
+        }
 
-                /* ---- Map marker: somente se ONLINE (logada no app) ---- */
-                if (team.online && team.last_location) {
-                    const lat = team.last_location.lat;
-                    const lng = team.last_location.lng;
-                    const teamColor = (colorKey === 'laranja') ? COLORS.laranja : COLORS.preta;
+        /* ============================================================
+           RENDER DEVICES (um pino por APARELHO, só com o NOME)
+           ============================================================ */
+        function renderDevices(devices) {
+            const seen = {};
 
-                    /* Pin cartunesco com o nome da equipe */
-                    const colorName = (colorKey === 'laranja') ? 'Laranja' : 'Preta';
-                    const icon = L.divIcon({
-                        className: 'team-pin-wrap',
-                        html: '<div class="team-pin team-pin-' + colorKey + '">' +
-                            '<span class="team-pin-label">Equipe</span>' +
-                            '<span class="team-pin-name">' + colorName + '</span>' +
-                            '<div class="team-pin-tail"></div>' +
-                            '</div>',
-                        iconSize: [130, 52],
-                        iconAnchor: [65, 52],
-                        popupAnchor: [0, -48],
-                    });
+            devices.forEach(dev => {
+                const colorKey = (dev.color || '').toLowerCase();
+                const key = dev.device_id || (colorKey + '|' + dev.name);
 
-                    if (teamMarkers[colorKey]) {
-                        /* Update existing */
-                        teamMarkers[colorKey].setLatLng([lat, lng]);
-                    } else {
-                        /* Create new */
-                        teamMarkers[colorKey] = L.marker([lat, lng], { icon }).addTo(map);
+                if (!dev.online || dev.lat === null || dev.lng === null) {
+                    if (teamMarkers[key]) {
+                        map.removeLayer(teamMarkers[key]);
+                        delete teamMarkers[key];
                     }
+                    return;
+                }
 
-                    teamMarkers[colorKey].bindPopup(
-                        '<strong>' + (team.name || side) + '</strong><br>Pontos: ' + (team.points || 0) +
-                            '<br>● ONLINE',
-                        { className: 'telao-popup' }
-                    );
-                } else if (teamMarkers[colorKey]) {
-                    /* Offline ou sem localização — NÃO mostra no mapa */
-                    map.removeLayer(teamMarkers[colorKey]);
-                    delete teamMarkers[colorKey];
+                seen[key] = true;
+
+                /* Pino com a cor da equipe e SÓ o nome do aparelho */
+                const icon = L.divIcon({
+                    className: 'team-pin-wrap',
+                    html: '<div class="team-pin team-pin-' + colorKey + '">' +
+                        '<span class="team-pin-name">' + escapeHtmlTelao(dev.name || 'Sem nome') + '</span>' +
+                        '<div class="team-pin-tail"></div>' +
+                        '</div>',
+                    iconSize: [160, 44],
+                    iconAnchor: [80, 44],
+                    popupAnchor: [0, -40],
+                });
+
+                if (teamMarkers[key]) {
+                    teamMarkers[key].setLatLng([dev.lat, dev.lng]);
+                    teamMarkers[key].setIcon(icon);
+                } else {
+                    teamMarkers[key] = L.marker([dev.lat, dev.lng], { icon }).addTo(map);
+                }
+
+                teamMarkers[key].bindPopup(
+                    '<strong>' + escapeHtmlTelao(dev.name || 'Sem nome') + '</strong><br>' +
+                    'Equipe: ' + escapeHtmlTelao(dev.team || colorKey) + '<br>● ONLINE',
+                    { className: 'telao-popup' }
+                );
+            });
+
+            /* Remove pinos de aparelhos que saíram */
+            Object.keys(teamMarkers).forEach(k => {
+                if (!seen[k]) {
+                    map.removeLayer(teamMarkers[k]);
+                    delete teamMarkers[k];
                 }
             });
+        }
+
+        /** Escapa texto que vai para o HTML do pino (o nome vem do celular). */
+        function escapeHtmlTelao(text) {
+            return String(text)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;');
+        }
         }
 
         /* ============================================================

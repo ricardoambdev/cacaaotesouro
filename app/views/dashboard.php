@@ -760,7 +760,6 @@ $colorMap = [
                 var icon = L.divIcon({
                     className: 'team-pin-wrap',
                     html: '<div class="team-pin team-pin-' + colorKey + '">'
-                        + '<span class="team-pin-label">' + colorName + '</span>'
                         + '<span class="team-pin-name">' + escapeHtmlDash(nome) + '</span>'
                         + '<div class="team-pin-tail"></div>'
                         + '</div>',
