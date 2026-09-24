@@ -147,22 +147,6 @@ final class GameRepository
      * @param array<string, mixed> $team Linha da tabela teams
      */
     /**
-     * Alguma equipe já encontrou (acertou a charada de) algum tesouro?
-     *
-     * Usado para liberar o bloqueio do Desafio Final: a organização só pode
-     * habilitar/bloquear o desafio depois que a caça começou de verdade.
-     */
-    public static function anyTreasureFound(): bool
-    {
-        $count = Database::get()->query(
-            'SELECT COUNT(*) FROM team_treasure_progress '
-            . 'WHERE riddle_correct = 1 AND disqualified = 0'
-        )->fetchColumn();
-
-        return (int) $count > 0;
-    }
-
-    /**
      * O Desafio Final está BLOQUEADO pela organização?
      */
     public static function finalBlocked(): bool

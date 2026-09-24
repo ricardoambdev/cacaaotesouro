@@ -143,6 +143,8 @@ Quando isso está ligado:
 
 ### 4.5 🎭 QR Codes Falsos (pegadinhas)
 A organização pode esconder **QR codes falsos** espalhados pelo caminho:
+- O código deles é **igual ao dos tesouros** (20 caracteres aleatórios) — não
+  tem nada escrito que denuncie a pegadinha.
 - Eles **não identificam tesouro nenhum** e **não dão pontos**.
 - Ao ler um deles, o app mostra a **mensagem** cadastrada (ex.: *"Você caiu numa
   armadilha do Quico!"*) e **volta para a tela inicial**.
@@ -246,9 +248,8 @@ Se não for possível usar o cofre físico, usa-se o **cofre virtual**.
 Na página **Desafio Final** do painel existe a caixa **"Bloquear o Desafio Final
 (e o Cofre)"**.
 
-- **Só aparece depois que pelo menos um tesouro for encontrado.** Antes disso, a
-  página mostra *"Bloqueio do Desafio Final indisponível"* — a caça precisa ter
-  começado para a organização poder bloquear/liberar.
+- **Pode ser usada a qualquer momento**, inclusive **antes** de alguém encontrar
+  o último tesouro — assim o desafio já fica bloqueado quando a equipe chegar.
 - **Marcada = bloqueado:** o **Cofre não abre** (mostra *"Estamos aguardando a
   liberação do Desafio Final"*) e o app, mesmo com todos os tesouros feitos,
   mostra a tela **"Aguardando..."** com a mensagem *"Estamos aguardando a

@@ -310,6 +310,9 @@ final class Database
             . ')'
         );
 
+        // Uniformiza os QR codes falsos já criados (ver comentário no método).
+        self::normalizeDecoyQrs($pdo);
+
         // Tentativas no COFRE da gincana (página pública). Controla o
         // bloqueio por tentativas erradas seguidas, por IP.
         $pdo->exec(
@@ -341,6 +344,53 @@ final class Database
      * Não é editável no painel nem no app — este trecho normaliza qualquer
      * nome antigo (ou digitado à mão em versões anteriores).
      */
+    /**
+     * O código do QR falso NÃO pode ter nenhuma pista de que é uma isca.
+     *
+     * Versões antigas criavam o código com o prefixo "FALSO-", o que entregava
+     * a pegadinha para quem lesse o QR com a câmera do celular. Aqui os
+     * registros antigos são trocados por um código no MESMO formato dos
+     * tesouros (20 caracteres alfanuméricos) e o SVG é refeito — sem isso, a
+     * imagem já gerada continuaria codificando o código antigo.
+     */
+    private static function normalizeDecoyQrs(PDO $pdo): void
+    {
+        try {
+            $stmt = $pdo->query(
+                "SELECT id, content FROM decoy_qrs WHERE content LIKE 'FALSO%'"
+            );
+
+            if ($stmt === false) {
+                return;
+            }
+
+            $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            if ($rows === []) {
+                return; // nada a corrigir (o normal depois da primeira vez)
+            }
+
+            foreach ($rows as $row) {
+                $id = (int) $row['id'];
+                $content = random_alnum(20);
+
+                $pdo->prepare('UPDATE decoy_qrs SET content = :c, updated_at = :n WHERE id = :id')
+                    ->execute([':c' => $content, ':n' => date('Y-m-d H:i:s'), ':id' => $id]);
+
+                // Refaz a imagem para o QR não continuar com o código antigo.
+                try {
+                    $path = \App\Services\QrService::generateCustomSvg($content, 'falso_' . $id . '.svg');
+                    $pdo->prepare('UPDATE decoy_qrs SET qr_svg_path = :p WHERE id = :id')
+                        ->execute([':p' => $path, ':id' => $id]);
+                } catch (\Throwable $e) {
+                    error_log('normalizeDecoyQrs (SVG) #' . $id . ': ' . $e->getMessage());
+                }
+            }
+        } catch (\Throwable $e) {
+            error_log('Database::normalizeDecoyQrs: ' . $e->getMessage());
+        }
+    }
+
     private static function normalizeTreasureNames(PDO $pdo): void
     {
         try {

@@ -140,18 +140,10 @@ final class GameController
                 'finalWrongPenalty'  => '0',
             ]);
 
-            // Bloquear/liberar o Desafio Final: só faz sentido depois que a
-            // caça começou, ou seja, quando ao menos um tesouro foi encontrado.
+            // Bloquear/liberar o Desafio Final: pode ser feito a QUALQUER
+            // momento — inclusive antes de alguém encontrar o último tesouro,
+            // para que o desafio já esteja bloqueado quando a equipe chegar.
             if (array_key_exists('finalBlocked', $body)) {
-                if (!GameRepository::anyTreasureFound()) {
-                    flash_set(
-                        'error',
-                        'O Desafio Final só pode ser habilitado ou bloqueado depois que '
-                        . 'pelo menos um tesouro for encontrado.'
-                    );
-                    redirect('/desafio-final');
-                }
-
                 // O formulário sempre envia o campo (hidden=0 + checkbox=1),
                 // então desmarcar realmente desbloqueia.
                 $blocked = (string) $body['finalBlocked'] === '1' ? '1' : '0';
@@ -171,7 +163,6 @@ final class GameController
             'finalCorrectPoints' => (string) ($old['finalCorrectPoints'] ?? SettingsRepository::get('finalCorrectPoints', '100')),
             'finalWrongPenalty'  => (string) ($old['finalWrongPenalty'] ?? SettingsRepository::get('finalWrongPenalty', '20')),
             'finalBlocked'       => GameRepository::finalBlocked(),
-            'anyTreasureFound'   => GameRepository::anyTreasureFound(),
         ]);
 
         $response->getBody()->write($this->renderLayout($content, $user, 'desafio-final'));

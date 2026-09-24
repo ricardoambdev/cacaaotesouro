@@ -59,8 +59,11 @@ $finalWrongPenalty = $finalWrongPenalty ?? '20';
             A equipe pode tentar quantas vezes quiser — só o acerto dá pontos.
         </div>
 
-        <?php if ($anyTreasureFound): ?>
-            <div class="form-group" style="border:1px solid <?= $finalBlocked ? 'rgba(239,68,68,0.35)' : 'rgba(34,197,94,0.3)' ?>; background:<?= $finalBlocked ? 'rgba(239,68,68,0.06)' : 'rgba(34,197,94,0.05)' ?>; border-radius:12px; padding:14px;">
+        <?php if ($finalBlocked): ?>
+            <div class="form-group" style="border:1px solid rgba(239,68,68,0.35); background:rgba(239,68,68,0.06); border-radius:12px; padding:14px;">
+        <?php else: ?>
+            <div class="form-group" style="border:1px solid rgba(34,197,94,0.3); background:rgba(34,197,94,0.05); border-radius:12px; padding:14px;">
+        <?php endif; ?>
                 <label style="display:flex; align-items:center; gap:10px; cursor:pointer; margin:0;">
                     <!-- Envia 0 quando o checkbox está desmarcado (padrão HTML). -->
                     <input type="hidden" name="finalBlocked" value="0">
@@ -74,24 +77,18 @@ $finalWrongPenalty = $finalWrongPenalty ?? '20';
                     <?php if ($finalBlocked): ?>
                         🚫 <strong style="color:#EF4444;">Bloqueado agora.</strong>
                         O Cofre não abre e o app mostra "Aguardando a liberação do Desafio Final".
+                        Desmarque e salve para liberar.
                     <?php else: ?>
                         ✅ <strong style="color:#22C55E;">Liberado agora.</strong>
-                        Marque para bloquear o Cofre e colocar as equipes em espera.
+                        Marque e salve para bloquear o Cofre e colocar as equipes em espera.
                     <?php endif; ?>
                 </p>
-            </div>
-        <?php else: ?>
-            <div class="form-group" style="border:1px solid rgba(247,236,212,0.12); background:rgba(5,11,18,0.4); border-radius:12px; padding:14px;">
-                <strong style="color:rgba(247,236,212,0.75);">
-                    <?= icon('lock_clock', 14) ?>
-                    Bloqueio do Desafio Final indisponível
-                </strong>
                 <p class="form-help-text" style="margin:8px 0 0;">
-                    Disponível depois que <strong>pelo menos um tesouro for encontrado</strong> —
-                    aí você poderá habilitar ou bloquear o Desafio Final (e o Cofre).
+                    <?= icon('info', 13) ?>
+                    Pode bloquear a qualquer momento — inclusive <strong>antes</strong> de alguém
+                    encontrar o último tesouro, para o desafio já estar bloqueado quando chegarem.
                 </p>
             </div>
-        <?php endif; ?>
 
         <p class="form-help-text" style="margin-top: 8px; padding-top: 12px; border-top: 1px solid rgba(247,236,212,0.08);">
             <?= icon('lock', 14) ?>
