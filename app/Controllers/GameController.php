@@ -411,6 +411,7 @@ final class GameController
 
         // ── Progresso zerado (nenhum tesouro encontrado) ────
         $pdo->exec('DELETE FROM team_treasure_progress');
+        $pdo->exec('DELETE FROM team_devices');
         $pdo->exec('DELETE FROM points_log');
         $pdo->exec('DELETE FROM team_locations');
         $pdo->exec('DELETE FROM team_messages');
@@ -482,6 +483,7 @@ final class GameController
 
         // ── Registros de progresso (tesouros completados) ──
         $pdo->exec('DELETE FROM team_treasure_progress');
+        $pdo->exec('DELETE FROM team_devices');
         $pdo->exec('DELETE FROM points_log');
         $pdo->exec('DELETE FROM team_locations');
         $pdo->exec('DELETE FROM team_messages');
@@ -588,6 +590,7 @@ final class GameController
 
         // ── Registros ────────────────────────────────────────
         $pdo->exec('DELETE FROM team_treasure_progress');
+        $pdo->exec('DELETE FROM team_devices');
         $pdo->exec('DELETE FROM points_log');
         $pdo->exec('DELETE FROM team_locations');
         $pdo->exec('DELETE FROM team_messages');

@@ -48,6 +48,102 @@ final class TeamRepository
     }
 
     /**
+     * Registra um aparelho para a equipe (a mesma equipe pode ter VÁRIOS
+     * aparelhos conectados ao mesmo tempo).
+     */
+    public static function addDevice(int $teamId, string $deviceId): void
+    {
+        // Compatibilidade: guarda também o último token em `teams`.
+        self::setSessionToken($teamId, $deviceId);
+
+        $pdo = Database::get();
+        $driver = app_config('db.driver', 'sqlite');
+        $now = date('Y-m-d H:i:s');
+
+        if ($driver === 'mysql') {
+            $stmt = $pdo->prepare(
+                'INSERT INTO team_devices (team_id, device_id, created_at) '
+                . 'VALUES (:team_id, :device_id, :created_at) '
+                . 'ON DUPLICATE KEY UPDATE created_at = :created_at_u'
+            );
+
+            $stmt->execute([
+                ':team_id'      => $teamId,
+                ':device_id'    => $deviceId,
+                ':created_at'   => $now,
+                ':created_at_u' => $now,
+            ]);
+
+            return;
+        }
+
+        $stmt = $pdo->prepare(
+            'INSERT INTO team_devices (team_id, device_id, created_at) '
+            . 'VALUES (:team_id, :device_id, :created_at) '
+            . 'ON CONFLICT(team_id, device_id) DO UPDATE SET created_at = :created_at_u'
+        );
+
+        $stmt->execute([
+            ':team_id'      => $teamId,
+            ':device_id'    => $deviceId,
+            ':created_at'   => $now,
+            ':created_at_u' => $now,
+        ]);
+    }
+
+    /**
+     * Remove um aparelho da equipe (logout de UM celular).
+     */
+    public static function removeDevice(int $teamId, string $deviceId): void
+    {
+        $stmt = Database::get()->prepare(
+            'DELETE FROM team_devices WHERE team_id = :team_id AND device_id = :device_id'
+        );
+        $stmt->execute([':team_id' => $teamId, ':device_id' => $deviceId]);
+    }
+
+    /**
+     * O aparelho está autorizado para esta equipe?
+     */
+    public static function hasDevice(int $teamId, string $deviceId): bool
+    {
+        $stmt = Database::get()->prepare(
+            'SELECT COUNT(*) FROM team_devices WHERE team_id = :team_id AND device_id = :device_id'
+        );
+        $stmt->execute([':team_id' => $teamId, ':device_id' => $deviceId]);
+
+        return (int) $stmt->fetchColumn() > 0;
+    }
+
+    /**
+     * Quantos aparelhos a equipe tem conectados agora.
+     */
+    public static function deviceCount(int $teamId): int
+    {
+        $stmt = Database::get()->prepare(
+            'SELECT COUNT(*) FROM team_devices WHERE team_id = :team_id'
+        );
+        $stmt->execute([':team_id' => $teamId]);
+
+        return (int) $stmt->fetchColumn();
+    }
+
+    /**
+     * Remove todos os aparelhos da equipe (usado nas limpezas do jogo).
+     */
+    public static function clearDevices(?int $teamId = null): void
+    {
+        if ($teamId === null) {
+            Database::get()->exec('DELETE FROM team_devices');
+
+            return;
+        }
+
+        $stmt = Database::get()->prepare('DELETE FROM team_devices WHERE team_id = :team_id');
+        $stmt->execute([':team_id' => $teamId]);
+    }
+
+    /**
      * Retorna todas as equipes, indexadas por id.
      *
      * Inclui `password` (senha em texto puro, para o admin visualizar/editar).

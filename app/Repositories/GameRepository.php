@@ -191,6 +191,40 @@ final class GameRepository
     }
 
     /**
+     * "Assinatura" do progresso da equipe, para sincronizar VÁRIOS
+     * aparelhos da mesma equipe em tempo real.
+     *
+     * Muda quando algum tesouro é concluído (ou desclassificado) — inclui o
+     * horário do último achado, então dois aparelhos nunca ficam com a mesma
+     * assinatura depois de um avanço.
+     *
+     * @return array{signature: string, found: int, last_found: ?string, disqualified: int}
+     */
+    public static function progressSignature(int $teamId): array
+    {
+        $stmt = Database::get()->prepare(
+            'SELECT '
+            . 'SUM(CASE WHEN riddle_correct = 1 THEN 1 ELSE 0 END) AS found, '
+            . 'SUM(CASE WHEN disqualified = 1 THEN 1 ELSE 0 END) AS disqualified, '
+            . 'MAX(found_at) AS last_found '
+            . 'FROM team_treasure_progress WHERE team_id = :team_id'
+        );
+        $stmt->execute([':team_id' => $teamId]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC) ?: [];
+
+        $found = (int) ($row['found'] ?? 0);
+        $disqualified = (int) ($row['disqualified'] ?? 0);
+        $lastFound = $row['last_found'] !== null ? (string) $row['last_found'] : null;
+
+        return [
+            'signature'    => md5($teamId . '|' . $found . '|' . $disqualified . '|' . (string) $lastFound),
+            'found'        => $found,
+            'last_found'   => $lastFound,
+            'disqualified' => $disqualified,
+        ];
+    }
+
+    /**
      * A equipe é a PRIMEIRA a acertar a charada deste tesouro?
      *
      * Verdadeiro quando nenhuma OUTRA equipe já resolveu o tesouro

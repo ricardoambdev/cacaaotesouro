@@ -202,6 +202,9 @@ $app->post('/api/team/final-answer', [ApiController::class, 'teamFinalAnswer']);
 $app->get('/api/team/points', [ApiController::class, 'teamPoints']);
 $app->post('/api/team/messages/read', [ApiController::class, 'teamMessagesRead']);
 $app->get('/api/team/messages', [ApiController::class, 'teamMessagesList']);
+
+// Sincronização em tempo real entre os aparelhos da MESMA equipe.
+$app->get('/api/team/sync', [ApiController::class, 'teamSync']);
 $app->post('/api/team/location', [ApiController::class, 'teamLocation']);
 
 // Públicas

@@ -82,38 +82,24 @@ final class ApiController
         $teamId = (int) $team['id'];
         $currentToken = (string) ($team['session_token'] ?? '');
 
-        // Conexão única: se outro aparelho já está logado com esta equipe,
-        // bloqueia e devolve os dados PÚBLICOS da equipe + a história, para
-        // o app mostrar a tela de "outra conta logada" (pontos/história)
-        // enquanto espera a vaga liberar.
-        if ($currentToken !== '' && $currentToken !== $deviceId) {
-            return $this->json($response, [
-                'success' => false,
-                'code'    => 'team_busy',
-                'error'   => 'Outro membro da equipe já está logado no aplicativo.',
-                'team'    => [
-                    'id'       => $teamId,
-                    'name'     => (string) $team['name'],
-                    'color'    => (string) $team['color'],
-                    'username' => (string) $team['username'],
-                    'points'   => (int) $team['points'],
-                ],
-                'story'         => (string) SettingsRepository::get('historyContent', ''),
-                'story_version' => (int) SettingsRepository::get('storyVersion', '0'),
-            ], 409);
-        }
+        // VÁRIOS APARELHOS: a mesma equipe pode entrar em mais de um celular
+        // ao mesmo tempo (o progresso é compartilhado). Nada de bloquear.
+        $currentToken = (string) ($team['session_token'] ?? '');
 
         session_regenerate_id(true);
 
         // Login de time destrói qualquer sessão de admin anterior.
         unset($_SESSION['user'], $_SESSION['admin']);
 
-        TeamRepository::setSessionToken($teamId, $deviceId);
+        // Registra este aparelho para a equipe (mantém os outros conectados).
+        TeamRepository::addDevice($teamId, $deviceId);
 
-        // Limpa as posições do aparelho ANTERIOR: só o dispositivo que está
-        // ativo agora deve aparecer no mapa do painel.
-        $del = Database::get()->prepare('DELETE FROM team_locations WHERE team_id = :team_id');
-        $del->execute([':team_id' => $teamId]);
+        // Ao entrar o PRIMEIRO aparelho, limpa posições antigas: só quem está
+        // ativo agora aparece no mapa do painel.
+        if ($currentToken === '' || TeamRepository::deviceCount($teamId) <= 1) {
+            $del = Database::get()->prepare('DELETE FROM team_locations WHERE team_id = :team_id');
+            $del->execute([':team_id' => $teamId]);
+        }
 
         $_SESSION['team'] = [
             'id'       => $teamId,
@@ -148,14 +134,21 @@ final class ApiController
         if (is_array($teamSession) && isset($teamSession['id']) && $deviceId !== '') {
             $team = TeamRepository::find((int) $teamSession['id']);
 
-            if ($team !== null && (string) ($team['session_token'] ?? '') === $deviceId) {
-                TeamRepository::setSessionToken((int) $team['id'], null);
+            if ($team !== null) {
+                $teamId = (int) $team['id'];
 
-                // Sem dispositivo ativo, a equipe sai do mapa do painel.
-                $del = Database::get()->prepare(
-                    'DELETE FROM team_locations WHERE team_id = :team_id'
-                );
-                $del->execute([':team_id' => (int) $team['id']]);
+                // Sai só ESTE aparelho (a equipe pode continuar em outros).
+                TeamRepository::removeDevice($teamId, $deviceId);
+
+                if (TeamRepository::deviceCount($teamId) === 0) {
+                    // Nenhum aparelho ativo: a equipe sai do mapa do painel.
+                    TeamRepository::setSessionToken($teamId, null);
+
+                    $del = Database::get()->prepare(
+                        'DELETE FROM team_locations WHERE team_id = :team_id'
+                    );
+                    $del->execute([':team_id' => $teamId]);
+                }
             }
         }
 
@@ -732,15 +725,13 @@ final class ApiController
 
         $this->updateProgress($teamId, $treasureId, ['attempts' => $attempts]);
 
-        TeamRepository::addPoints($teamId, -5);
-        GameRepository::logPoints($teamId, -5, 'erro charada');
-
+        // SEM PENALIDADE: errar a charada não tira pontos.
         return $this->json($response, [
             'success'  => true,
             'correct'  => false,
-            'message'  => 'Resposta incorreta. -5 pontos.',
-            'points'   => $points - 5,
-            'delta'    => -5,
+            'message'  => 'Resposta incorreta. Tente novamente!',
+            'points'   => $points,
+            'delta'    => 0,
             'attempts' => $attempts,
         ]);
     }
@@ -790,7 +781,7 @@ final class ApiController
      * Body: { answer }
      * Senha final correta: +finalCorrectPoints (settings) e encerra a
      * partida (primeira equipe a terminar define a vencedora).
-     * Errada: -finalWrongPenalty (settings), sem pontos negativos.
+     * Errada: sem penalidade (não tira pontos).
      */
     public function teamFinalAnswer(Request $request, Response $response): Response
     {
@@ -820,7 +811,7 @@ final class ApiController
         $finalAnswer = trim((string) SettingsRepository::get('finalAnswer', ''));
 
         $finalCorrectPoints = (int) SettingsRepository::get('finalCorrectPoints', '100');
-        $finalWrongPenalty = (int) SettingsRepository::get('finalWrongPenalty', '20');
+        // (a penalidade por erro foi removida: errar não tira pontos)
 
         $points = (int) $team['points'];
 
@@ -854,17 +845,13 @@ final class ApiController
             ]);
         }
 
-        // Penalidade por erro (nunca deixa os pontos ficarem negativos).
-        $newPoints = max(0, $points - $finalWrongPenalty);
-
-        TeamRepository::updateGameState($teamId, ['points' => $newPoints]);
-        GameRepository::logPoints($teamId, -$finalWrongPenalty, 'erro desafio final');
-
+        // SEM PENALIDADE: errar a senha final não tira pontos.
         return $this->json($response, [
             'success' => false,
             'correct' => false,
-            'message' => 'Senha incorreta. -' . $finalWrongPenalty . ' pontos.',
-            'points'  => $newPoints,
+            'message' => 'Senha incorreta. Tente novamente!',
+            'points'  => $points,
+            'delta'   => 0,
         ]);
     }
 
@@ -955,6 +942,39 @@ final class ApiController
     }
 
     /**
+     * GET /api/team/sync — sincronização em tempo real entre os VÁRIOS
+     * aparelhos da mesma equipe.
+     *
+     * O app chama isso a cada poucos segundos. Quando a assinatura do
+     * progresso muda (outro aparelho completou um tesouro), o app toca a
+     * notificação, avisa e recarrega o estado — passando para o próximo
+     * tesouro automaticamente.
+     */
+    public function teamSync(Request $request, Response $response): Response
+    {
+        $team = $this->requireTeam($request);
+
+        if ($team === null) {
+            return $this->unauthorized($response);
+        }
+
+        $teamId = (int) $team['id'];
+        $progress = GameRepository::progressSignature($teamId);
+        $currentTreasureId = GameRepository::currentTreasureId($team);
+        $finalAvailable = GameRepository::finalAvailable($team);
+
+        return $this->json($response, [
+            'success'          => true,
+            'signature'        => $progress['signature'],
+            'found'            => $progress['found'],
+            'last_found'       => $progress['last_found'],
+            'points'           => (int) TeamRepository::find($teamId)['points'],
+            'current_treasure_id' => $currentTreasureId,
+            'final_available'  => $finalAvailable,
+        ]);
+    }
+
+    /**
      * POST /api/team/location
      *
      * Body: { lat, lng, accuracy? }
@@ -1025,10 +1045,9 @@ final class ApiController
         foreach (TeamRepository::all() as $row) {
             $teamId = (int) $row['id'];
 
-            // Só aparece no mapa quem tem um DISPOSITIVO ATIVO (sessão em
-            // uso). Sem sessão, posições antigas são ignoradas — assim o
-            // marcador some quando o aparelho sai.
-            $hasActiveDevice = trim((string) ($row['session_token'] ?? '')) !== '';
+            // Só aparece no mapa quem tem um APARELHO CONECTADO (a equipe
+            // pode ter vários). Sem aparelho, posições antigas são ignoradas.
+            $hasActiveDevice = TeamRepository::deviceCount($teamId) > 0;
 
             $lastLocation = $hasActiveDevice ? self::lastLocation($teamId) : null;
 
@@ -2436,7 +2455,13 @@ final class ApiController
 
         $team = TeamRepository::find((int) $teamSession['id']);
 
-        if ($team === null || (string) ($team['session_token'] ?? '') !== $deviceId) {
+        if ($team === null) {
+            return null;
+        }
+
+        // VÁRIOS APARELHOS: vale qualquer aparelho registrado para a equipe
+        // (não só o último que entrou).
+        if (!TeamRepository::hasDevice((int) $team['id'], $deviceId)) {
             return null;
         }
 

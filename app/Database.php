@@ -254,6 +254,30 @@ final class Database
             . ')'
         );
 
+        // Aparelhos conectados por equipe: a MESMA equipe pode entrar em
+        // vários celulares ao mesmo tempo (progresso compartilhado).
+        $pdo->exec(
+            'CREATE TABLE IF NOT EXISTS team_devices ('
+            . 'id ' . $autoIncrement . ', '
+            . 'team_id INT NOT NULL, '
+            . 'device_id VARCHAR(64) NOT NULL, '
+            . 'created_at DATETIME NOT NULL'
+            . ($driver === 'mysql'
+                ? ', UNIQUE KEY uniq_team_device (team_id, device_id), KEY idx_team (team_id)'
+                : '')
+            . ')'
+        );
+
+        if ($driver !== 'mysql') {
+            try {
+                $pdo->exec(
+                    'CREATE UNIQUE INDEX IF NOT EXISTS uniq_team_device ON team_devices (team_id, device_id)'
+                );
+            } catch (PDOException $e) {
+                error_log('Database: indice uniq_team_device: ' . $e->getMessage());
+            }
+        }
+
         // Tentativas no COFRE da gincana (página pública). Controla o
         // bloqueio por tentativas erradas seguidas, por IP.
         $pdo->exec(
