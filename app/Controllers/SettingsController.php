@@ -123,6 +123,8 @@ final class SettingsController
             'environments'       => $environments,
             'teams'     => $teams,
             'treasureOrder' => (string) ($old['treasureOrder'] ?? SettingsRepository::get('treasureOrder', 'estabelecida')),
+            // Lista negra de NOMES (falta o padrão quando vazia, para o admin ver/editar)
+            'nameBlocklist' => (string) ($old['nameBlocklist'] ?? SettingsRepository::get('nameBlocklist', '')),
             'adminUsername' => (string) ($old['adminUsername'] ?? SettingsRepository::get('adminUsername', 'admin')),
         ]);
 
@@ -172,6 +174,8 @@ final class SettingsController
 
         // Jogo: ordem dos tesouros e credenciais do admin da API.
         $treasureOrder = (string) ($body['treasureOrder'] ?? 'estabelecida');
+        // Lista negra de nomes (uma palavra por linha).
+        $nameBlocklist = mb_substr((string) ($body['nameBlocklist'] ?? ''), 0, 20000);
         $adminUsername = strtolower(trim((string) ($body['adminUsername'] ?? '')));
         $adminPassword = (string) ($body['adminPassword'] ?? '');
 
@@ -271,6 +275,7 @@ final class SettingsController
         // Jogo: ordem dos tesouros e credenciais do admin da API.
         // adminPassword em branco mantém a senha atual.
         SettingsRepository::set('treasureOrder', $treasureOrder);
+        SettingsRepository::set('nameBlocklist', $nameBlocklist);
         SettingsRepository::set('adminUsername', $adminUsername);
 
         if ($adminPassword !== '') {

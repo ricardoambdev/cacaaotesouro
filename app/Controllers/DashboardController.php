@@ -8,6 +8,7 @@ use App\Database;
 use App\Repositories\GameRepository;
 use App\Repositories\SettingsRepository;
 use App\Repositories\TeamRepository;
+use App\Services\NameBlocklist;
 use App\View;
 use PDO;
 use Psr\Http\Message\ResponseInterface as Response;
@@ -193,6 +194,68 @@ final class DashboardController
             (string) $team['name'],
             $delta
         ));
+        redirect('/');
+    }
+
+    /**
+     * POST /admin/dispositivo/derrubar — derruba um aparelho conectado.
+     *
+     * Body: { device_id, blacklist ('' | '1') }
+     *
+     * - o aparelho sai da equipe (o nome some do mapa);
+     * - as posições dele são apagadas;
+     * - com blacklist=1, o nome vai para a LISTA NEGRA (ninguém usa de novo).
+     */
+    public function kickDevice(Request $request, Response $response): Response
+    {
+        $pdo = Database::get();
+        $body = (array) $request->getParsedBody();
+
+        $deviceId = trim((string) ($body['device_id'] ?? ''));
+        $blacklist = (string) ($body['blacklist'] ?? '') === '1';
+
+        if ($deviceId === '') {
+            flash_set('error', 'Aparelho não informado.');
+            redirect('/');
+        }
+
+        $stmt = $pdo->prepare(
+            'SELECT team_id, name FROM team_devices WHERE device_id = :device_id LIMIT 1'
+        );
+        $stmt->execute([':device_id' => $deviceId]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if ($row === false) {
+            flash_set('error', 'Aparelho não encontrado (talvez já tenha sido derrubado).');
+            redirect('/');
+        }
+
+        $teamId = (int) $row['team_id'];
+        $name = trim((string) ($row['name'] ?? ''));
+
+        // Derruba: sai da equipe e some do mapa.
+        $pdo->prepare('DELETE FROM team_devices WHERE device_id = :device_id')
+            ->execute([':device_id' => $deviceId]);
+
+        $pdo->prepare('DELETE FROM team_locations WHERE device_id = :device_id')
+            ->execute([':device_id' => $deviceId]);
+
+        if (TeamRepository::deviceCount($teamId) === 0) {
+            TeamRepository::setSessionToken($teamId, null);
+            $pdo->prepare('DELETE FROM team_locations WHERE team_id = :team_id')
+                ->execute([':team_id' => $teamId]);
+        }
+
+        $message = $name !== ''
+            ? 'Aparelho "' . $name . '" derrubado.'
+            : 'Aparelho derrubado.';
+
+        if ($blacklist && $name !== '') {
+            NameBlocklist::addWord($name);
+            $message .= ' O nome "' . $name . '" foi para a lista negra.';
+        }
+
+        flash_set('success', $message);
         redirect('/');
     }
 }

@@ -779,6 +779,14 @@ $colorMap = [
                     '<strong>' + escapeHtmlDash(nome) + '</strong><br>'
                     + 'Equipe: ' + escapeHtmlDash(dev.team || colorName) + '<br>'
                     + '&#x25CF; ONLINE'
+                    + '<div style="margin-top:8px;">'
+                    + '<button type="button" class="btn-kick-device" '
+                    + 'data-device="' + escapeHtmlDash(dev.device_id || '') + '" '
+                    + 'data-name="' + escapeHtmlDash(nome) + '" '
+                    + 'style="width:100%;padding:7px 10px;border:none;border-radius:8px;cursor:pointer;'
+                    + 'background:linear-gradient(135deg,#c0392b,#8e2a20);color:#fff;font-weight:700;font-size:12px;">'
+                    + '&#128683; Derrubar este aparelho</button>'
+                    + '</div>'
                 );
             } else if (teamMarkers[key]) {
                 map.removeLayer(teamMarkers[key]);
@@ -821,5 +829,80 @@ $colorMap = [
     initMap();
     loadPositions();
     setInterval(loadPositions, 5000);
+})();
+</script>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     DERRUBAR APARELHO — form + modal de confirmação
+     ═══════════════════════════════════════════════════════════════ -->
+<form id="kickDeviceForm" method="post" action="/admin/dispositivo/derrubar" style="display:none;">
+    <?= csrf_field() ?>
+    <input type="hidden" name="device_id" id="kickDeviceId" value="">
+    <input type="hidden" name="blacklist" id="kickDeviceBlacklist" value="0">
+</form>
+
+<div id="kickModal" class="sysmodal">
+    <div class="sysmodal-box">
+        <div class="sysmodal-icon"><?= icon('block', 32) ?></div>
+        <div class="sysmodal-msg" id="kickModalMsg">Derrubar este aparelho?</div>
+        <p style="font-size:0.85rem;color:rgba(247,236,212,0.6);line-height:1.6;margin:0 0 18px;text-align:center;">
+            O aparelho sai do jogo e o nome dele <strong>some do mapa</strong>.
+            Você quer também <strong>proibir esse nome</strong> de ser usado de novo?
+        </p>
+        <div class="sysmodal-actions" style="flex-direction:column;gap:8px;">
+            <button type="button" class="sysmodal-btn cancel" data-kick="cancel">Cancelar</button>
+            <button type="button" class="sysmodal-btn confirm" data-kick="plain"
+                    style="background:linear-gradient(135deg,#c0392b,#8e2a20);">
+                Só derrubar
+            </button>
+            <button type="button" class="sysmodal-btn confirm" data-kick="blacklist"
+                    style="background:linear-gradient(135deg,#F97316,#c2410c);">
+                Derrubar + lista negra
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+(function () {
+    'use strict';
+
+    var modal = document.getElementById('kickModal');
+    var msg = document.getElementById('kickModalMsg');
+    var form = document.getElementById('kickDeviceForm');
+    var idInput = document.getElementById('kickDeviceId');
+    var blInput = document.getElementById('kickDeviceBlacklist');
+    var currentName = '';
+
+    /* Abre o modal quando clica em "Derrubar" no pino do mapa */
+    document.addEventListener('click', function (e) {
+        var btn = e.target.closest ? e.target.closest('.btn-kick-device') : null;
+        if (!btn) return;
+
+        var deviceId = btn.getAttribute('data-device') || '';
+        currentName = btn.getAttribute('data-name') || '';
+
+        if (deviceId === '') return;
+
+        idInput.value = deviceId;
+        blInput.value = '0';
+        msg.textContent = 'Derrubar o aparelho de "' + currentName + '"?';
+        modal.classList.add('open');
+    });
+
+    /* Ações do modal */
+    modal.addEventListener('click', function (e) {
+        var action = e.target.getAttribute ? e.target.getAttribute('data-kick') : null;
+        if (!action) return;
+
+        if (action === 'cancel') {
+            modal.classList.remove('open');
+            return;
+        }
+
+        blInput.value = (action === 'blacklist') ? '1' : '0';
+        modal.classList.remove('open');
+        form.submit();
+    });
 })();
 </script>

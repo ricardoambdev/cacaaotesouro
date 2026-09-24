@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../services/name_blocklist.dart';
 import '../theme.dart';
 
 /// Pergunta o nome DESTE aparelho.
@@ -70,6 +71,12 @@ Future<String?> showDeviceNameDialog(
                   if (value == null || value.trim().isEmpty) {
                     return 'Informe o seu nome.';
                   }
+
+                  // Lista negra (palavrões/xingamentos e nomes derrubados).
+                  if (NameBlocklist.isBlocked(value)) {
+                    return 'Esse nome não é permitido. Escolha outro.';
+                  }
+
                   return null;
                 },
               ),

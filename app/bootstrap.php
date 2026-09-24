@@ -156,6 +156,12 @@ $app->post('/limpar/tesouros', [GameController::class, 'createDemoTreasures'])->
 $app->post('/limpar/historia', [GameController::class, 'resetStorySeen'])->add($mw['authRequired']);
 $app->post('/admin/pontos', [DashboardController::class, 'adjustPoints'])->add($mw['authRequired']);
 $app->post('/admin/desclassificar', [DashboardController::class, 'disqualifyTreasure'])->add($mw['authRequired']);
+
+// Derrubar um aparelho conectado (opcionalmente jogando o nome na lista negra).
+$app->post('/admin/dispositivo/derrubar', [DashboardController::class, 'kickDevice'])->add($mw['authRequired']);
+
+// Derrubar aparelho pelo APP do admin.
+$app->post('/api/admin/device/kick', [ApiController::class, 'adminKickDevice']);
 $app->post('/admin/mensagem', [GameController::class, 'broadcastMessage'])->add($mw['authRequired']);
 $app->get('/admin/mensagens', [GameController::class, 'messageHistory'])->add($mw['authRequired']);
 $app->get('/admin/backup', [GameController::class, 'exportBackup'])->add($mw['authRequired']);

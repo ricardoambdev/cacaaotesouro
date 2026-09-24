@@ -481,6 +481,32 @@ $teamBlackPassword  = (string) ($teams['preta']['password']  ?? '');
             </div>
         </div>
 
+        <!-- Card: Lista negra de nomes -->
+        <div class="settings-card">
+            <h2 class="settings-card-title">
+                <?= icon('block', 20) ?>
+                Lista negra de nomes
+            </h2>
+
+            <p class="form-help-text" style="margin-top:0;margin-bottom:14px;">
+                Nomes que <strong>não podem ser usados</strong> no aplicativo (palavrões,
+                xingamentos e apelidos problemáticos). O app bloqueia antes mesmo de enviar.
+                Quando você <strong>derruba um aparelho</strong> no mapa, pode jogar o nome
+                dele aqui automaticamente.
+            </p>
+
+            <div class="form-group">
+                <label for="nameBlocklist">Palavras bloqueadas (uma por linha)</label>
+                <textarea id="nameBlocklist" name="nameBlocklist" class="form-input" rows="10"
+                          placeholder="merda&#10;burro&#10;...(deixe vazio para usar a lista padrão)"><?= e($nameBlocklist ?? '') ?></textarea>
+                <div class="error-inline"></div>
+                <p class="form-help-text">
+                    Deixe <strong>vazio</strong> para usar a lista padrão do sistema
+                    (144 palavras). Também funciona separando por vírgula.
+                </p>
+            </div>
+        </div>
+
     </div><!-- /tab-jogo -->
 
     <div class="settings-actions">

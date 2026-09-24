@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../theme.dart';
 import '../services/api_service.dart';
 import '../services/device_service.dart';
+import '../services/name_blocklist.dart';
 import '../widgets/device_name_dialog.dart';
 import 'admin_screen.dart';
 import 'story_screen.dart';
@@ -114,6 +115,9 @@ class _LoginScreenState extends State<LoginScreen> {
       final savedName = await deviceService.getDeviceName();
       final teamData = await _apiService.teamLogin(username, password,
           deviceName: savedName);
+
+      // Lista negra de nomes (bloqueia palavrões/xingamentos na hora).
+      NameBlocklist.setWords(teamData['name_blacklist'] as List<dynamic>?);
 
       if (!mounted) return;
 

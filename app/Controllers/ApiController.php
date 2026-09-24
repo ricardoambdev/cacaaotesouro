@@ -11,6 +11,7 @@ use App\Repositories\TeamRepository;
 use App\Repositories\TreasureRepository;
 use App\Repositories\UserRepository;
 use App\Repositories\VaultRepository;
+use App\Services\NameBlocklist;
 use DateTime;
 use PDO;
 use Psr\Http\Message\ResponseInterface as Response;
@@ -95,6 +96,11 @@ final class ApiController
         unset($_SESSION['user'], $_SESSION['admin']);
 
         // Registra este aparelho para a equipe (mantém os outros conectados).
+        // Um nome da lista negra é ignorado (o app pede outro em seguida).
+        if ($deviceName !== '' && NameBlocklist::isBlocked($deviceName)) {
+            $deviceName = '';
+        }
+
         TeamRepository::addDevice($teamId, $deviceId, $deviceName);
 
         // Ao entrar o PRIMEIRO aparelho, limpa posições antigas: só quem está
@@ -122,6 +128,8 @@ final class ApiController
             ],
             // Nome já salvo NESTE aparelho ('' = nunca definido; o app pede).
             'device_name' => TeamRepository::deviceName($teamId, $deviceId),
+            // Nomes proibidos: o app bloqueia antes mesmo de enviar.
+            'name_blacklist' => NameBlocklist::words(),
         ]);
     }
 
@@ -1016,6 +1024,15 @@ final class ApiController
             return $this->json($response, [
                 'success' => false,
                 'error'   => 'O nome deve ter no máximo 60 caracteres.',
+            ], 400);
+        }
+
+        // Lista negra: palavrões, xingamentos e nomes que já foram derrubados.
+        if (NameBlocklist::isBlocked($name)) {
+            return $this->json($response, [
+                'success' => false,
+                'blocked' => true,
+                'error'   => 'Esse nome não é permitido. Escolha outro.',
             ], 400);
         }
 
@@ -2172,6 +2189,83 @@ final class ApiController
             'blocked'       => $result['blocked'],
             'blocked_until' => $result['blocked_until'],
             'attempts_left' => $result['attempts_left'],
+        ]);
+    }
+
+    /**
+     * POST /api/admin/device/kick — DERRUBA um aparelho conectado.
+     *
+     * Body: { device_id, add_to_blacklist?: bool }
+     *
+     * - remove o aparelho da equipe (o nome some do mapa);
+     * - apaga as posições daquele aparelho;
+     * - opcionalmente joga o nome na LISTA NEGRA (ninguém usa de novo).
+     */
+    public function adminKickDevice(Request $request, Response $response): Response
+    {
+        if ($this->requireAdmin() === null) {
+            return $this->unauthorized($response);
+        }
+
+        $body = (array) $request->getParsedBody();
+        $deviceId = trim((string) ($body['device_id'] ?? ''));
+        $addToBlacklist = !empty($body['add_to_blacklist']);
+
+        if ($deviceId === '') {
+            return $this->json($response, [
+                'success' => false,
+                'error'   => 'Aparelho não informado.',
+            ], 400);
+        }
+
+        $pdo = Database::get();
+
+        // Descobre a equipe e o nome do aparelho (para a lista negra).
+        $stmt = $pdo->prepare(
+            'SELECT team_id, name FROM team_devices WHERE device_id = :device_id LIMIT 1'
+        );
+        $stmt->execute([':device_id' => $deviceId]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if ($row === false) {
+            return $this->json($response, [
+                'success' => false,
+                'error'   => 'Aparelho não encontrado (talvez já tenha sido derrubado).',
+            ], 404);
+        }
+
+        $teamId = (int) $row['team_id'];
+        $name = trim((string) ($row['name'] ?? ''));
+
+        // Derruba: sai da equipe e some do mapa.
+        $pdo->prepare('DELETE FROM team_devices WHERE device_id = :device_id')
+            ->execute([':device_id' => $deviceId]);
+
+        $pdo->prepare('DELETE FROM team_locations WHERE device_id = :device_id')
+            ->execute([':device_id' => $deviceId]);
+
+        // Se não sobrou nenhum aparelho, limpa o token da equipe.
+        if (TeamRepository::deviceCount($teamId) === 0) {
+            TeamRepository::setSessionToken($teamId, null);
+            $pdo->prepare('DELETE FROM team_locations WHERE team_id = :team_id')
+                ->execute([':team_id' => $teamId]);
+        }
+
+        $blocked = false;
+
+        if ($addToBlacklist && $name !== '') {
+            NameBlocklist::addWord($name);
+            $blocked = true;
+        }
+
+        return $this->json($response, [
+            'success'  => true,
+            'device_id' => $deviceId,
+            'name'     => $name,
+            'blacklisted' => $blocked,
+            'message'  => $blocked
+                ? 'Aparelho derrubado e o nome foi para a lista negra.'
+                : 'Aparelho derrubado.',
         ]);
     }
 

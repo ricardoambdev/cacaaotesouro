@@ -596,6 +596,8 @@ final class Database
             'adminPassword'    => 'admin1234',
             'historyContent'   => '',
             'rulesContent'    => '',
+            // Lista negra de NOMES (uma palavra por linha). Vazio = lista padrão.
+            'nameBlocklist'   => '',
             'storyVersion'     => '0',
             'finalClue'        => '',
             'finalAnswer'      => '',
