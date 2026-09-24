@@ -45,7 +45,7 @@ $hasQr = $qrPath !== '';
 <a href="/tesouros" class="treasure-back-link">← Voltar para tesouros</a>
 <div class="page-header">
     <h1 class="page-title"><?= e($title) ?></h1>
-    <p class="page-subtitle">Defina o código, a descrição, a dica e as duas charadas do tesouro.</p>
+    <p class="page-subtitle">Defina o código, o local do tesouro, a dica e as duas charadas.</p>
 </div>
 
 <?php foreach ($errors as $error): ?>
@@ -80,9 +80,14 @@ $hasQr = $qrPath !== '';
                 </div>
 
                 <div class="form-group">
-                    <label for="description">Descrição *</label>
+                    <label for="description">Local do tesouro *</label>
                     <textarea id="description" name="description" class="form-input" rows="3" required><?= e($value('description')) ?></textarea>
                     <div class="error-inline"></div>
+                    <p class="form-help-text">
+                        Escreva aqui o <strong>local real</strong> (ex.: "Biblioteca, atrás da estante de revistas").
+                        <strong style="color:#22C55E;">Somente o admin vê este campo</strong> — as equipes
+                        <strong>não têm acesso</strong> a ele em nenhum momento (nem no app).
+                    </p>
                 </div>
 
                 <div class="form-group">

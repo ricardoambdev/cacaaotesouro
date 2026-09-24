@@ -401,14 +401,15 @@ class _TreasureEditScreenState extends State<TreasureEditScreen> {
 
             const SizedBox(height: 16),
 
-            // ── Descrição ────────────────────────────────
+            // ── Local do tesouro (só o admin vê) ─────────
             TextFormField(
               controller: _descriptionController,
               style: const TextStyle(color: AppColors.ivory),
               maxLines: 3,
               decoration: const InputDecoration(
-                labelText: 'Descrição',
-                prefixIcon: Icon(Icons.description, size: 20),
+                labelText: 'Local do tesouro',
+                helperText: 'Só o admin vê este campo',
+                prefixIcon: Icon(Icons.place, size: 20),
                 alignLabelWithHint: true,
               ),
             ),

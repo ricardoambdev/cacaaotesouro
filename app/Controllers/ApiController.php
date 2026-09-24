@@ -200,6 +200,9 @@ final class ApiController
                     'id'           => (int) $treasure['id'],
                     'name'         => (string) $treasure['name'],
                     'clue'         => (string) $treasure['clue'],
+                    // ATENÇÃO: o campo `description` guarda o LOCAL REAL do
+                    // tesouro e é EXCLUSIVO DO ADMIN. Ele nunca pode entrar
+                    // aqui (nem em nenhum retorno do app das equipes).
                     'has_location' => $this->hasLocation($treasure),
                     'checked_in'    => false,
                     'selfie_sent'   => false,
@@ -697,6 +700,8 @@ final class ApiController
                         'id'           => (int) $nextTreasure['id'],
                         'name'         => (string) $nextTreasure['name'],
                         'clue'         => (string) $nextTreasure['clue'],
+                        // `description` (local real) é SÓ DO ADMIN — nunca vai
+                        // para o app das equipes.
                         'has_location' => $this->hasLocation($nextTreasure),
                     ];
                 }

@@ -108,7 +108,9 @@ $isRandomOrder = ($game['treasureOrder'] ?? 'estabelecida') === 'aleatorio';
                     </div>
 
                     <p class="treasure-card-desc">
+                        <span style="color:#F97316; font-weight:600;">📍 Local:</span>
                         <?= e((string) ($treasure['description'] ?? '')) ?>
+                        <span style="opacity:.5; font-size:.82em;">(só o admin vê)</span>
                     </p>
 
                     <!-- Team Progress Markers -->
