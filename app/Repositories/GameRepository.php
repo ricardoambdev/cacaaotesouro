@@ -151,7 +151,7 @@ final class GameRepository
      */
     public static function finalBlocked(): bool
     {
-        return (string) \App\Repositories\SettingsRepository::get('finalBlocked', '0') === '1';
+        return (string) \App\Repositories\SettingsRepository::get('finalBlocked', '1') === '1';
     }
 
     public static function finalAvailable(array $team): bool

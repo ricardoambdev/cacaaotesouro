@@ -712,8 +712,9 @@ final class Database
             'finalAnswer'      => '',
             'finalCorrectPoints'=> '100',
             'finalWrongPenalty' => '20',
-            // Bloqueia o Desafio Final (e o cofre) mesmo com tudo encontrado.
-            'finalBlocked'      => '0',
+            // PADRÃO: o Desafio Final começa BLOQUEADO — o cofre só abre e as
+            // equipes só entram no desafio depois que a organização liberar.
+            'finalBlocked'      => '1',
             // Cofre virtual da gincana (página pública /cofre): a equipe
             // encontra o código de 9 dígitos no mundo físico e, ao acertá-lo,
             // o cofre revela a senha do desafio final (finalAnswer).

@@ -87,6 +87,7 @@ $finalWrongPenalty = $finalWrongPenalty ?? '20';
                     <?= icon('info', 13) ?>
                     Pode bloquear a qualquer momento — inclusive <strong>antes</strong> de alguém
                     encontrar o último tesouro, para o desafio já estar bloqueado quando chegarem.
+                    O padrão é <strong>bloqueado</strong>: libere só quando quiser soltar o desafio.
                 </p>
             </div>
 

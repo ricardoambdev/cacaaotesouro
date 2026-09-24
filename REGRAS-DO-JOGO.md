@@ -248,6 +248,8 @@ Se não for possível usar o cofre físico, usa-se o **cofre virtual**.
 Na página **Desafio Final** do painel existe a caixa **"Bloquear o Desafio Final
 (e o Cofre)"**.
 
+- **PADRÃO: BLOQUEADO.** Numa instalação nova o Desafio Final já vem bloqueado —
+  o cofre não abre e as equipes ficam em espera até a organização liberar.
 - **Pode ser usada a qualquer momento**, inclusive **antes** de alguém encontrar
   o último tesouro — assim o desafio já fica bloqueado quando a equipe chegar.
 - **Marcada = bloqueado:** o **Cofre não abre** (mostra *"Estamos aguardando a
