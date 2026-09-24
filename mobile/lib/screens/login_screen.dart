@@ -599,22 +599,6 @@ class _LoginCard extends StatelessWidget {
             ),
 
             const SizedBox(height: 8),
-
-            // O app SEMPRE entra automaticamente depois do primeiro login.
-            // Para trocar de usuário, use o botão "Sair" dentro do app.
-            const Padding(
-              padding: EdgeInsets.only(top: 4),
-              child: Text(
-                'Você entra automaticamente nas próximas vezes.\n'
-                'Para trocar de usuário, use "Sair" dentro do jogo.',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 12,
-                  height: 1.4,
-                  color: AppColors.ivoryMuted,
-                ),
-              ),
-            ),
           ],
         ),
       ),
