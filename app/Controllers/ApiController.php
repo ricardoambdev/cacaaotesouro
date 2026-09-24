@@ -37,7 +37,15 @@ final class ApiController
     private const SELFIE_POINTS = 5;
     /** Pontos por acertar a charada do tesouro. */
     private const ANSWER_POINTS = 20;
-    /** Bônus por responder a charada estando no local (≤30m). */
+    /**
+     * Margem de erro do GPS nos TESOUROS (em metros).
+     *
+     * Vale para o check-in no local e para o bônus de "responder no local".
+     * 100 m dá mais amplitude às buscas.
+     */
+    private const GEO_TOLERANCE_METERS = 100;
+
+    /** Bônus por responder a charada estando no local. */
     private const LOCAL_BONUS_POINTS = 5;
     /** Bônus da PRIMEIRA equipe a encontrar o tesouro. */
     private const FIRST_BONUS_POINTS = 10;
@@ -304,7 +312,8 @@ final class ApiController
      * POST /api/team/checkin
      *
      * Body: { treasure_id, lat, lng, qr_code }
-     * Valida GPS (<= 30 m), QR code e ordem de jogo; assinala a charada.
+     * Valida GPS (margem GEO_TOLERANCE_METERS), QR code e ordem de jogo;
+     * assinala a charada.
      */
     public function teamCheckin(Request $request, Response $response): Response
     {
@@ -376,12 +385,12 @@ final class ApiController
             (float) $treasure['lng']
         );
 
-        if ($distance > 30) {
+        if ($distance > self::GEO_TOLERANCE_METERS) {
             $distanceRounded = (int) round($distance);
 
             return $this->json($response, [
                 'success'    => false,
-                'error'      => 'Você está a ' . $distanceRounded . 'm do local. Aproxime-se (máx 30m).',
+                'error'      => 'Você está a ' . $distanceRounded . 'm do local. Aproxime-se (máx ' . self::GEO_TOLERANCE_METERS . 'm).',
                 'distance_m' => $distanceRounded,
             ], 400);
         }
@@ -628,11 +637,11 @@ final class ApiController
 
         // Resposta correta (trim + case-insensitive).
         if (strcasecmp($answer, $correctAnswer) === 0) {
-            // Bônus: responder a charada NO LOCAL (+5 pontos) — GPS a menos
-            // de 30m do tesouro no momento da resposta.
+            // Bônus: responder a charada NO LOCAL (+5 pontos) — GPS dentro da
+            // margem de erro do tesouro no momento da resposta.
             $localBonus = $answerLat !== null && $answerLng !== null
                 && self::hasLocation($treasure)
-                && haversine_meters($answerLat, $answerLng, self::latOrNull($treasure), self::lngOrNull($treasure)) <= 30;
+                && haversine_meters($answerLat, $answerLng, self::latOrNull($treasure), self::lngOrNull($treasure)) <= self::GEO_TOLERANCE_METERS;
 
             // Bônus: PRIMEIRO a encontrar este tesouro (+10 pontos). Vale a
             // primeira equipe que acertar a charada — checado ANTES de gravar

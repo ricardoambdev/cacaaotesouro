@@ -115,11 +115,14 @@ Quando isso está ligado:
 |---|---|
 | **Acertar a charada** | **+20** |
 | **Selfie no local** | **+5** |
-| **Responder estando no local** (GPS ≤ 30 m no momento da resposta) | **+5** |
+| **Responder estando no local** (GPS dentro da margem de 100 m) | **+5** |
 | **Primeira equipe a encontrar** o tesouro | **+10** |
 | **Acertar o desafio final** | **configurável** (padrão **+100**) |
 | **Errar a charada** | **0** (não perde pontos) |
 | **Errar a senha do desafio final** | **0** (não perde pontos) |
+
+> 📍 **Margem de erro do GPS:** o check-in no tesouro e o bônus de "responder no
+> local" aceitam uma margem de **100 m** — dá mais amplitude à busca.
 
 ### Exemplos de um tesouro
 | Situação | Total ganho |
