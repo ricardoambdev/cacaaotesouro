@@ -272,6 +272,14 @@ $colorMap = [
     gap: 6px;
 }
 
+.db-form-hint {
+    margin-top: 6px;
+    font-size: 0.68rem;
+    line-height: 1.4;
+    color: rgba(247,236,212,0.35);
+}
+.db-form-hint strong { color: rgba(247,236,212,0.6); }
+
 .db-input {
     flex: 1;
     padding: 8px 10px;
@@ -611,8 +619,13 @@ $colorMap = [
                     </div>
 
                     <div class="db-form-row">
-                        <input type="text" name="reason" class="db-input" placeholder="Motivo (opcional)">
+                        <input type="text" name="reason" class="db-input db-reason-input"
+                               placeholder="Motivo (obrigatório)" required maxlength="200"
+                               title="O motivo é obrigatório e será enviado como mensagem para a equipe">
                         <button type="submit" class="db-btn-apply">Aplicar</button>
+                    </div>
+                    <div class="db-form-hint">
+                        O motivo é <strong>obrigatório</strong> e vira uma <strong>mensagem no app da equipe</strong>.
                     </div>
                 </form>
 
@@ -815,8 +828,20 @@ $colorMap = [
     /* ---- QUICK BUTTONS: aplicam os pontos imediatamente ---- */
     document.querySelectorAll('[data-delta-input]').forEach(function (form) {
         var deltaInput = form.querySelector('input[name="delta"]');
+        var reasonInput = form.querySelector('input[name="reason"]');
+
         form.querySelectorAll('[data-delta]').forEach(function (btn) {
             btn.addEventListener('click', function () {
+                // O motivo é obrigatório: sem ele nada é aplicado
+                // (o motivo vira mensagem para a equipe).
+                if (reasonInput && reasonInput.value.trim() === '') {
+                    if (window.showSystemMessage) {
+                        window.showSystemMessage('Informe o motivo do ajuste de pontos.', 'error');
+                    }
+                    reasonInput.focus();
+                    return;
+                }
+
                 var val = this.getAttribute('data-delta');
                 // Remove o '+' (o input type=number pode rejeitar o sinal)
                 deltaInput.value = val.charAt(0) === '+' ? val.slice(1) : val;

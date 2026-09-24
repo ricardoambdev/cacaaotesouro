@@ -102,12 +102,34 @@ final class DashboardController
             redirect('/');
         }
 
+        // O MOTIVO é obrigatório: além de ficar no histórico, vira uma
+        // mensagem para a equipe saber por que ganhou/perdeu pontos.
+        if ($reason === '') {
+            flash_set('error', 'Informe o motivo do ajuste de pontos.');
+            redirect('/');
+        }
+
+        if (mb_strlen($reason) > 200) {
+            flash_set('error', 'O motivo deve ter no máximo 200 caracteres.');
+            redirect('/');
+        }
+
         $newPoints = max(0, (int) $team['points'] + $delta);
         TeamRepository::updateGameState($teamId, ['points' => $newPoints]);
-        GameRepository::logPoints($teamId, $delta, $reason !== '' ? $reason : 'ajuste manual no painel');
+        GameRepository::logPoints($teamId, $delta, $reason);
+
+        // Avisa a equipe pelo app: aparece como mensagem (com título e cor).
+        $notice = sprintf('%s%d pontos: %s', $delta > 0 ? '+' : '', $delta, $reason);
+
+        TeamRepository::addMessage(
+            $teamId,
+            $notice,
+            $delta > 0 ? 'Pontos ganhos' : 'Pontos perdidos',
+            $delta > 0 ? 'success' : 'error'
+        );
 
         flash_set('success', sprintf(
-            '%s: %s%d pontos (novo total: %d).',
+            '%s: %s%d pontos (novo total: %d). A equipe foi avisada no app.',
             (string) $team['name'],
             $delta > 0 ? '+' : '',
             $delta,
