@@ -10,6 +10,7 @@ import '../models/game_state.dart';
 import '../services/api_service.dart';
 import '../services/device_service.dart';
 import '../services/sound_service.dart';
+import '../widgets/device_name_dialog.dart';
 import 'login_screen.dart';
 import 'qr_scanner_screen.dart';
 
@@ -66,6 +67,7 @@ class _TeamHomeScreenState extends State<TeamHomeScreen> {
   @override
   void initState() {
     super.initState();
+    _loadDeviceName();
     _loadState();
   }
 
@@ -666,6 +668,57 @@ class _TeamHomeScreenState extends State<TeamHomeScreen> {
     }
   }
 
+  /// Nome salvo NESTE aparelho (aparece entre parênteses no título).
+  String _deviceName = '';
+
+  /// Nome da equipe (ex.: "Equipe Preta").
+  String get _teamTitle {
+    final name = widget.teamData['name'] as String?;
+
+    return (name != null && name.isNotEmpty) ? name : 'Equipe';
+  }
+
+  /// Abre o modal para editar o nome deste aparelho.
+  Future<void> _editDeviceName() async {
+    final typed = await showDeviceNameDialog(
+      context,
+      initial: _deviceName,
+    );
+
+    if (typed == null || !mounted) return;
+
+    final name = typed.trim();
+
+    if (name.isEmpty || name == _deviceName) return;
+
+    await _deviceService.setDeviceName(name);
+
+    // Salva no servidor (é o que faz o nome aparecer no mapa da organização).
+    try {
+      await _apiService.teamSetName(name);
+    } catch (_) {
+      if (mounted) {
+        _showSnackBar('Nome salvo no aparelho. Sem conexão para enviar agora.',
+            isError: true);
+      }
+    }
+
+    if (!mounted) return;
+
+    setState(() => _deviceName = name);
+
+    _showSnackBar('Nome atualizado: $name', isError: false);
+  }
+
+  /// Carrega o nome salvo neste aparelho.
+  Future<void> _loadDeviceName() async {
+    final name = await _deviceService.getDeviceName();
+
+    if (!mounted || name.isEmpty) return;
+
+    setState(() => _deviceName = name);
+  }
+
   /// Sincronização em tempo real entre os aparelhos da MESMA equipe.
   ///
   /// Quando a assinatura do progresso muda, outro aparelho concluiu um
@@ -825,14 +878,24 @@ class _TeamHomeScreenState extends State<TeamHomeScreen> {
               ),
             ),
             const SizedBox(width: 8),
-            Text(
-              (widget.teamData['name'] as String?)?.isNotEmpty == true
-                  ? (widget.teamData['name'] as String)
-                  : 'Equipe',
-              style: const TextStyle(
-                fontWeight: FontWeight.w700,
-                fontSize: 17,
+            Flexible(
+              child: Text(
+                _deviceName.isEmpty
+                    ? _teamTitle
+                    : '$_teamTitle ($_deviceName)',
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontWeight: FontWeight.w700,
+                  fontSize: 17,
+                ),
               ),
+            ),
+            // Lápis: edita o nome deste aparelho (fora dos parênteses).
+            IconButton(
+              onPressed: _editDeviceName,
+              tooltip: 'Editar o meu nome',
+              visualDensity: VisualDensity.compact,
+              icon: const Icon(Icons.edit, size: 18, color: AppColors.gold),
             ),
           ],
         ),

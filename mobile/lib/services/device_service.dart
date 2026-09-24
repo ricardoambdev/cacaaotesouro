@@ -13,6 +13,10 @@ class DeviceService {
   static const String _keySavedPassword = 'saved_password';
   static const String _keyAutoLogin = 'auto_login';
 
+  /// Nome do aparelho (o que a pessoa digita no primeiro login). Fica salvo
+  /// no dispositivo: não pede de novo.
+  static const String _keyDeviceName = 'device_name';
+
   // ── Singleton ──────────────────────────────────────────────
   static final DeviceService _instance = DeviceService._internal();
   factory DeviceService() => _instance;
@@ -98,6 +102,19 @@ class DeviceService {
   Future<void> setAutoLogin(bool value) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_keyAutoLogin, value);
+  }
+
+  /// Nome salvo NESTE aparelho ('' quando ainda não foi definido).
+  Future<String> getDeviceName() async {
+    final prefs = await SharedPreferences.getInstance();
+
+    return prefs.getString(_keyDeviceName) ?? '';
+  }
+
+  /// Salva o nome deste aparelho (não pede de novo no próximo login).
+  Future<void> setDeviceName(String name) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_keyDeviceName, name.trim());
   }
 
   /// Gera um UUID v4 sem pacotes externos.

@@ -256,7 +256,7 @@ class ApiService {
 
   /// POST /api/team/login
   Future<Map<String, dynamic>> teamLogin(
-      String username, String password) async {
+      String username, String password, {String? deviceName}) async {
     final deviceId = await DeviceService().getDeviceId();
     final response = await http.post(
       Uri.parse('$baseUrl/team/login'),
@@ -268,6 +268,8 @@ class ApiService {
         'username': username,
         'password': password,
         'device_id': deviceId,
+        if (deviceName != null && deviceName.isNotEmpty)
+          'device_name': deviceName,
       }),
     );
 
@@ -275,7 +277,13 @@ class ApiService {
     final body = _parseBody(response);
 
     if (response.statusCode == 200 && body['success'] == true) {
-      return body['team'] as Map<String, dynamic>;
+      final team = Map<String, dynamic>.from(
+          body['team'] as Map<String, dynamic>? ?? {});
+
+      // Nome salvo NESTE aparelho ('' = o app precisa perguntar).
+      team['device_name'] = (body['device_name'] as String?) ?? '';
+
+      return team;
     }
 
     if (response.statusCode == 409 || body['code'] == 'team_busy') {
@@ -922,6 +930,30 @@ class ApiService {
   // ════════════════════════════════════════════════════════════
 
   /// GET /api/team/messages → lista de mensagens não lidas da equipe.
+  /// POST /api/team/name → salva o nome DESTE aparelho no servidor.
+  ///
+  /// O nome é por aparelho: o mapa mostra um marcador para cada celular
+  /// conectado, com o nome e a cor da equipe.
+  Future<void> teamSetName(String name) async {
+    final headers = await _teamHeaders();
+    final response = await http
+        .post(
+          Uri.parse('$baseUrl/team/name'),
+          headers: headers,
+          body: json.encode({'name': name}),
+        )
+        .timeout(requestTimeout);
+
+    _extractCookie(response);
+    _checkUnauthorized(response);
+
+    final body = _parseBody(response);
+
+    if (response.statusCode != 200 || body['success'] != true) {
+      throw ApiException(body['error'] as String? ?? 'Erro ao salvar o nome.');
+    }
+  }
+
   /// GET /api/team/sync → assinatura do progresso da equipe.
   ///
   /// Usado para sincronizar VÁRIOS aparelhos da mesma equipe: quando a

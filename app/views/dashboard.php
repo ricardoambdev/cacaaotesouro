@@ -469,8 +469,12 @@ $colorMap = [
     margin-bottom: 4px;
 }
 .team-pin-name {
-    font-size: 17px;
+    font-size: 15px;
     font-weight: 800;
+    max-width: 150px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 .team-pin-tail {
     position: absolute;
@@ -729,7 +733,7 @@ $colorMap = [
             .then(function (data) {
                 if (!data.success) throw new Error('API error');
                 document.getElementById('db-map-error').style.display = 'none';
-                renderPins(data.teams || []);
+                renderPins(data.devices || [], data.teams || []);
             })
             .catch(function (err) {
                 console.error('[Dashboard] fetch error:', err);
@@ -737,37 +741,45 @@ $colorMap = [
             });
     }
 
-    function renderPins(teams) {
+    /**
+     * Desenha UM marcador por APARELHO conectado (não por equipe): cada
+     * celular tem o seu nome e o pino usa a cor da equipe dele.
+     */
+    function renderPins(devices, teams) {
         var seen = {};
-        teams.forEach(function (team) {
-            var key = (team.color || '').toLowerCase();
+
+        (devices || []).forEach(function (dev, idx) {
+            var key = (dev.color || '').toLowerCase() + '|' + (dev.name || '') + '|' + idx;
+            var colorKey = (dev.color || '').toLowerCase();
             seen[key] = true;
 
-            if (team.online && team.last_location) {
-                var lat = team.last_location.lat;
-                var lng = team.last_location.lng;
-                var colorName = (key === 'laranja') ? 'Laranja' : 'Preta';
+            if (dev.online && dev.lat !== null && dev.lng !== null) {
+                var colorName = (colorKey === 'laranja') ? 'Laranja' : 'Preta';
+                var nome = dev.name || 'Sem nome';
+
                 var icon = L.divIcon({
                     className: 'team-pin-wrap',
-                    html: '<div class="team-pin team-pin-' + key + '">'
-                        + '<span class="team-pin-label">Equipe</span>'
-                        + '<span class="team-pin-name">' + colorName + '</span>'
+                    html: '<div class="team-pin team-pin-' + colorKey + '">'
+                        + '<span class="team-pin-label">' + colorName + '</span>'
+                        + '<span class="team-pin-name">' + escapeHtmlDash(nome) + '</span>'
                         + '<div class="team-pin-tail"></div>'
                         + '</div>',
-                    iconSize: [130, 52],
-                    iconAnchor: [65, 52],
+                    iconSize: [160, 52],
+                    iconAnchor: [80, 52],
                     popupAnchor: [0, -48]
                 });
 
                 if (teamMarkers[key]) {
-                    teamMarkers[key].setLatLng([lat, lng]);
+                    teamMarkers[key].setLatLng([dev.lat, dev.lng]);
                     teamMarkers[key].setIcon(icon);
                 } else {
-                    teamMarkers[key] = L.marker([lat, lng], { icon: icon }).addTo(map);
+                    teamMarkers[key] = L.marker([dev.lat, dev.lng], { icon: icon }).addTo(map);
                 }
+
                 teamMarkers[key].bindPopup(
-                    '<strong>' + (team.name || colorName) + '</strong><br>'
-                    + 'Pontos: ' + (team.points || 0) + '<br>&#x25CF; ONLINE'
+                    '<strong>' + escapeHtmlDash(nome) + '</strong><br>'
+                    + 'Equipe: ' + escapeHtmlDash(dev.team || colorName) + '<br>'
+                    + '&#x25CF; ONLINE'
                 );
             } else if (teamMarkers[key]) {
                 map.removeLayer(teamMarkers[key]);
@@ -775,13 +787,22 @@ $colorMap = [
             }
         });
 
-        /* Remove markers de cores que não existem mais */
+        /* Remove os marcadores de aparelhos que saíram */
         Object.keys(teamMarkers).forEach(function (k) {
             if (!seen[k]) {
                 map.removeLayer(teamMarkers[k]);
                 delete teamMarkers[k];
             }
         });
+    }
+
+    /** Escapa texto que vai para o HTML do pino (nome vem do celular). */
+    function escapeHtmlDash(text) {
+        return String(text)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;');
     }
 
     /* ---- QUICK BUTTONS: aplicam os pontos imediatamente ---- */

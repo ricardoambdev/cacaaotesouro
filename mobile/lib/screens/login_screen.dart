@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../theme.dart';
 import '../services/api_service.dart';
 import '../services/device_service.dart';
+import '../widgets/device_name_dialog.dart';
 import 'admin_screen.dart';
 import 'story_screen.dart';
 import 'team_busy_screen.dart';
@@ -109,7 +110,10 @@ class _LoginScreenState extends State<LoginScreen> {
 
     // ── 2. Tentar login equipe ──────────────────────────
     try {
-      final teamData = await _apiService.teamLogin(username, password);
+      // Reenvia o nome já salvo neste aparelho (se houver).
+      final savedName = await deviceService.getDeviceName();
+      final teamData = await _apiService.teamLogin(username, password,
+          deviceName: savedName);
 
       if (!mounted) return;
 
@@ -120,6 +124,37 @@ class _LoginScreenState extends State<LoginScreen> {
       } else {
         await deviceService.clearCredentials();
       }
+
+      // ── NOME DO APARELHO ────────────────────────────────
+      // Na PRIMEIRA vez o app pergunta o nome (antes do jogo começar) e
+      // guarda no dispositivo: nos próximos logins não pergunta de novo.
+      var deviceName = (teamData['device_name'] as String?) ?? '';
+
+      if (deviceName.isEmpty) {
+        deviceName = await deviceService.getDeviceName();
+
+        if (deviceName.isEmpty) {
+          if (!mounted) return;
+
+          final typed = await showDeviceNameDialog(context, mandatory: true);
+          deviceName = (typed ?? '').trim();
+        }
+      }
+
+      if (deviceName.isNotEmpty) {
+        await deviceService.setDeviceName(deviceName);
+
+        try {
+          await _apiService.teamSetName(deviceName);
+        } catch (_) {
+          // Sem rede: o nome fica salvo localmente e é reenviado no próximo
+          // login (vai junto do /api/team/login).
+        }
+
+        teamData['device_name'] = deviceName;
+      }
+
+      if (!mounted) return;
 
       // Obter estado do jogo (inclui storyVersion e story)
       final state = await _apiService.teamState();
