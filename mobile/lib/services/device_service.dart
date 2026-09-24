@@ -17,6 +17,9 @@ class DeviceService {
   /// no dispositivo: não pede de novo.
   static const String _keyDeviceName = 'device_name';
 
+  /// Já viu a mensagem de boas-vindas neste aparelho?
+  static const String _keyWelcomeSeen = 'welcome_seen';
+
   // ── Singleton ──────────────────────────────────────────────
   static final DeviceService _instance = DeviceService._internal();
   factory DeviceService() => _instance;
@@ -115,6 +118,19 @@ class DeviceService {
   Future<void> setDeviceName(String name) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_keyDeviceName, name.trim());
+  }
+
+  /// Já mostrou as boas-vindas neste aparelho?
+  Future<bool> getWelcomeSeen() async {
+    final prefs = await SharedPreferences.getInstance();
+
+    return prefs.getBool(_keyWelcomeSeen) ?? false;
+  }
+
+  /// Marca que as boas-vindas já foram mostradas.
+  Future<void> setWelcomeSeen() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_keyWelcomeSeen, true);
   }
 
   /// Gera um UUID v4 sem pacotes externos.

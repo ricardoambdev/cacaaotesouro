@@ -44,16 +44,16 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Future<void> _loadSavedCredentials() async {
     final deviceService = DeviceService();
-    final autoLogin = await deviceService.getAutoLogin();
     final credentials = await deviceService.getSavedCredentials();
 
     if (!mounted) return;
 
+    // Auto-login é o PADRÃO do app (o checkbox foi removido).
     setState(() {
-      _autoLogin = autoLogin;
+      _autoLogin = true;
     });
 
-    if (autoLogin && credentials != null) {
+    if (credentials != null) {
       _usuarioController.text = credentials['username']!;
       _senhaController.text = credentials['password']!;
       // Pequeno delay para garantir que a tela foi renderizada
@@ -90,13 +90,9 @@ class _LoginScreenState extends State<LoginScreen> {
 
       if (!mounted) return;
 
-      // Login com sucesso — salvar ou limpar credenciais (igual à equipe)
-      if (_autoLogin) {
-        await deviceService.saveCredentials(username, password);
-        await deviceService.setAutoLogin(true);
-      } else {
-        await deviceService.clearCredentials();
-      }
+      // Login com sucesso — salva sempre (auto-login é o padrão).
+      await deviceService.saveCredentials(username, password);
+      await deviceService.setAutoLogin(true);
 
       Navigator.pushReplacement(
         context,
@@ -122,16 +118,98 @@ class _LoginScreenState extends State<LoginScreen> {
 
       if (!mounted) return;
 
-      // Login com sucesso — salvar ou limpar credenciais
-      if (_autoLogin) {
-        await deviceService.saveCredentials(username, password);
-        await deviceService.setAutoLogin(true);
-      } else {
-        await deviceService.clearCredentials();
+      // Login com sucesso — SEMPRE salva as credenciais: o padrão do app é
+      // entrar automaticamente. Só troca de usuário quem tocar em "Sair".
+      await deviceService.saveCredentials(username, password);
+      await deviceService.setAutoLogin(true);
+
+      // ══════════════════════════════════════════════════════
+      //  PRIMEIRO ACESSO NESTE APARELHO
+      //  1) mensagem de boas-vindas
+      //  2) história aberta (com o modal do nome por cima)
+      // ══════════════════════════════════════════════════════
+      final welcomeSeen = await deviceService.getWelcomeSeen();
+
+      if (!welcomeSeen) {
+        if (!mounted) return;
+
+        await showDialog<void>(
+          context: context,
+          barrierDismissible: false,
+          builder: (ctx) => AlertDialog(
+            backgroundColor: AppColors.navyMedium,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+            ),
+            title: const Row(
+              children: [
+                Icon(Icons.celebration, color: AppColors.gold, size: 26),
+                SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Boas-vindas!',
+                    style: TextStyle(
+                      color: AppColors.gold,
+                      fontWeight: FontWeight.w900,
+                      fontSize: 20,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            content: const Text(
+              'Bem-vindo à Caça ao Tesouro da Gincana 2026 do Colégio Helena!',
+              style: TextStyle(
+                color: AppColors.ivory,
+                fontSize: 16,
+                height: 1.5,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            actions: [
+              ElevatedButton(
+                onPressed: () => Navigator.pop(ctx),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.gold,
+                  foregroundColor: AppColors.navyDark,
+                ),
+                child: const Text(
+                  'OK',
+                  style: TextStyle(fontWeight: FontWeight.w800),
+                ),
+              ),
+            ],
+          ),
+        );
+
+        await deviceService.setWelcomeSeen();
+
+        if (!mounted) return;
+
+        // Abre a HISTÓRIA (é nela que o modal do nome aparece).
+        final firstState = await _apiService.teamState();
+        final savedDeviceName = await deviceService.getDeviceName();
+
+        if (!mounted) return;
+
+        final serverName = (teamData['device_name'] as String?) ?? '';
+
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (_) => StoryScreen(
+              story: firstState.story,
+              teamData: teamData,
+              storyVersion: firstState.storyVersion,
+              askDeviceName:
+                  serverName.isEmpty && savedDeviceName.trim().isEmpty,
+            ),
+          ),
+        );
+        return;
       }
 
       // ── NOME DO APARELHO ────────────────────────────────
-      // Na PRIMEIRA vez o app pergunta o nome (antes do jogo começar) e
       // guarda no dispositivo: nos próximos logins não pergunta de novo.
       var deviceName = (teamData['device_name'] as String?) ?? '';
 
@@ -192,13 +270,9 @@ class _LoginScreenState extends State<LoginScreen> {
     } on TeamBusyException catch (e) {
       if (!mounted) return;
 
-      // Salvar credenciais se auto-login ativo (para a tela de espera usar)
-      if (_autoLogin) {
-        await deviceService.saveCredentials(username, password);
-        await deviceService.setAutoLogin(true);
-      } else {
-        await deviceService.clearCredentials();
-      }
+      // Salva as credenciais (a tela de espera usa para tentar de novo).
+      await deviceService.saveCredentials(username, password);
+      await deviceService.setAutoLogin(true);
 
       // Navegar para tela de espera — NÃO mostrar erro
       Navigator.pushReplacement(
@@ -284,19 +358,10 @@ class _LoginScreenState extends State<LoginScreen> {
                     senhaVisivel: _senhaVisivel,
                     isLoading: _isLoading,
                     errorMessage: _errorMessage,
-                    autoLogin: _autoLogin,
                     onToggleSenha: () {
                       setState(() {
                         _senhaVisivel = !_senhaVisivel;
                       });
-                    },
-                    onToggleAutoLogin: (value) {
-                      setState(() {
-                        _autoLogin = value;
-                      });
-                      if (!value) {
-                        DeviceService().clearCredentials();
-                      }
                     },
                     onEntrar: _onEntrar,
                   ),
@@ -318,9 +383,7 @@ class _LoginCard extends StatelessWidget {
   final bool senhaVisivel;
   final bool isLoading;
   final String? errorMessage;
-  final bool autoLogin;
   final VoidCallback onToggleSenha;
-  final ValueChanged<bool> onToggleAutoLogin;
   final VoidCallback onEntrar;
 
   const _LoginCard({
@@ -330,9 +393,7 @@ class _LoginCard extends StatelessWidget {
     required this.senhaVisivel,
     required this.isLoading,
     required this.errorMessage,
-    required this.autoLogin,
     required this.onToggleSenha,
-    required this.onToggleAutoLogin,
     required this.onEntrar,
   });
 
@@ -539,21 +600,17 @@ class _LoginCard extends StatelessWidget {
 
             const SizedBox(height: 8),
 
-            // ── Checkbox auto-login ─────────────────────
-            CheckboxListTile(
-              value: autoLogin,
-              onChanged: isLoading
-                  ? null
-                  : (value) => onToggleAutoLogin(value ?? false),
-              controlAffinity: ListTileControlAffinity.leading,
-              contentPadding: EdgeInsets.zero,
-              dense: true,
-              activeColor: AppColors.gold,
-              checkColor: AppColors.navyDark,
-              title: const Text(
-                'Salvar e entrar automaticamente',
+            // O app SEMPRE entra automaticamente depois do primeiro login.
+            // Para trocar de usuário, use o botão "Sair" dentro do app.
+            const Padding(
+              padding: EdgeInsets.only(top: 4),
+              child: Text(
+                'Você entra automaticamente nas próximas vezes.\n'
+                'Para trocar de usuário, use "Sair" dentro do jogo.',
+                textAlign: TextAlign.center,
                 style: TextStyle(
-                  fontSize: 13,
+                  fontSize: 12,
+                  height: 1.4,
                   color: AppColors.ivoryMuted,
                 ),
               ),

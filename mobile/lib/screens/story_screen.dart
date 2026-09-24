@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_widget_from_html_core/flutter_widget_from_html_core.dart';
 import '../theme.dart';
+import '../services/api_service.dart';
 import '../services/device_service.dart';
+import '../services/name_blocklist.dart';
+import '../widgets/device_name_dialog.dart';
 import 'team_home_screen.dart';
 
 /// Tela de história — exibida na primeira entrada do jogo.
@@ -10,11 +13,16 @@ class StoryScreen extends StatefulWidget {
   final Map<String, dynamic> teamData;
   final int storyVersion;
 
+  /// Primeiro acesso: abre o modal para digitar o nome DESTE aparelho
+  /// assim que a história aparece.
+  final bool askDeviceName;
+
   const StoryScreen({
     super.key,
     required this.story,
     required this.teamData,
     this.storyVersion = 0,
+    this.askDeviceName = false,
   });
 
   @override
@@ -38,6 +46,58 @@ class _StoryScreenState extends State<StoryScreen>
       curve: Curves.easeInOut,
     );
     _controller.forward();
+
+    // Primeiro acesso: pede o nome deste aparelho já com a história aberta.
+    if (widget.askDeviceName) {
+      Future.delayed(const Duration(milliseconds: 600), _askDeviceName);
+    }
+  }
+
+  /// Pergunta (ou confirma) o nome deste aparelho e salva no servidor.
+  Future<void> _askDeviceName() async {
+    if (!mounted) return;
+
+    final deviceService = DeviceService();
+    final current = await deviceService.getDeviceName();
+
+    if (!mounted) return;
+
+    final typed = await showDeviceNameDialog(
+      context,
+      initial: current,
+      mandatory: current.isEmpty,
+    );
+
+    if (typed == null || !mounted) return;
+
+    final name = typed.trim();
+
+    if (name.isEmpty) return;
+
+    // Nunca deixa passar um nome da lista negra.
+    if (NameBlocklist.isBlocked(name)) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Esse nome não é permitido. Escolha outro.'),
+          backgroundColor: Colors.redAccent,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
+    try {
+      await ApiService().teamSetName(name);
+    } catch (_) {
+      // Sem rede: fica salvo no aparelho e é reenviado no próximo login.
+    }
+
+    await deviceService.setDeviceName(name);
+
+    if (!mounted) return;
+
+    setState(() => widget.teamData['device_name'] = name);
   }
 
   @override
