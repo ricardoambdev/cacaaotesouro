@@ -174,17 +174,6 @@ final class GameController
         /** @var array{id: int, name: string} $user */
         $user = $_SESSION['user'];
 
-        // Gerar um NOVO link secreto do telão (invalida o endereço antigo).
-        if (strtoupper($request->getMethod()) === 'POST') {
-            $body = (array) $request->getParsedBody();
-
-            if ((string) ($body['action'] ?? '') === 'regenerate-telao') {
-                $slug = VaultRepository::generateTelaoSlug();
-                flash_set('success', 'Novo link do telão: /t/' . $slug . ' (o link antigo deixou de funcionar).');
-            }
-
-            redirect('/jogo');
-        }
 
         $teams = array_map(static function (array $team): array {
             return [
@@ -222,7 +211,6 @@ final class GameController
             'game'  => $game,
             // Link SECRETO do telão (aberto numa única máquina, no evento)
             'telaoUrl'  => VaultRepository::telaoUrl(),
-            'telaoSlug' => VaultRepository::telaoSlug(),
         ]);
 
         $response->getBody()->write($this->renderLayout($content, $user, 'jogo'));
@@ -240,38 +228,12 @@ final class GameController
      * é renderizada fora do layout autenticado.
      */
     /**
-     * GET /telao — atalho conveniente para o ADMIN logado.
+     * GET /telao — TELÃO público do evento.
      *
-     * O telão de verdade fica em /t/<sequência secreta>. Este atalho existe
-     * só para não precisar decorar a sequência: quem estiver logado no
-     * painel é redirecionado para lá. Para quem NÃO está logado devolve 404
-     * (as equipes não descobrem o telão por adivinhação).
-     */
-    public function telaoShortcut(Request $request, Response $response): Response
-    {
-        if (!isset($_SESSION['user'])) {
-            return $response->withStatus(404);
-        }
-
-        return $response
-            ->withHeader('Location', '/t/' . VaultRepository::telaoSlug())
-            ->withStatus(302);
-    }
-
-    /**
-     * GET /t/{slug} — TELÃO público (tela do evento), em URL secreta.
-     *
-     * O endereço não é /telao: é uma sequência aleatória, para só a
-     * organização conhecer (é aberto numa única máquina, no telão).
+     * Aberto de qualquer lugar, SEM login: é a tela que fica no projetor.
      */
     public function telao(Request $request, Response $response, array $args = []): Response
     {
-        $slug = (string) ($args['slug'] ?? '');
-
-        if ($slug === '' || !hash_equals(VaultRepository::telaoSlug(), $slug)) {
-            return $response->withStatus(404);
-        }
-
         $html = View::render('telao', [
             'siteName' => (string) app_config('app.name', 'Caça ao Tesouro'),
         ]);
@@ -868,16 +830,12 @@ final class GameController
     }
 
     /**
-     * GET /t/{slug}/qr.svg — QR code (SVG) do link secreto do TELÃO.
+     * GET /telao/qr.svg — QR code (SVG) do link público do telão.
+     *
+     * Serve para abrir a tela do telão rapidinho (celular/tablet também).
      */
     public function telaoQr(Request $request, Response $response, array $args = []): Response
     {
-        $slug = (string) ($args['slug'] ?? '');
-
-        if ($slug === '' || !hash_equals(VaultRepository::telaoSlug(), $slug)) {
-            return $response->withStatus(404);
-        }
-
         $svg = '';
 
         try {

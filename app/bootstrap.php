@@ -173,16 +173,12 @@ $app->post('/jogo', [GameController::class, 'status'])->add($mw['authRequired'])
 // Telão (PÚBLICO — sem authRequired). Página autônoma que consome
 // GET /api/telao; o CSRF global só atinge POST/PUT/DELETE/PATCH,
 // portanto um GET é livre.
-// TELÃO público — URL SECRETA (/t/<slug>), aberto numa única máquina
-// (a tela do evento). O endereço antigo /telao deixa de existir.
-$app->get('/t/{slug}', [GameController::class, 'telao']);
+// TELÃO público — endereço FIXO e PÚBLICO (/telao), sem login: é a tela
+// do evento, aberta no projetor e acessível de qualquer lugar.
+$app->get('/telao', [GameController::class, 'telao']);
 
-// Atalho: admin logado que digitar /telao é levado ao endereço secreto.
-// Quem não está logado recebe 404 (as equipes não acham o telão adivinhando).
-$app->get('/telao', [GameController::class, 'telaoShortcut']);
-
-// QR code (SVG) do link secreto do telão.
-$app->get('/t/{slug}/qr.svg', [GameController::class, 'telaoQr']);
+// QR code (SVG) do link público do telão.
+$app->get('/telao/qr.svg', [GameController::class, 'telaoQr']);
 
 // COFRE virtual da gincana — página PÚBLICA (sem login), em URL SECRETA:
 // /v/<slug>, onde o slug é uma sequência aleatória (não "/cofre").

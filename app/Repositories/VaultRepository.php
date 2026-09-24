@@ -179,37 +179,11 @@ final class VaultRepository
     }
 
     /**
-     * "Slug" secreto da página do TELÃO (a tela do telão fica em /t/<slug>,
-     * não em /telao, para só a organização conhecer o endereço).
+     * URL pública do TELÃO (endereço fixo e público: /telao).
      */
-    public static function telaoSlug(): string
-    {
-        $slug = trim((string) SettingsRepository::get('telaoSlug', ''));
-
-        if ($slug === '' || !preg_match('/^[a-zA-Z0-9]{8,40}$/', $slug)) {
-            $slug = self::generateTelaoSlug();
-        }
-
-        return $slug;
-    }
-
-    public static function generateTelaoSlug(): string
-    {
-        $alphabet = 'abcdefghijkmnpqrstuvwxyz23456789';
-        $slug = '';
-
-        for ($i = 0; $i < 16; $i++) {
-            $slug .= $alphabet[random_int(0, strlen($alphabet) - 1)];
-        }
-
-        SettingsRepository::update(['telaoSlug' => $slug]);
-
-        return $slug;
-    }
-
     public static function telaoUrl(): string
     {
-        return rtrim((string) app_config('app.url', ''), '/') . '/t/' . self::telaoSlug();
+        return rtrim((string) app_config('app.url', ''), '/') . '/telao';
     }
 
     /**
