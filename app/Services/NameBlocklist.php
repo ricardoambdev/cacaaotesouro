@@ -26,31 +26,45 @@ final class NameBlocklist
     public static function defaultWords(): array
     {
         return [
-            // Palavrões (linguagem obscena — não ofende ninguém em particular)
+            // ── Palavrões (linguagem obscena) ──────────────────────
             'caralho', 'porra', 'merda', 'bosta', 'puta', 'putaria', 'puto',
             'foder', 'fuder', 'fodase', 'fodido', 'fudido', 'cacete',
             'krl', 'kct', 'vsf', 'vtnc', 'pqp', 'fdp', 'filhodaputa',
-            'arrombado', 'arrombada', 'cuzao', 'cuzinho', 'cu', 'quenga',
-            'buceta', 'boceta', 'xoxota', 'pepeca', 'pica', 'pau', 'rola',
-            'punheta', 'punhetinha', 'gozar', 'gozada', 'tesao', 'tarado',
-            'punheteiro', 'chupa',
-            // Xingamentos comuns (usados PARA ofender)
+            'arrombado', 'arrombada', 'escroto', 'escrota',
+            // ── Xingamentos ────────────────────────────────────────
             'otario', 'otaria', 'babaca', 'idiota', 'imbecil', 'burro',
-            'burra', 'estupido', 'estupida', 'escroto', 'escrota',
+            'burra', 'estupido', 'estupida', 'retardado', 'retardada',
             'vagabunda', 'vagabundo', 'vadia', 'safada', 'safado',
             'piranha', 'prostituta', 'gp', 'corno', 'corna', 'chifrudo',
-            'nojento', 'nojenta', 'verme', 'lixo', 'escoria',
-            // Ofensas de cunho sexual (usadas como apelido pejorativo)
+            'chifre', 'nojento', 'nojenta', 'verme', 'ratazana', 'lixo',
+            'escoria', 'vagabundagem',
+            // ── Ofensas de cunho sexual ────────────────────────────
             'viado', 'veado', 'bicha', 'boiola', 'traveco', 'sapatao',
-            // Termos impróprios / conteúdo adulto
+            // ── Termos sexuais / conteúdo adulto ───────────────────
+            'buceta', 'boceta', 'xoxota', 'pepeca', 'pinto', 'pica', 'pau',
+            'rola', 'saco', 'cuzao', 'cuzinho', 'cu', 'quenga', 'punheta',
+            'punhetinha', 'punheteiro', 'gozar', 'gozada', 'tesao', 'tarado',
             'sexo', 'sexy', 'nudes', 'porno', 'pornografia', 'orgia',
-            'suruba', 'menage', 'traicao',
-            // Drogas e apostas (incentivo)
+            'suruba', 'menage', 'traicao', 'chupa',
+            // ── Aparência (usado para provocar) ────────────────────
+            'gordo', 'gorda', 'gordao', 'baleia', 'magrelo', 'magrela',
+            'feioso', 'feiosa',
+            // ── Etnia / origem ─────────────────────────────────────
+            'macaco', 'macaca', 'preto', 'preta', 'crioulo', 'crioula',
+            'negao', 'negona', 'neguinho', 'favelado', 'favelada', 'pobre',
+            // ── Deficiência / capacidade ───────────────────────────
+            'aleijado', 'aleijada', 'deficiente', 'mongol', 'mongoloide',
+            'analfabeto', 'analfabeta', 'fracassado', 'fracassada',
+            // ── Ódio / política ────────────────────────────────────
+            'nazista', 'hitler',
+            // ── Religião (usado como xingamento) ───────────────────
+            'demonio', 'satanas', 'capeta', 'diabo', 'feiticeira',
+            // ── Drogas e apostas ───────────────────────────────────
             'maconha', 'cocaina', 'crack', 'droga', 'drogado', 'traficante',
             'maconheiro', 'noia', 'bebida', 'cerveja', 'cachaca', 'bebado',
             'cachaceiro', 'aposta', 'apostar', 'cassino',
-            // Violência / ameaça
-            'suicidio', 'bullying', 'arma',
+            // ── Violência / ameaça ─────────────────────────────────
+            'matar', 'morte', 'suicidio', 'arma', 'bullying',
         ];
     }
 

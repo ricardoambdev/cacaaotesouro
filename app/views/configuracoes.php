@@ -502,7 +502,7 @@ $teamBlackPassword  = (string) ($teams['preta']['password']  ?? '');
                 <div class="error-inline"></div>
                 <p class="form-help-text">
                     Deixe <strong>vazio</strong> para usar a lista padrão do sistema
-                    (102 palavras). Também funciona separando por vírgula.
+                    (147 palavras). Também funciona separando por vírgula.
                 </p>
             </div>
         </div>
