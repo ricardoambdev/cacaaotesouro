@@ -49,6 +49,13 @@ class _TeamHomeScreenState extends State<TeamHomeScreen> {
   // ── Timer de polling de mensagens ──────────────────────
   Timer? _messagesTimer;
 
+  /// Sincronização entre os aparelhos da mesma equipe (5s).
+  Timer? _syncTimer;
+
+  /// Assinatura do progresso vista por último — muda quando OUTRO aparelho
+  /// da equipe completa um tesouro.
+  String? _syncSignature;
+
   // ── Mensagens não lidas ────────────────────────────────
   List<TeamMessage> _unreadMessages = [];
 
@@ -66,6 +73,7 @@ class _TeamHomeScreenState extends State<TeamHomeScreen> {
   void dispose() {
     _locationTimer?.cancel();
     _messagesTimer?.cancel();
+    _syncTimer?.cancel();
     // NUNCA chamar _soundService.dispose() aqui: o SoundService é um
     // singleton e o player seria destruído para o resto da sessão (os sons
     // parariam de tocar). Apenas paramos o que estiver tocando.
@@ -164,6 +172,7 @@ class _TeamHomeScreenState extends State<TeamHomeScreen> {
       });
       _startLocationTracking();
       _startMessagesPolling();
+      _startSyncPolling();
 
       // ── Detectar mensagens NOVAS (id > última vista) ──────
       await _handleNewTeamMessages(state.messages);
@@ -637,6 +646,112 @@ class _TeamHomeScreenState extends State<TeamHomeScreen> {
     } catch (_) {
       // Silencioso — falha de rede não deve bloquear a UI
     }
+
+    // A mudança de progresso foi deste aparelho: registra a assinatura para
+    // o aviso de sincronização não disparar aqui (só nos outros aparelhos).
+    await _rememberSyncSignature();
+  }
+
+  /// Guarda a assinatura atual do progresso (sem avisar).
+  Future<void> _rememberSyncSignature() async {
+    try {
+      final data = await _apiService.teamSync();
+      final signature = (data['signature'] as String?) ?? '';
+
+      if (signature.isNotEmpty && mounted) {
+        _syncSignature = signature;
+      }
+    } catch (_) {
+      // Silencioso
+    }
+  }
+
+  /// Sincronização em tempo real entre os aparelhos da MESMA equipe.
+  ///
+  /// Quando a assinatura do progresso muda, outro aparelho concluiu um
+  /// tesouro: toca a notificação, avisa e recarrega o estado (passando para
+  /// o próximo tesouro automaticamente).
+  Future<void> _checkSync() async {
+    try {
+      final data = await _apiService.teamSync();
+      final signature = (data['signature'] as String?) ?? '';
+
+      if (signature.isEmpty) return;
+
+      // Primeira leitura: só guarda (não avisa).
+      if (_syncSignature == null) {
+        _syncSignature = signature;
+        return;
+      }
+
+      if (signature == _syncSignature) return;
+
+      _syncSignature = signature;
+
+      // Som de notificação — importante para os outros aparelhos perceberem.
+      _soundService.playNotification();
+
+      if (!mounted) return;
+
+      showDialog<void>(
+        context: context,
+        barrierDismissible: true,
+        builder: (ctx) => AlertDialog(
+          backgroundColor: AppColors.navyMedium,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(18),
+          ),
+          title: Row(
+            children: const [
+              Icon(Icons.sync, color: AppColors.gold),
+              SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Tesouro concluído!',
+                  style: TextStyle(
+                    color: AppColors.gold,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 16,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          content: const Text(
+            'Outro aparelho da sua equipe completou um tesouro. '
+            'O app já foi atualizado para o próximo passo!',
+            style: TextStyle(color: AppColors.ivory, height: 1.5),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text(
+                'OK',
+                style: TextStyle(
+                  color: AppColors.gold,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+
+      // Recarrega o estado: avança para o próximo tesouro / desafio final.
+      await _loadState();
+    } catch (_) {
+      // Silencioso — rede não pode atrapalhar o jogo
+    }
+  }
+
+  /// Inicia o polling de sincronização (a cada 5 segundos).
+  void _startSyncPolling() {
+    _syncTimer?.cancel();
+    _syncTimer = Timer.periodic(
+      const Duration(seconds: 5),
+      (_) => _checkSync(),
+    );
+    _checkSync();
   }
 
   // ════════════════════════════════════════════════════════════
@@ -1484,33 +1599,41 @@ class _TeamHomeScreenState extends State<TeamHomeScreen> {
             //  CASO ERRADO → mantém layout original
             // ══════════════════════════════════════════════
             if (!result.correct) ...[
-              // ── Delta (penalização) ──────────────────
-              const SizedBox(height: 12),
-              Builder(
-                builder: (context) {
-                  final perdeu = result.delta != 0 ? result.delta.abs() : 5;
-                  final deltaText = 'perdeu $perdeu pontos';
-                  return Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                    decoration: BoxDecoration(
-                      color: Colors.redAccent.withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: Colors.redAccent.withValues(alpha: 0.4),
-                      ),
+              // ── Erro NÃO tira pontos (sem penalidade) ──
+              // Só mostra o selo de perda se o servidor realmente descontou.
+              if (result.delta < 0) ...[
+                const SizedBox(height: 12),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: Colors.redAccent.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: Colors.redAccent.withValues(alpha: 0.4),
                     ),
-                    child: Text(
-                      deltaText,
-                      style: const TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w800,
-                        color: Colors.redAccent,
-                      ),
+                  ),
+                  child: Text(
+                    'perdeu ${result.delta.abs()} pontos',
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w800,
+                      color: Colors.redAccent,
                     ),
-                  );
-                },
-              ),
+                  ),
+                ),
+              ] else ...[
+                const SizedBox(height: 10),
+                const Text(
+                  'Sem perda de pontos — tente novamente!',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.ivoryMuted,
+                  ),
+                ),
+              ],
 
               // ── Total atualizado ─────────────────────
               const SizedBox(height: 6),

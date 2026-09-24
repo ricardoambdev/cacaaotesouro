@@ -922,6 +922,32 @@ class ApiService {
   // ════════════════════════════════════════════════════════════
 
   /// GET /api/team/messages → lista de mensagens não lidas da equipe.
+  /// GET /api/team/sync → assinatura do progresso da equipe.
+  ///
+  /// Usado para sincronizar VÁRIOS aparelhos da mesma equipe: quando a
+  /// assinatura muda, outro aparelho concluiu um tesouro.
+  Future<Map<String, dynamic>> teamSync() async {
+    final headers = await _teamHeaders();
+    final response = await http
+        .get(
+          Uri.parse('$baseUrl/team/sync'),
+          headers: headers,
+        )
+        .timeout(requestTimeout);
+
+    _extractCookie(response);
+    _checkUnauthorized(response);
+
+    final body = _parseBody(response);
+
+    if (response.statusCode != 200 || body['success'] != true) {
+      throw ApiException(body['error'] as String? ?? 'Erro ao sincronizar.');
+    }
+
+    return body;
+  }
+
+  /// GET /api/team/messages → lista de mensagens não lidas da equipe.
   Future<List<TeamMessage>> teamMessages() async {
     final headers = await _teamHeaders();
     final response = await http.get(
