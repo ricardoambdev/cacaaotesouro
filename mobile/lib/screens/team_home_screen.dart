@@ -796,6 +796,46 @@ class _TeamHomeScreenState extends State<TeamHomeScreen> {
   /// Nome salvo NESTE aparelho (aparece entre parênteses no título).
   String _deviceName = '';
 
+  /// Está atualizando manualmente (tela "Aguardando o Desafio Final").
+  bool _refreshing = false;
+
+  /// Botão "Atualizar" da espera do Desafio Final.
+  Future<void> _refreshManual() async {
+    if (_refreshing) return;
+
+    setState(() => _refreshing = true);
+
+    try {
+      final state = await _apiService.teamState();
+      if (!mounted) return;
+
+      setState(() {
+        _gameState = state;
+
+        // Liberou o Desafio Final? Entra no desafio na hora.
+        if (state.finalAvailable && !state.finalBlocked) {
+          _flowState = TreasureFlowState.finalChallenge;
+        }
+      });
+
+      if (state.finalAvailable && !state.finalBlocked) {
+        _soundService.playNotification();
+
+        if (mounted) {
+          _showSnackBar('O Desafio Final foi liberado! Boa sorte!', isError: false);
+        }
+      }
+    } catch (_) {
+      if (mounted) {
+        _showSnackBar('Não foi possível atualizar. Tente de novo.', isError: true);
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _refreshing = false);
+      }
+    }
+  }
+
   /// Nome da equipe (ex.: "Equipe Preta").
   String get _teamTitle {
     final name = widget.teamData['name'] as String?;
@@ -2089,12 +2129,111 @@ class _TeamHomeScreenState extends State<TeamHomeScreen> {
   }
 
   Widget _buildFinalChallenge() {
+    // Desafio Final bloqueado pela organização: fica aguardando a liberação.
+    if (_gameState?.finalBlocked == true) {
+      return _buildFinalAwaiting();
+    }
+
     // O desafio abre automaticamente quando finalAvailable
     return _FinalAnswerInput(
       clue: _gameState?.finalClue ?? '',
       correctPoints: _gameState?.finalCorrectPoints ?? 100,
       wrongPenalty: _gameState?.finalWrongPenalty ?? 20,
       onSubmit: _submitFinalAnswer,
+    );
+  }
+
+  /// "Aguardando..." — o Desafio Final ainda não foi liberado pela organização.
+  ///
+  /// Tem o botão de atualizar: quando a organização liberar, a equipe entra
+  /// no desafio sem precisar fazer mais nada.
+  Widget _buildFinalAwaiting() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(22),
+              decoration: BoxDecoration(
+                color: AppColors.gold.withValues(alpha: 0.12),
+                shape: BoxShape.circle,
+                border: Border.all(color: AppColors.gold, width: 2),
+              ),
+              child: const Icon(
+                Icons.hourglass_top_rounded,
+                color: AppColors.gold,
+                size: 56,
+              ),
+            ),
+            const SizedBox(height: 28),
+            const Text(
+              'Aguardando...',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: AppColors.gold,
+                fontSize: 28,
+                fontWeight: FontWeight.w900,
+                letterSpacing: 0.5,
+              ),
+            ),
+            const SizedBox(height: 14),
+            const Text(
+              'Estamos aguardando a liberação do Desafio Final.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: AppColors.ivory,
+                fontSize: 17,
+                height: 1.5,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Toque em atualizar quando a organização avisar.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: AppColors.ivory.withValues(alpha: 0.6),
+                fontSize: 13,
+                height: 1.4,
+              ),
+            ),
+            const SizedBox(height: 32),
+            ElevatedButton.icon(
+              onPressed: _refreshing ? null : _refreshManual,
+              icon: _refreshing
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: AppColors.navyDark,
+                      ),
+                    )
+                  : const Icon(Icons.refresh_rounded, size: 22),
+              label: Text(
+                _refreshing ? 'Atualizando...' : 'Atualizar',
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.gold,
+                foregroundColor: AppColors.navyDark,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 32,
+                  vertical: 16,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 

@@ -295,11 +295,14 @@ final class ApiController
             'final_wrong_penalty'  => 0,
             'current_treasure'=> $currentTreasure,
             'final_available' => $finalAvailable,
+            // Bloqueio do Desafio Final pela organização: o app fica em espera.
+            'final_blocked'   => GameRepository::finalBlocked(),
             'leaderboard'     => $leaderboard,
             'messages'        => self::teamMessages($teamId),
         ];
 
-        if ($finalAvailable) {
+        // A dica só é enviada quando o desafio está liberado de verdade.
+        if ($finalAvailable && !GameRepository::finalBlocked()) {
             $data['final_clue'] = (string) SettingsRepository::get('finalClue', '');
             $data['final_correct_points'] = (int) SettingsRepository::get('finalCorrectPoints', '100');
             // Errar o desafio final NÃO tira pontos (a penalidade foi removida).
@@ -2145,6 +2148,8 @@ final class ApiController
             'blocked_until'  => $blockedUntil,
             'attempts_left'  => max(0, $maxAttempts - $state['wrong_streak']),
             'max_attempts'   => $maxAttempts,
+            // Desafio Final bloqueado pela organização: o cofre não abre.
+            'final_blocked'  => GameRepository::finalBlocked(),
             // Regra de localização
             'has_coordinate' => $coordinate !== null,
             'in_range'       => $range['ok'],
@@ -2179,6 +2184,16 @@ final class ApiController
 
         $body = (array) $request->getParsedBody();
         $code = preg_replace('/\D/', '', (string) ($body['code'] ?? ''));
+
+        // ── Desafio Final bloqueado: o cofre só libera depois que a
+        //    organização desbloquear no painel. ──
+        if (GameRepository::finalBlocked()) {
+            return $this->json($response, [
+                'success'       => false,
+                'final_blocked' => true,
+                'error'         => 'Estamos aguardando a liberação do Desafio Final.',
+            ], 423);
+        }
 
         // ── Regra de LOCALIZAÇÃO: o cofre só abre perto da coordenada ──
         $lat = isset($body['lat']) && is_numeric($body['lat']) ? (float) $body['lat'] : null;

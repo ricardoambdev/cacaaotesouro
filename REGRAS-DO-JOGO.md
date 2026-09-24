@@ -241,6 +241,21 @@ Se não for possível usar o cofre físico, usa-se o **cofre virtual**.
 - Enquanto o desafio está aberto, toca uma **música de fundo** e, ao acertar,
   toca a **risada** comemorativa.
 
+### 10.1 Bloquear / liberar o Desafio Final (e o Cofre)
+
+Na página **Desafio Final** do painel existe a caixa **"Bloquear o Desafio Final
+(e o Cofre)"**.
+
+- **Só aparece depois que pelo menos um tesouro for encontrado.** Antes disso, a
+  página mostra *"Bloqueio do Desafio Final indisponível"* — a caça precisa ter
+  começado para a organização poder bloquear/liberar.
+- **Marcada = bloqueado:** o **Cofre não abre** (mostra *"Estamos aguardando a
+  liberação do Desafio Final"*) e o app, mesmo com todos os tesouros feitos,
+  mostra a tela **"Aguardando..."** com a mensagem *"Estamos aguardando a
+  liberação do Desafio Final."* e o botão **Atualizar**.
+- **Desmarcada = liberado:** tudo volta ao normal — o app entra no desafio na
+  hora em que a equipe toca **Atualizar**.
+
 ---
 
 ## 11. 📺 Telão

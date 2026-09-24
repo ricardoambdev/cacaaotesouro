@@ -967,6 +967,18 @@ $appUrl = $appUrl ?? '';
     </div>
 
     <!-- ============================================================
+         AGUARDANDO O DESAFIO FINAL
+         ============================================================ -->
+    <div class="blocked-banner" id="final-await-banner">
+        <div class="blocked-icon">⏳</div>
+        <div class="blocked-title">Aguardando o Desafio Final</div>
+        <div class="blocked-hint">
+            Estamos aguardando a liberação do Desafio Final.<br>
+            Assim que a organização liberar, o cofre abrirá automaticamente.
+        </div>
+    </div>
+
+    <!-- ============================================================
          NOT CONFIGURED
          ============================================================ -->
     <div class="not-configured" id="not-configured">
@@ -1080,6 +1092,7 @@ $appUrl = $appUrl ?? '';
         var safeInteriorValue = document.getElementById('safe-interior-value');
         var blockedBanner = document.getElementById('blocked-banner');
         var blockedCountdown = document.getElementById('blocked-countdown');
+        var finalAwaitBanner = document.getElementById('final-await-banner');
         var notConfigured = document.getElementById('not-configured');
         var confirmOverlay = document.getElementById('confirm-overlay');
         var confirmCancel = document.getElementById('confirm-cancel');
@@ -1100,6 +1113,7 @@ $appUrl = $appUrl ?? '';
         var isSubmitting = false;
         var blockedUntilTs = null;  /* timestamp of block end */
         var countdownTimer = null;
+        var finalAwaitTimer = null;
 
         /* Geofence state */
         var userLat = null;
@@ -1300,6 +1314,14 @@ $appUrl = $appUrl ?? '';
                         return;
                     }
 
+                    /* Desafio Final bloqueado: o cofre não abre ainda */
+                    if (data.final_blocked) {
+                        showFinalAwait();
+                        return;
+                    }
+
+                    hideFinalAwait();
+
                     /* Store whether vault has coordinates */
                     hasCoordinate = data.has_coordinate;
 
@@ -1347,8 +1369,40 @@ $appUrl = $appUrl ?? '';
             digitArea.style.display = '';
             submitBtn.style.display = '';
             blockedBanner.classList.remove('visible');
+            hideFinalAwait();
             hideAllGeofence();
             updateSubmitState();
+        }
+
+        /**
+         * O Desafio Final está bloqueado pela organização: o cofre fica em
+         * espera e avisa que aguarda a liberação. Fica verificando sozinho
+         * e abre assim que for liberado.
+         */
+        function showFinalAwait() {
+            finalAwaitBanner.classList.add('visible');
+            digitArea.style.display = 'none';
+            submitBtn.style.display = 'none';
+            notConfigured.classList.remove('visible');
+            blockedBanner.classList.remove('visible');
+            statusMsg.textContent = '';
+            attemptsMsg.textContent = '';
+            hideAllGeofence();
+            hideBlocked();
+
+            if (!finalAwaitTimer) {
+                finalAwaitTimer = setInterval(function () {
+                    loadStatus();
+                }, 10000);
+            }
+        }
+
+        function hideFinalAwait() {
+            finalAwaitBanner.classList.remove('visible');
+            if (finalAwaitTimer) {
+                clearInterval(finalAwaitTimer);
+                finalAwaitTimer = null;
+            }
         }
 
         function showBlocked(blockedUntil) {
@@ -1360,6 +1414,7 @@ $appUrl = $appUrl ?? '';
             digitArea.style.display = 'none';
             submitBtn.style.display = 'none';
             notConfigured.classList.remove('visible');
+            hideFinalAwait();
             statusMsg.textContent = '';
             attemptsMsg.textContent = '';
             hideAllGeofence();
@@ -1486,6 +1541,13 @@ $appUrl = $appUrl ?? '';
                         showGeofenceNoLocation();
                     }
                     showToast(data.error || 'Você precisa estar no local do cofre.', 'error');
+                    return;
+                }
+
+                /* final_blocked = Desafio Final ainda não liberado */
+                if (data.final_blocked) {
+                    showFinalAwait();
+                    showToast('Estamos aguardando a liberação do Desafio Final.', 'error');
                     return;
                 }
 

@@ -88,6 +88,8 @@ class GameState {
   final String rules;
   final GameTreasure? currentTreasure;
   final bool finalAvailable;
+  /// Desafio Final bloqueado pela organização (aguarda liberação).
+  final bool finalBlocked;
   final String finalClue;
   final int finalCorrectPoints;
   final int finalWrongPenalty;
@@ -106,6 +108,7 @@ class GameState {
     this.rules = '',
     this.currentTreasure,
     required this.finalAvailable,
+    this.finalBlocked = false,
     required this.finalClue,
     this.finalCorrectPoints = 100,
     this.finalWrongPenalty = 20,
@@ -148,6 +151,7 @@ class GameState {
           ? GameTreasure.fromJson(currentTreasureData)
           : null,
       finalAvailable: json['final_available'] == true,
+      finalBlocked: json['final_blocked'] == true,
       finalClue: (json['final_clue'] as String?) ?? '',
       finalCorrectPoints: (json['final_correct_points'] as num?)?.toInt() ?? 100,
       finalWrongPenalty: (json['final_wrong_penalty'] as num?)?.toInt() ?? 20,
@@ -255,6 +259,8 @@ class AnswerResult {
   final List<BreakdownItem> breakdown;
   final GameTreasure? nextTreasure;
   final bool finalAvailable;
+  /// Desafio Final bloqueado pela organização (aguarda liberação).
+  final bool finalBlocked;
   final int attempts;
 
   const AnswerResult({
@@ -266,6 +272,7 @@ class AnswerResult {
     this.breakdown = const [],
     this.nextTreasure,
     required this.finalAvailable,
+    this.finalBlocked = false,
     required this.attempts,
   });
 
@@ -290,6 +297,7 @@ class AnswerResult {
       breakdown: breakdownList,
       nextTreasure: treasureData != null ? GameTreasure.fromJson(treasureData) : null,
       finalAvailable: nextData?['final_available'] == true,
+      finalBlocked: nextData?['final_blocked'] == true,
       attempts: (json['attempts'] as num?)?.toInt() ?? 1,
     );
   }
