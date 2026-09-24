@@ -50,8 +50,11 @@ final class TeamRepository
     /**
      * Registra um aparelho para a equipe (a mesma equipe pode ter VÁRIOS
      * aparelhos conectados ao mesmo tempo).
+     *
+     * @param string $name Nome do aparelho/pessoa (ex.: "Ricardo"). Vazio
+     *                     mantém o nome que já estava salvo.
      */
-    public static function addDevice(int $teamId, string $deviceId): void
+    public static function addDevice(int $teamId, string $deviceId, string $name = ''): void
     {
         // Compatibilidade: guarda também o último token em `teams`.
         self::setSessionToken($teamId, $deviceId);
@@ -60,17 +63,27 @@ final class TeamRepository
         $driver = app_config('db.driver', 'sqlite');
         $now = date('Y-m-d H:i:s');
 
+        // Nome vazio = mantém o que já estava salvo neste aparelho.
+        // (Resolvido aqui porque o mesmo parâmetro não pode ser usado duas
+        //  vezes na query com prepared statements nativos.)
+        $existing = self::deviceName($teamId, $deviceId);
+        $finalName = trim($name) !== ''
+            ? mb_substr(trim($name), 0, 60)
+            : $existing;
+
         if ($driver === 'mysql') {
             $stmt = $pdo->prepare(
-                'INSERT INTO team_devices (team_id, device_id, created_at) '
-                . 'VALUES (:team_id, :device_id, :created_at) '
-                . 'ON DUPLICATE KEY UPDATE created_at = :created_at_u'
+                'INSERT INTO team_devices (team_id, device_id, name, created_at) '
+                . 'VALUES (:team_id, :device_id, :name, :created_at) '
+                . 'ON DUPLICATE KEY UPDATE name = :name_u, created_at = :created_at_u'
             );
 
             $stmt->execute([
                 ':team_id'      => $teamId,
                 ':device_id'    => $deviceId,
+                ':name'         => $finalName,
                 ':created_at'   => $now,
+                ':name_u'       => $finalName,
                 ':created_at_u' => $now,
             ]);
 
@@ -78,16 +91,78 @@ final class TeamRepository
         }
 
         $stmt = $pdo->prepare(
-            'INSERT INTO team_devices (team_id, device_id, created_at) '
-            . 'VALUES (:team_id, :device_id, :created_at) '
-            . 'ON CONFLICT(team_id, device_id) DO UPDATE SET created_at = :created_at_u'
+            'INSERT INTO team_devices (team_id, device_id, name, created_at) '
+            . 'VALUES (:team_id, :device_id, :name, :created_at) '
+            . 'ON CONFLICT(team_id, device_id) DO UPDATE SET '
+            . 'name = :name_u, created_at = :created_at_u'
         );
 
         $stmt->execute([
             ':team_id'      => $teamId,
             ':device_id'    => $deviceId,
+            ':name'         => $finalName,
             ':created_at'   => $now,
+            ':name_u'       => $finalName,
             ':created_at_u' => $now,
+        ]);
+    }
+
+    /**
+     * Aparelhos conectados da equipe (com o nome de cada um).
+     *
+     * @return array<int, array{device_id: string, name: string, created_at: string}>
+     */
+    public static function devices(int $teamId): array
+    {
+        $stmt = Database::get()->prepare(
+            'SELECT device_id, name, created_at FROM team_devices '
+            . 'WHERE team_id = :team_id ORDER BY id ASC'
+        );
+        $stmt->execute([':team_id' => $teamId]);
+
+        return array_map(static function (array $row): array {
+            return [
+                'device_id'  => (string) $row['device_id'],
+                'name'       => (string) ($row['name'] ?? ''),
+                'created_at' => (string) ($row['created_at'] ?? ''),
+            ];
+        }, $stmt->fetchAll(PDO::FETCH_ASSOC));
+    }
+
+    /**
+     * Nome salvo para um aparelho da equipe ('' quando ainda não definido).
+     */
+    public static function deviceName(int $teamId, string $deviceId): string
+    {
+        $stmt = Database::get()->prepare(
+            'SELECT name FROM team_devices WHERE team_id = :team_id AND device_id = :device_id'
+        );
+        $stmt->execute([':team_id' => $teamId, ':device_id' => $deviceId]);
+
+        return (string) ($stmt->fetchColumn() ?: '');
+    }
+
+    /**
+     * Define/atualiza o nome de um aparelho da equipe.
+     *
+     * O nome é do DISPOSITIVO: cada celular da equipe tem o seu (o mapa
+     * mostra um marcador por aparelho, com o nome e a cor da equipe).
+     */
+    public static function setDeviceName(int $teamId, string $deviceId, string $name): void
+    {
+        $pdo = Database::get();
+
+        // Garante a linha do aparelho (caso ainda não exista).
+        self::addDevice($teamId, $deviceId);
+
+        $stmt = $pdo->prepare(
+            'UPDATE team_devices SET name = :name '
+            . 'WHERE team_id = :team_id AND device_id = :device_id'
+        );
+        $stmt->execute([
+            ':name'      => mb_substr(trim($name), 0, 60),
+            ':team_id'   => $teamId,
+            ':device_id' => $deviceId,
         ]);
     }
 

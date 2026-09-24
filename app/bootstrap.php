@@ -211,6 +211,9 @@ $app->get('/api/team/messages', [ApiController::class, 'teamMessagesList']);
 $app->get('/api/team/sync', [ApiController::class, 'teamSync']);
 $app->post('/api/team/location', [ApiController::class, 'teamLocation']);
 
+// Nome do aparelho (cada celular da equipe tem o seu — aparece no mapa).
+$app->post('/api/team/name', [ApiController::class, 'teamSetName']);
+
 // Públicas
 $app->get('/api', [ApiController::class, 'index']);
 $app->get('/api/story', [ApiController::class, 'story']);

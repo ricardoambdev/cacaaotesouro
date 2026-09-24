@@ -234,11 +234,14 @@ final class Database
             . 'lat DECIMAL(10,7) NOT NULL, '
             . 'lng DECIMAL(10,7) NOT NULL, '
             . 'accuracy DECIMAL(10,2) NULL, '
+            . 'device_id VARCHAR(64) NOT NULL DEFAULT \'\', '
             . 'created_at DATETIME NOT NULL'
             . ')'
         );
 
         self::ensureTeamLocationsIndex($pdo, $driver);
+        self::ensureSimpleColumn($pdo, $driver, 'team_locations', 'device_id', 'VARCHAR(64) NOT NULL DEFAULT \'\'');
+        self::ensureSimpleColumn($pdo, $driver, 'team_devices', 'name', 'VARCHAR(60) NOT NULL DEFAULT \'\'');
 
         // Mensagens do admin para as equipes (lidas pelo app no /api/team/state).
         $pdo->exec(
@@ -470,6 +473,61 @@ final class Database
      * Usada por: `title` (título exibido no app) e `kind`
      * ('info' | 'success' | 'error' — define a cor do aviso no app).
      */
+    /**
+     * Garante uma coluna QUALQUER em uma tabela (migração idempotente).
+     *
+     * Nome de tabela/coluna vêm sempre do código (nunca do usuário), então é
+     * seguro interpolar. A definição também é fixa.
+     */
+    private static function ensureSimpleColumn(
+        PDO $pdo,
+        string $driver,
+        string $table,
+        string $column,
+        string $definition
+    ): void {
+        $allowed = [
+            'team_locations.device_id' => 'VARCHAR(64) NOT NULL DEFAULT \'\'',
+            'team_devices.name'        => 'VARCHAR(60) NOT NULL DEFAULT \'\'',
+        ];
+
+        if (($allowed[$table . '.' . $column] ?? null) !== $definition) {
+            return;
+        }
+
+        try {
+            if ($driver === 'sqlite') {
+                $found = false;
+
+                foreach ($pdo->query('PRAGMA table_info(' . $table . ')') as $row) {
+                    if (strtolower((string) $row['name']) === $column) {
+                        $found = true;
+                        break;
+                    }
+                }
+
+                if (!$found) {
+                    $pdo->exec('ALTER TABLE ' . $table . ' ADD COLUMN ' . $column . ' ' . $definition);
+                }
+
+                return;
+            }
+
+            $stmt = $pdo->prepare(
+                'SELECT COUNT(*) FROM information_schema.columns '
+                . 'WHERE table_schema = DATABASE() AND table_name = :table '
+                . 'AND column_name = :column'
+            );
+            $stmt->execute([':table' => $table, ':column' => $column]);
+
+            if ((int) $stmt->fetchColumn() === 0) {
+                $pdo->exec('ALTER TABLE ' . $table . ' ADD COLUMN ' . $column . ' ' . $definition);
+            }
+        } catch (PDOException $e) {
+            error_log('Database::ensureSimpleColumn(' . $table . '.' . $column . '): ' . $e->getMessage());
+        }
+    }
+
     private static function ensureMessageColumn(PDO $pdo, string $driver, string $column, string $definition): void
     {
         // Coluna e definição são fixas (whitelist) — não vêm do usuário.

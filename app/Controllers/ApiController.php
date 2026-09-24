@@ -60,6 +60,9 @@ final class ApiController
         $username = strtolower(trim((string) ($body['username'] ?? '')));
         $password = (string) ($body['password'] ?? '');
         $deviceId = trim((string) ($body['device_id'] ?? ''));
+        // Nome do aparelho/pessoa (opcional): o mapa mostra um marcador por
+        // aparelho, com o nome e a cor da equipe.
+        $deviceName = trim((string) ($body['device_name'] ?? ''));
 
         $team = ($username !== '' && $password !== '')
             ? TeamRepository::findByUsername($username)
@@ -92,7 +95,7 @@ final class ApiController
         unset($_SESSION['user'], $_SESSION['admin']);
 
         // Registra este aparelho para a equipe (mantém os outros conectados).
-        TeamRepository::addDevice($teamId, $deviceId);
+        TeamRepository::addDevice($teamId, $deviceId, $deviceName);
 
         // Ao entrar o PRIMEIRO aparelho, limpa posições antigas: só quem está
         // ativo agora aparece no mapa do painel.
@@ -117,6 +120,8 @@ final class ApiController
                 'username' => (string) $team['username'],
                 'points'   => (int) $team['points'],
             ],
+            // Nome já salvo NESTE aparelho ('' = nunca definido; o app pede).
+            'device_name' => TeamRepository::deviceName($teamId, $deviceId),
         ]);
     }
 
@@ -981,6 +986,48 @@ final class ApiController
     }
 
     /**
+     * POST /api/team/name — define/edita o nome DESTE aparelho.
+     *
+     * Body: { name: "Ricardo" }
+     *
+     * O nome é por aparelho: o mapa mostra um marcador para cada celular
+     * conectado, com o nome e a cor da equipe.
+     */
+    public function teamSetName(Request $request, Response $response): Response
+    {
+        $team = $this->requireTeam($request);
+
+        if ($team === null) {
+            return $this->unauthorized($response);
+        }
+
+        $deviceId = trim($request->getHeaderLine('X-Device-Id'));
+        $body = (array) $request->getParsedBody();
+        $name = trim((string) ($body['name'] ?? ''));
+
+        if ($name === '') {
+            return $this->json($response, [
+                'success' => false,
+                'error'   => 'Informe o nome.',
+            ], 400);
+        }
+
+        if (mb_strlen($name) > 60) {
+            return $this->json($response, [
+                'success' => false,
+                'error'   => 'O nome deve ter no máximo 60 caracteres.',
+            ], 400);
+        }
+
+        TeamRepository::setDeviceName((int) $team['id'], $deviceId, $name);
+
+        return $this->json($response, [
+            'success' => true,
+            'name'    => $name,
+        ]);
+    }
+
+    /**
      * POST /api/team/location
      *
      * Body: { lat, lng, accuracy? }
@@ -1019,14 +1066,16 @@ final class ApiController
         }
 
         $stmt = Database::get()->prepare(
-            'INSERT INTO team_locations (team_id, lat, lng, accuracy, created_at) '
-            . 'VALUES (:team_id, :lat, :lng, :accuracy, :created_at)'
+            'INSERT INTO team_locations (team_id, lat, lng, accuracy, device_id, created_at) '
+            . 'VALUES (:team_id, :lat, :lng, :accuracy, :device_id, :created_at)'
         );
         $stmt->execute([
             ':team_id'    => (int) $team['id'],
             ':lat'        => $lat,
             ':lng'        => $lng,
             ':accuracy'   => is_numeric($accuracy) ? (float) $accuracy : null,
+            // Aparelho que enviou: o mapa mostra um marcador por aparelho.
+            ':device_id'  => trim($request->getHeaderLine('X-Device-Id')),
             ':created_at' => date('Y-m-d H:i:s'),
         ]);
 
@@ -1076,6 +1125,10 @@ final class ApiController
             ];
         }
 
+        // APARELHOS conectados: o mapa mostra UM marcador por celular, com o
+        // nome que a pessoa colocou no aparelho e a cor da equipe.
+        $devices = self::teamDevicesWithLocation();
+
         // Mapa treasure_id => cores que já encontraram (found_at != null).
         $found = [];
 
@@ -1115,9 +1168,73 @@ final class ApiController
         return $this->json($response, [
             'success'   => true,
             'teams'     => $teams,
+            // Um item por APARELHO conectado (nome + cor da equipe + posição).
+            'devices'   => $devices,
             'treasures' => $treasures,
             'selfies'   => self::recentSelfies(6),
         ]);
+    }
+
+    /**
+     * Aparelhos conectados com a última posição de cada um.
+     *
+     * Usado pelo telão/painel: o mapa mostra um marcador por celular, com o
+     * nome que a pessoa colocou no aparelho e a cor da equipe.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    private static function teamDevicesWithLocation(): array
+    {
+        $teams = TeamRepository::all();
+
+        // Última posição de cada aparelho (correlaciona pelo maior id).
+        $rows = Database::get()->query(
+            'SELECT l.team_id, l.device_id, l.lat, l.lng, l.created_at '
+            . 'FROM team_locations l '
+            . 'JOIN (SELECT device_id, MAX(id) AS max_id FROM team_locations '
+            . '      WHERE device_id <> \'\' GROUP BY device_id) ult ON ult.max_id = l.id'
+        )->fetchAll(PDO::FETCH_ASSOC);
+
+        $lastByDevice = [];
+
+        foreach ($rows as $row) {
+            $lastByDevice[(string) $row['device_id']] = [
+                'lat'        => (float) $row['lat'],
+                'lng'        => (float) $row['lng'],
+                'updated_at' => (string) $row['created_at'],
+            ];
+        }
+
+        $devices = [];
+
+        foreach ($teams as $team) {
+            $teamId = (int) $team['id'];
+
+            foreach (TeamRepository::devices($teamId) as $device) {
+                $deviceId = $device['device_id'];
+                $last = $lastByDevice[$deviceId] ?? null;
+
+                // Online = enviou posição nos últimos 30s (o app envia a cada 5s).
+                $online = false;
+
+                if ($last !== null && $last['updated_at'] !== '') {
+                    $online = (strtotime($last['updated_at']) + 30) >= time();
+                }
+
+                $devices[] = [
+                    'team_id'  => $teamId,
+                    'color'    => (string) $team['color'],
+                    'team'     => (string) $team['name'],
+                    'name'     => $device['name'] !== '' ? $device['name'] : 'Sem nome',
+                    'lat'      => $last['lat'] ?? null,
+                    'lng'      => $last['lng'] ?? null,
+                    'online'   => $online,
+                    'updated_at' => $last['updated_at'] ?? null,
+                ];
+            }
+        }
+
+        return $devices;
     }
 
     /**
