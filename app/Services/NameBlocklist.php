@@ -26,36 +26,31 @@ final class NameBlocklist
     public static function defaultWords(): array
     {
         return [
-            // Palavrões / xingamentos (PT-BR)
+            // Palavrões (linguagem obscena — não ofende ninguém em particular)
             'caralho', 'porra', 'merda', 'bosta', 'puta', 'putaria', 'puto',
-            'foder', 'fuder', 'fodase', 'fodase', 'fodido', 'fudido',
-            'cacete', 'krl', 'kct', 'vsf', 'vtnc', 'pqp', 'fdp', 'filhodaputa',
-            'arrombado', 'arrombada', 'otario', 'otaria', 'babaca', 'idiota',
-            'imbecil', 'burro', 'burra', 'estupido', 'estupida', 'retardado',
-            'viado', 'veado', 'bicha', 'boiola', 'traveco', 'sapatao',
-            'corno', 'corna', 'chifrudo', 'vagabunda', 'vagabundo', 'vadia',
-            'safada', 'safado', 'piranha', 'prostituta', 'gp',
-            'buceta', 'boceta', 'xoxota', 'pepeca', 'pinto', 'pica', 'pau',
-            'rola', 'saco', 'cuzao', 'cuzinho', 'cu', 'quenga',
+            'foder', 'fuder', 'fodase', 'fodido', 'fudido', 'cacete',
+            'krl', 'kct', 'vsf', 'vtnc', 'pqp', 'fdp', 'filhodaputa',
+            'arrombado', 'arrombada', 'cuzao', 'cuzinho', 'cu', 'quenga',
+            'buceta', 'boceta', 'xoxota', 'pepeca', 'pica', 'pau', 'rola',
             'punheta', 'punhetinha', 'gozar', 'gozada', 'tesao', 'tarado',
-            'pedofilo', 'pedofila', 'estuprador', 'estupradora', 'maconheiro',
-            'noia', 'nóia', 'traficante', 'maconha', 'cocaina', 'crack',
-            'bebado', 'bêbado', 'cachaceiro',
-            // Ofensas / preconceito (não podem aparecer como apelido)
-            'macaco', 'macaca', 'preto', 'preta', 'crioulo', 'crioula',
-            'negao', 'negona', 'neguinho', 'favelado', 'favelada', 'pobre',
-            'gordo', 'gorda', 'gordao', 'baleia', 'magrelo', 'magrela',
-            'feiticeira', 'feioso', 'feiosa', 'nazista', 'hitler',
-            'aleijado', 'aleijada', 'deficiente', 'mongol', 'mongoloide',
-            'analfabeto', 'analfabeta', 'fracassado', 'fracassada', 'lixo',
-            'escoria', 'escória', 'nojento', 'nojenta', 'verme', 'ratazana',
-            'demônio', 'demonio', 'satanas', 'satã', 'capeta', 'diabo',
-            // Termos impróprios em geral
-            'sexo', 'sexy', 'nudes', 'pornô', 'porno', 'pornografia',
-            'orgia', 'suruba', 'menage', 'chifre', 'traicao', 'traição',
-            'matar', 'morte', 'morte', 'suicidio', 'suicídio', 'morte',
-            'droga', 'drogado', 'bebida', 'cerveja', 'cachaça', 'cachaca',
-            'aposta', 'apostar', 'cassino',
+            'punheteiro', 'chupa',
+            // Xingamentos comuns (usados PARA ofender)
+            'otario', 'otaria', 'babaca', 'idiota', 'imbecil', 'burro',
+            'burra', 'estupido', 'estupida', 'escroto', 'escrota',
+            'vagabunda', 'vagabundo', 'vadia', 'safada', 'safado',
+            'piranha', 'prostituta', 'gp', 'corno', 'corna', 'chifrudo',
+            'nojento', 'nojenta', 'verme', 'lixo', 'escoria',
+            // Ofensas de cunho sexual (usadas como apelido pejorativo)
+            'viado', 'veado', 'bicha', 'boiola', 'traveco', 'sapatao',
+            // Termos impróprios / conteúdo adulto
+            'sexo', 'sexy', 'nudes', 'porno', 'pornografia', 'orgia',
+            'suruba', 'menage', 'traicao',
+            // Drogas e apostas (incentivo)
+            'maconha', 'cocaina', 'crack', 'droga', 'drogado', 'traficante',
+            'maconheiro', 'noia', 'bebida', 'cerveja', 'cachaca', 'bebado',
+            'cachaceiro', 'aposta', 'apostar', 'cassino',
+            // Violência / ameaça
+            'suicidio', 'bullying', 'arma',
         ];
     }
 

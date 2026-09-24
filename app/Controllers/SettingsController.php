@@ -123,8 +123,15 @@ final class SettingsController
             'environments'       => $environments,
             'teams'     => $teams,
             'treasureOrder' => (string) ($old['treasureOrder'] ?? SettingsRepository::get('treasureOrder', 'estabelecida')),
-            // Lista negra de NOMES (falta o padrão quando vazia, para o admin ver/editar)
-            'nameBlocklist' => (string) ($old['nameBlocklist'] ?? SettingsRepository::get('nameBlocklist', '')),
+            // Lista negra de NOMES — mostra a lista PADRÃO quando ainda não
+            // foi personalizada, para o admin ver e editar as palavras.
+            'nameBlocklist' => (static function () use ($old): string {
+                $saved = trim((string) ($old['nameBlocklist'] ?? SettingsRepository::get('nameBlocklist', '')));
+
+                return $saved !== ''
+                    ? $saved
+                    : implode("\n", \App\Services\NameBlocklist::defaultWords());
+            })(),
             'adminUsername' => (string) ($old['adminUsername'] ?? SettingsRepository::get('adminUsername', 'admin')),
         ]);
 
