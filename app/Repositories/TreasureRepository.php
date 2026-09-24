@@ -33,6 +33,7 @@ final class TreasureRepository
         'lng',
         'sort_order',
         'active',
+        'with_guardian',
     ];
 
     /**
@@ -158,7 +159,7 @@ final class TreasureRepository
 
                 if ($column === 'lat' || $column === 'lng') {
                     $params[":$column"] = self::nullIfEmpty($data[$column] ?? null);
-                } elseif ($column === 'sort_order' || $column === 'active') {
+                } elseif ($column === 'sort_order' || $column === 'active' || $column === 'with_guardian') {
                     $params[":$column"] = (int) $data[$column];
                 } else {
                     $params[":$column"] = (string) $data[$column];

@@ -378,6 +378,8 @@ final class TreasureController
             'answer1'     => trim((string) ($body['answer1'] ?? '')),
             'riddle2'     => trim((string) ($body['riddle2'] ?? '')),
             'answer2'     => trim((string) ($body['answer2'] ?? '')),
+            // Este tesouro deve ser encontrado na companhia dos responsáveis?
+            'with_guardian' => isset($body['with_guardian']) ? '1' : '0',
         ];
     }
 

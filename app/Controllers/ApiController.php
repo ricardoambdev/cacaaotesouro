@@ -218,6 +218,8 @@ final class ApiController
                     // tesouro e é EXCLUSIVO DO ADMIN. Ele nunca pode entrar
                     // aqui (nem em nenhum retorno do app das equipes).
                     'has_location' => $this->hasLocation($treasure),
+                    // Este tesouro precisa ser encontrado COM OS RESPONSÁVEIS?
+                    'with_guardian' => (int) ($treasure['with_guardian'] ?? 0) === 1,
                     'checked_in'    => false,
                     'selfie_sent'   => false,
                     'riddle_answered' => false,
@@ -717,6 +719,7 @@ final class ApiController
                         // `description` (local real) é SÓ DO ADMIN — nunca vai
                         // para o app das equipes.
                         'has_location' => $this->hasLocation($nextTreasure),
+                        'with_guardian' => (int) ($nextTreasure['with_guardian'] ?? 0) === 1,
                     ];
                 }
             }
@@ -784,6 +787,7 @@ final class ApiController
                     'name'         => (string) $row['name'],
                     'clue'         => (string) $row['clue'],
                     'has_location' => $this->hasLocation($row),
+                    'with_guardian' => (int) ($row['with_guardian'] ?? 0) === 1,
                 ];
             }
         }
@@ -1863,6 +1867,8 @@ final class ApiController
             'answer1'     => $answer1,
             'riddle2'     => $riddle2,
             'answer2'     => $answer2,
+            // Precisa ser encontrado na companhia dos responsáveis?
+            'with_guardian' => !empty($body['with_guardian']) ? '1' : '0',
         ]);
 
         $updated = TreasureRepository::find((int) $treasure['id']);
@@ -2510,6 +2516,7 @@ final class ApiController
             'lat'         => self::latOrNull($treasure),
             'lng'         => self::lngOrNull($treasure),
             'active'      => (int) $treasure['active'],
+            'with_guardian' => (int) ($treasure['with_guardian'] ?? 0),
             'qr_svg_path' => (string) $treasure['qr_svg_path'],
         ];
     }

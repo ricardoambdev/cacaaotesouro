@@ -188,9 +188,20 @@ final class Database
             . 'lng DECIMAL(10,7) NULL, '
             . 'sort_order INT NOT NULL DEFAULT 0, '
             . 'active TINYINT(1) NOT NULL DEFAULT 0, '
+            . 'with_guardian TINYINT(1) NOT NULL DEFAULT 0, '
             . 'created_at DATETIME NOT NULL, '
             . 'updated_at DATETIME NULL'
             . ')'
+        );
+
+        // Migração: tesouros que devem ser encontrados na companhia dos
+        // responsáveis (mostra aviso no app e exige responsável na selfie).
+        self::ensureSimpleColumn(
+            $pdo,
+            $driver,
+            'treasures',
+            'with_guardian',
+            'TINYINT(1) NOT NULL DEFAULT 0'
         );
 
         $pdo->exec(
@@ -489,6 +500,7 @@ final class Database
         $allowed = [
             'team_locations.device_id' => 'VARCHAR(64) NOT NULL DEFAULT \'\'',
             'team_devices.name'        => 'VARCHAR(60) NOT NULL DEFAULT \'\'',
+            'treasures.with_guardian'  => 'TINYINT(1) NOT NULL DEFAULT 0',
         ];
 
         if (($allowed[$table . '.' . $column] ?? null) !== $definition) {

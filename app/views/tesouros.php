@@ -104,6 +104,12 @@ $isRandomOrder = ($game['treasureOrder'] ?? 'estabelecida') === 'aleatorio';
                             <?php else: ?>
                                 <span class="badge badge-warning"><?= icon('place', 14) ?> Coordenada pendente</span>
                             <?php endif; ?>
+
+                            <?php if ((int) ($treasure['with_guardian'] ?? 0) === 1): ?>
+                                <span class="badge badge-info" title="Deve ser encontrado na companhia dos responsáveis">
+                                    <?= icon('family_restroom', 14) ?> Com responsáveis
+                                </span>
+                            <?php endif; ?>
                         </div>
                     </div>
 

@@ -78,6 +78,25 @@ Serve tanto para a organização quanto para explicar às equipes.
   - e **avançam sozinhos** para o próximo tesouro.
 - **Todos** os aparelhos da equipe aparecem no mapa, **cada um com o seu nome**.
 
+### 4.4 👨‍👩‍👧 Tesouro que precisa dos RESPONSÁVEIS
+Alguns tesouros podem ser configurados (no painel, ao editar o tesouro) para
+serem encontrados **na companhia dos responsáveis**.
+
+Quando isso está ligado:
+- a tela do tesouro mostra um **aviso vermelho bem chamativo**:
+  > ⚠️ **ATENÇÃO!** Este tesouro deve ser encontrado na companhia dos seus
+  > **RESPONSÁVEIS**. Pelo menos UM responsável precisa estar com a equipe — e
+  > aparecer na selfie.
+- na tela da **selfie** aparece o aviso
+  > **OS RESPONSÁVEIS DEVEM APARECER NA SELFIE**
+- e, **antes de abrir a câmera**, aparece um **modal de aviso** avisando que
+  **pelo menos um responsável deve aparecer na selfie**, sob risco de
+  **DESCLASSIFICAR o tesouro** da equipe.
+
+> 🚫 **Regra:** selfie de tesouro "com responsáveis" **sem nenhum responsável na
+> foto** pode fazer a equipe **perder o tesouro** (a organização confere as
+> fotos no painel e pode desclassificar).
+
 ---
 
 ## 5. Pontuação
@@ -119,6 +138,8 @@ Serve tanto para a organização quanto para explicar às equipes.
   atrás da estante"*). 🔒 **Só o admin vê** — as equipes **não têm acesso**.
 - O **QR code** de cada tesouro é gerado automaticamente e pode ser baixado
   em SVG na listagem.
+- Cada tesouro pode ser marcado como **"deve ser encontrado na companhia dos
+  responsáveis"** — veja a seção 4.4.
 
 ---
 
@@ -278,6 +299,7 @@ Barra inferior: **História · Regras · Cofre · Sair**
 **Antes (na organização):**
 1. Cadastrar/editar os **tesouros**: código, nome, **local**, dica, 2 charadas.
 2. Imprimir/colar os **QR codes** nos locais corretos.
+   - Marque **"com responsáveis"** nos tesouros que exigem a companhia de um responsável.
 3. Definir a **ordem** dos tesouros.
 4. Configurar a **história** e as **regras** (aparecem no app).
 5. Configurar o **desafio final** (senha e pontos).
@@ -318,6 +340,12 @@ O cofre **não abre** (mostra *"O cofre ainda não foi liberado"*).
 
 **As equipes veem o local real dos tesouros no app?**
 Não. O campo "Local do tesouro" é **exclusivo do admin**.
+
+**O que é um tesouro "com responsáveis"?**
+É um tesouro marcado no painel para ser encontrado na companhia de um
+responsável. O app avisa isso **na tela do tesouro** e **na selfie** (com um
+modal antes de abrir a câmera), avisando que **pelo menos um responsável deve
+aparecer na foto** — sob risco de **desclassificar o tesouro**.
 
 ---
 

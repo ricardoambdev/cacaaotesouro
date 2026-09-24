@@ -7,6 +7,9 @@ class GameTreasure {
   final String? clue;
   final bool hasLocation;
 
+  /// Este tesouro deve ser encontrado na companhia dos responsáveis?
+  final bool withGuardian;
+
   // Campos do estado (retornados em current_treasure)
   final bool checkedIn;
   final bool selfieSent;
@@ -28,6 +31,7 @@ class GameTreasure {
     required this.name,
     this.clue,
     this.hasLocation = false,
+    this.withGuardian = false,
     this.checkedIn = false,
     this.selfieSent = false,
     this.riddleAnswered = false,
@@ -48,6 +52,7 @@ class GameTreasure {
       name: (json['name'] as String?) ?? '',
       clue: json['clue'] as String?,
       hasLocation: json['has_location'] == true,
+      withGuardian: json['with_guardian'] == true,
       checkedIn: json['checked_in'] == true,
       selfieSent: json['selfie_sent'] == true,
       riddleAnswered: json['riddle_answered'] == true,

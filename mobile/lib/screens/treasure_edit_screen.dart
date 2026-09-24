@@ -25,6 +25,9 @@ class _TreasureEditScreenState extends State<TreasureEditScreen> {
   final _nameController = TextEditingController();
   final _descriptionController = TextEditingController();
   final _clueController = TextEditingController();
+
+  /// Este tesouro deve ser encontrado na companhia dos responsáveis?
+  bool _withGuardian = false;
   final _riddle1Controller = TextEditingController();
   final _answer1Controller = TextEditingController();
   final _riddle2Controller = TextEditingController();
@@ -74,6 +77,7 @@ class _TreasureEditScreenState extends State<TreasureEditScreen> {
         _nameController.text = (data['name'] as String?) ?? '';
         _descriptionController.text = (data['description'] as String?) ?? '';
         _clueController.text = (data['clue'] as String?) ?? '';
+        _withGuardian = (data['with_guardian'] as num?)?.toInt() == 1;
         _riddle1Controller.text = (data['riddle1'] as String?) ?? '';
         _answer1Controller.text = (data['answer1'] as String?) ?? '';
         _riddle2Controller.text = (data['riddle2'] as String?) ?? '';
@@ -124,6 +128,7 @@ class _TreasureEditScreenState extends State<TreasureEditScreen> {
         'name': _nameController.text.trim(),
         'description': _descriptionController.text.trim(),
         'clue': _clueController.text.trim(),
+        'with_guardian': _withGuardian ? 1 : 0,
         'riddle1': _riddle1Controller.text.trim(),
         'answer1': _answer1Controller.text.trim(),
         'riddle2': _riddle2Controller.text.trim(),
@@ -425,6 +430,60 @@ class _TreasureEditScreenState extends State<TreasureEditScreen> {
                 labelText: 'Dica do local',
                 prefixIcon: Icon(Icons.lightbulb_outline, size: 20),
                 alignLabelWithHint: true,
+              ),
+            ),
+
+            const SizedBox(height: 14),
+
+            // ── Encontro com os responsáveis ────────────
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: Colors.orangeAccent.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: Colors.orangeAccent.withValues(alpha: 0.3),
+                ),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Icon(Icons.family_restroom,
+                      color: Colors.orangeAccent, size: 22),
+                  const SizedBox(width: 12),
+                  const Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Encontro com os responsáveis',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.ivory,
+                          ),
+                        ),
+                        SizedBox(height: 4),
+                        Text(
+                          'O app avisa bem visível que este tesouro precisa ser '
+                          'encontrado com pelo menos UM responsável, e que ele '
+                          'deve aparecer na selfie — sob risco de desclassificar.',
+                          style: TextStyle(
+                            fontSize: 12,
+                            height: 1.4,
+                            color: AppColors.ivoryMuted,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Switch(
+                    value: _withGuardian,
+                    activeColor: AppColors.gold,
+                    onChanged: (v) => setState(() => _withGuardian = v),
+                  ),
+                ],
               ),
             ),
 

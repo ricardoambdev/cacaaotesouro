@@ -437,6 +437,72 @@ class _TeamHomeScreenState extends State<TeamHomeScreen> {
   }
 
   Future<void> _takeSelfie() async {
+    // ── Tesouro que exige responsável: avisa ANTES de abrir a câmera ──
+    if (_gameState?.currentTreasure?.withGuardian == true) {
+      final ok = await showDialog<bool>(
+        context: context,
+        barrierDismissible: false,
+        builder: (ctx) => AlertDialog(
+          backgroundColor: const Color(0xFF7F1D1D),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(18),
+            side: const BorderSide(color: Colors.redAccent, width: 2),
+          ),
+          title: Row(
+            children: const [
+              Icon(Icons.warning_amber_rounded,
+                  color: Colors.white, size: 28),
+              SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'RESPONSÁVEL NA SELFIE',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w900,
+                    fontSize: 17,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          content: const Text(
+            'Para registrar este tesouro, pelo menos UM RESPONSÁVEL precisa '
+            'aparecer na selfie junto com a equipe.\n\n'
+            '⚠️ Se a selfie for enviada SEM o responsável, o tesouro pode ser '
+            'DESCLASSIFICADO da sua equipe (a organização vai conferir a foto).\n\n'
+            'Chame o responsável e tire a foto com ele aparecendo.',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 14,
+              height: 1.5,
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text(
+                'Ainda não',
+                style: TextStyle(color: Colors.white70),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.white,
+                foregroundColor: const Color(0xFF7F1D1D),
+              ),
+              child: const Text(
+                'Entendi, tirar foto',
+                style: TextStyle(fontWeight: FontWeight.w700),
+              ),
+            ),
+          ],
+        ),
+      );
+
+      if (ok != true) return;
+    }
+
     final picker = ImagePicker();
     try {
       final XFile? image = await picker.pickImage(
@@ -1302,6 +1368,77 @@ class _TeamHomeScreenState extends State<TeamHomeScreen> {
       padding: const EdgeInsets.all(20),
       child: Column(
         children: [
+          // ══════════════════════════════════════════════════
+          //  AVISO BEM VISÍVEL: precisa dos responsáveis
+          // ══════════════════════════════════════════════════
+          if (treasure.withGuardian) ...[
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(18),
+              margin: const EdgeInsets.only(bottom: 16),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFFB91C1C), Color(0xFF7F1D1D)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: Colors.redAccent, width: 2),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.redAccent.withValues(alpha: 0.4),
+                    blurRadius: 16,
+                    offset: const Offset(0, 6),
+                  ),
+                ],
+              ),
+              child: Column(
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: const [
+                      Icon(Icons.warning_amber_rounded,
+                          color: Colors.white, size: 30),
+                      SizedBox(width: 8),
+                      Text(
+                        'ATENÇÃO!',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 20,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 2,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  const Text(
+                    'Este tesouro deve ser encontrado na companhia dos seus RESPONSÁVEIS.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                      height: 1.4,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'Pelo menos UM responsável precisa estar com a equipe — '
+                    'e aparecer na selfie. Tesouro sem responsável pode ser '
+                    'DESCLASSIFICADO.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 13,
+                      height: 1.4,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+
           // ── Card do tesouro ────────────────────────────
           Container(
             width: double.infinity,
@@ -1513,6 +1650,55 @@ class _TeamHomeScreenState extends State<TeamHomeScreen> {
                   ),
                 ),
                 const SizedBox(height: 18),
+
+                // ── Aviso: responsáveis na selfie (tesouro exige) ──
+                if (_gameState?.currentTreasure?.withGuardian == true) ...[
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFFB91C1C), Color(0xFF7F1D1D)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.redAccent, width: 2),
+                    ),
+                    child: Column(
+                      children: const [
+                        Icon(Icons.family_restroom,
+                            color: Colors.white, size: 32),
+                        SizedBox(height: 8),
+                        Text(
+                          'OS RESPONSÁVEIS DEVEM APARECER NA SELFIE',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w900,
+                            height: 1.35,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                        SizedBox(height: 8),
+                        Text(
+                          'Este tesouro só vale se pelo menos UM responsável '
+                          'aparecer na foto junto com a equipe. '
+                          'Sem o responsável, o tesouro pode ser DESCLASSIFICADO.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 13,
+                            height: 1.45,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                ],
+
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton.icon(
@@ -2193,7 +2379,7 @@ class _TeamHomeScreenState extends State<TeamHomeScreen> {
             ),
             const SizedBox(height: 16),
             const Text(
-              'REGRAS DA GINCANA',
+              'REGRAS DO JOGO',
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w700,

@@ -96,6 +96,27 @@ $hasQr = $qrPath !== '';
                     <div class="error-inline"></div>
                     <p class="form-help-text">Entregue à equipe quando ela acertar a charada deste tesouro.</p>
                 </div>
+
+                <!-- Companhia dos responsáveis -->
+                <div class="form-group" style="margin-top:8px;">
+                    <div class="toggle-group" style="border:1px solid rgba(249,115,22,0.25);border-radius:12px;padding:16px;background:rgba(249,115,22,0.05);">
+                        <div>
+                            <div class="toggle-label-text">
+                                👨‍👩‍👧 Este tesouro deve ser encontrado na companhia dos responsáveis
+                            </div>
+                            <div class="toggle-label-desc">
+                                O app mostra um <strong>aviso bem visível</strong> na tela do tesouro e na
+                                selfie, e na selfie explica que <strong>pelo menos um responsável precisa
+                                aparecer na foto</strong> — sob risco de <strong>desclassificar o tesouro</strong>.
+                            </div>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" name="with_guardian" value="1"
+                                   <?= ((int) ($treasure['with_guardian'] ?? 0) === 1 || ($value('with_guardian') === '1')) ? 'checked' : '' ?>>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                </div>
             </div>
 
             <!-- Card: Charada 1 -->
