@@ -388,10 +388,13 @@ final class ApiController
         if ($distance > self::GEO_TOLERANCE_METERS) {
             $distanceRounded = (int) round($distance);
 
+            // A equipe JÁ leu o QR code: o que falhou foi a localização.
             return $this->json($response, [
-                'success'    => false,
-                'error'      => 'Você está a ' . $distanceRounded . 'm do local. Aproxime-se (máx ' . self::GEO_TOLERANCE_METERS . 'm).',
-                'distance_m' => $distanceRounded,
+                'success'      => false,
+                'error'        => 'Você não está no local.',
+                'code'         => 'not_at_location',
+                'distance_m'   => $distanceRounded,
+                'tolerance_m'  => self::GEO_TOLERANCE_METERS,
             ], 400);
         }
 

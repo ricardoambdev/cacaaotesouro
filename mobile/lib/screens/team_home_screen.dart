@@ -378,7 +378,21 @@ class _TeamHomeScreenState extends State<TeamHomeScreen> {
       return;
     }
 
-    // 3. Obter posição
+    // 3. Ler o QR code PRIMEIRO (a localização é conferida depois)
+    if (!mounted) return;
+    final qrCode = await Navigator.push<String>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const QrScannerScreen(title: 'Ler QR Code do Tesouro'),
+      ),
+    );
+
+    if (qrCode == null || !mounted) {
+      setState(() => _flowState = TreasureFlowState.viewingClue);
+      return;
+    }
+
+    // 4. Agora sim: obter a posição (é o que confirma se está no local)
     Position position;
     try {
       setState(() => _flowState = TreasureFlowState.gettingLocation);
@@ -393,20 +407,6 @@ class _TeamHomeScreenState extends State<TeamHomeScreen> {
       setState(() => _flowState = TreasureFlowState.viewingClue);
       _showSnackBar(
           'Não foi possível obter a posição. Tente novamente.', isError: true);
-      return;
-    }
-
-    // 4. Abrir scanner QR
-    if (!mounted) return;
-    final qrCode = await Navigator.push<String>(
-      context,
-      MaterialPageRoute(
-        builder: (_) => const QrScannerScreen(title: 'Ler QR Code do Tesouro'),
-      ),
-    );
-
-    if (qrCode == null || !mounted) {
-      setState(() => _flowState = TreasureFlowState.viewingClue);
       return;
     }
 
