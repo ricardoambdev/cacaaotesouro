@@ -125,7 +125,6 @@ class _TreasureEditScreenState extends State<TreasureEditScreen> {
 
     try {
       await _apiService.adminUpdateTreasure(widget.treasureId, {
-        'name': _nameController.text.trim(),
         'description': _descriptionController.text.trim(),
         'clue': _clueController.text.trim(),
         'with_guardian': _withGuardian ? 1 : 0,
@@ -388,20 +387,17 @@ class _TreasureEditScreenState extends State<TreasureEditScreen> {
 
             const SizedBox(height: 24),
 
-            // ── Nome ─────────────────────────────────────
+            // ── Nome (automático: "Tesouro N") ───────────
             TextFormField(
               controller: _nameController,
-              style: const TextStyle(color: AppColors.ivory),
+              enabled: false,
+              style: const TextStyle(color: AppColors.ivoryMuted),
               decoration: const InputDecoration(
-                labelText: 'Nome do tesouro',
+                labelText: 'Nome do tesouro (automático)',
+                helperText: 'Sempre "Tesouro N" pela posição na lista',
+                helperStyle: TextStyle(color: AppColors.ivoryMuted),
                 prefixIcon: Icon(Icons.title, size: 20),
               ),
-              validator: (v) {
-                if (v == null || v.trim().isEmpty) {
-                  return 'Nome é obrigatório';
-                }
-                return null;
-              },
             ),
 
             const SizedBox(height: 16),

@@ -199,9 +199,11 @@ final class TreasureRepository
     {
         $pdo = Database::get();
 
+        // O NOME do tesouro é sempre "Tesouro N" (posição na lista), então
+        // ele é reescrito junto com a nova ordem.
         $stmt = $pdo->prepare(
-            'UPDATE treasures SET sort_order = :sort_order, updated_at = :updated_at '
-            . 'WHERE id = :id'
+            'UPDATE treasures SET sort_order = :sort_order, name = :name, '
+            . 'updated_at = :updated_at WHERE id = :id'
         );
 
         $pdo->beginTransaction();
@@ -210,6 +212,7 @@ final class TreasureRepository
             foreach (array_values($orderedIds) as $index => $id) {
                 $stmt->execute([
                     ':sort_order' => $index + 1,
+                    ':name'       => 'Tesouro ' . ($index + 1),
                     ':updated_at' => date('Y-m-d H:i:s'),
                     ':id'         => (int) $id,
                 ]);

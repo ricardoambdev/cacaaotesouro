@@ -146,6 +146,8 @@ final class TreasureController
         // automaticamente como um código aleatório alfanumérico de 20 chars.
         $data['qr_content'] = random_alnum(20);
         $data['sort_order'] = TreasureRepository::nextSortOrder();
+        // Nome automático: "Tesouro N" (posição na lista).
+        $data['name'] = 'Tesouro ' . $data['sort_order'];
         $data['active'] = 0; // só ativa quando o admin confirmar a coordenada no app
         $data['qr_svg_path'] = '';
 
@@ -190,6 +192,9 @@ final class TreasureController
             $data['qr_content'] = random_alnum(20);
         }
         $data['qr_svg_path'] = (string) ($treasure['qr_svg_path'] ?? '');
+
+        // O nome é automático: sempre "Tesouro N" (posição na lista).
+        $data['name'] = 'Tesouro ' . (int) ($treasure['sort_order'] ?? 1);
 
         TreasureRepository::update($id, $data);
 
@@ -371,7 +376,8 @@ final class TreasureController
 
         return [
             'code'        => strtoupper(trim((string) ($body['code'] ?? ''))),
-            'name'        => trim((string) ($body['name'] ?? '')),
+            // O NOME não é editável: é sempre "Tesouro N" (posição na lista),
+            // definido automaticamente ao criar/reordenar.
             'description' => trim((string) ($body['description'] ?? '')),
             'clue'        => trim((string) ($body['clue'] ?? '')),
             'riddle1'     => trim((string) ($body['riddle1'] ?? '')),
@@ -410,12 +416,6 @@ final class TreasureController
             if ($owner !== null && ($ignoreId === null || (int) $owner['id'] !== $ignoreId)) {
                 $errors[] = 'Já existe um tesouro com o código "' . $data['code'] . '".';
             }
-        }
-
-        if ($data['name'] === '') {
-            $errors[] = 'O nome do tesouro é obrigatório.';
-        } elseif (mb_strlen($data['name']) > 190) {
-            $errors[] = 'O nome deve ter no máximo 190 caracteres.';
         }
 
         foreach ([

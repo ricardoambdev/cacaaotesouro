@@ -1828,20 +1828,14 @@ final class ApiController
 
         $body = (array) $request->getParsedBody();
 
-        $name = trim((string) ($body['name'] ?? ''));
+        // O NOME não é editável: é sempre "Tesouro N" (posição na lista).
+        $name = 'Tesouro ' . (int) ($treasure['sort_order'] ?? 1);
         $description = trim((string) ($body['description'] ?? ''));
         $clue = trim((string) ($body['clue'] ?? ''));
         $riddle1 = trim((string) ($body['riddle1'] ?? ''));
         $riddle2 = trim((string) ($body['riddle2'] ?? ''));
         $answer1 = trim((string) ($body['answer1'] ?? ''));
         $answer2 = trim((string) ($body['answer2'] ?? ''));
-
-        if ($name === '') {
-            return $this->json($response, [
-                'success' => false,
-                'error'   => 'O nome do tesouro é obrigatório.',
-            ], 400);
-        }
 
         if ($clue === '') {
             return $this->json($response, [

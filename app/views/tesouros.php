@@ -91,11 +91,7 @@ $isRandomOrder = ($game['treasureOrder'] ?? 'estabelecida') === 'aleatorio';
                             <span class="badge badge-info"><?= e((string) ($treasure['code'] ?? '')) ?></span>
                             Tesouro <?= (int) ($treasure['sort_order'] ?? $index + 1) ?>
                         </h3>
-                        <?php if (trim((string) ($treasure['name'] ?? '')) !== ''): ?>
-                            <div style="font-size:.78rem;color:rgba(247,236,212,0.45);margin-top:-2px;">
-                                Cadastrado como: <?= e((string) $treasure['name']) ?>
-                            </div>
-                        <?php endif; ?>
+
 
                         <div class="treasure-card-badges">
                             <?php if ($isActive): ?>

@@ -73,10 +73,15 @@ $hasQr = $qrPath !== '';
                 </div>
 
                 <div class="form-group">
-                    <label for="name">Nome do tesouro *</label>
-                    <input type="text" id="name" name="name" class="form-input" maxlength="190"
-                           value="<?= e($value('name')) ?>" required>
+                    <label>Nome do tesouro</label>
+                    <input type="text" class="form-input" disabled
+                           value="<?= e($isEdit ? (string) ($treasure['name'] ?? '') : 'Tesouro ' . (\App\Repositories\TreasureRepository::nextSortOrder())) ?>">
                     <div class="error-inline"></div>
+                    <p class="form-help-text">
+                        O nome é <strong>automático</strong>: sempre <strong>"Tesouro N"</strong>,
+                        onde N é a posição do tesouro na lista. Para mudar a ordem,
+                        arraste os tesouros na listagem.
+                    </p>
                 </div>
 
                 <div class="form-group">

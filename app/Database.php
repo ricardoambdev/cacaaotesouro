@@ -204,6 +204,9 @@ final class Database
             'TINYINT(1) NOT NULL DEFAULT 0'
         );
 
+        // Nome dos tesouros: sempre "Tesouro N" (posição na lista).
+        self::normalizeTreasureNames($pdo);
+
         $pdo->exec(
             'CREATE TABLE IF NOT EXISTS team_treasure_progress ('
             . 'id ' . $autoIncrement . ', '
@@ -315,6 +318,33 @@ final class Database
         }
 
         self::seedDefaultSettings($pdo, $driver);
+    }
+
+    /**
+     * O NOME do tesouro é sempre "Tesouro N" (a posição dele na lista).
+     *
+     * Não é editável no painel nem no app — este trecho normaliza qualquer
+     * nome antigo (ou digitado à mão em versões anteriores).
+     */
+    private static function normalizeTreasureNames(PDO $pdo): void
+    {
+        try {
+            if (app_config('db.driver', 'sqlite') === 'mysql') {
+                $pdo->exec(
+                    'UPDATE treasures SET name = CONCAT(\'Tesouro \', sort_order) '
+                    . 'WHERE name <> CONCAT(\'Tesouro \', sort_order)'
+                );
+
+                return;
+            }
+
+            $pdo->exec(
+                'UPDATE treasures SET name = \'Tesouro \' || sort_order '
+                . 'WHERE name <> \'Tesouro \' || sort_order'
+            );
+        } catch (PDOException $e) {
+            error_log('Database::normalizeTreasureNames: ' . $e->getMessage());
+        }
     }
 
     /**
