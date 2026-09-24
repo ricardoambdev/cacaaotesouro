@@ -2512,6 +2512,7 @@ class _TeamHomeScreenState extends State<TeamHomeScreen> {
                         points: entry.points,
                         status: entry.status,
                         isMe: isMe,
+                        teamColor: _leaderboardColor(entry.color, entry.team),
                       );
                     },
                   ),
@@ -2523,6 +2524,23 @@ class _TeamHomeScreenState extends State<TeamHomeScreen> {
 
   Color _parseColor(String name) {
     return AppColors.teamColor(name);
+  }
+
+  /// Cor de fundo da equipe na CLASSIFICAÇÃO.
+  ///
+  /// Preta = preto e Laranja = laranja (com o texto sempre em branco).
+  Color _leaderboardColor(String colorKey, String name) {
+    final key = (colorKey.isNotEmpty ? colorKey : name).toLowerCase();
+
+    if (key.contains('laranja')) {
+      return const Color(0xFFE67E22);
+    }
+
+    if (key.contains('preta') || key.contains('preto')) {
+      return Colors.black;
+    }
+
+    return AppColors.teamColor(key);
   }
 }
 
@@ -2990,12 +3008,16 @@ class _LeaderboardTile extends StatelessWidget {
   final String status;
   final bool isMe;
 
+  /// Cor da equipe (preta = preto, laranja = laranja). O texto vai em branco.
+  final Color teamColor;
+
   const _LeaderboardTile({
     required this.rank,
     required this.teamName,
     required this.points,
     required this.status,
     required this.isMe,
+    required this.teamColor,
   });
 
   @override
@@ -3004,14 +3026,13 @@ class _LeaderboardTile extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: isMe
-            ? AppColors.gold.withValues(alpha: 0.1)
-            : AppColors.navyMedium,
+        // Fundo na cor da equipe, com o texto todo em branco.
+        color: teamColor,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: isMe
-              ? AppColors.gold.withValues(alpha: 0.4)
-              : AppColors.ivoryMuted.withValues(alpha: 0.1),
+          // "Minha equipe" ganha uma borda branca destacada.
+          color: isMe ? Colors.white : Colors.white24,
+          width: isMe ? 2.5 : 1,
         ),
       ),
       child: Row(
@@ -3021,18 +3042,16 @@ class _LeaderboardTile extends StatelessWidget {
             width: 32,
             height: 32,
             decoration: BoxDecoration(
-              color: rank == 1
-                  ? AppColors.gold.withValues(alpha: 0.2)
-                  : AppColors.navyDark,
+              color: Colors.white.withValues(alpha: rank == 1 ? 0.3 : 0.16),
               shape: BoxShape.circle,
             ),
             child: Center(
               child: Text(
                 '$rank',
-                style: TextStyle(
-                  fontWeight: FontWeight.w700,
+                style: const TextStyle(
+                  fontWeight: FontWeight.w800,
                   fontSize: 14,
-                  color: rank == 1 ? AppColors.gold : AppColors.ivoryMuted,
+                  color: Colors.white,
                 ),
               ),
             ),
@@ -3044,28 +3063,48 @@ class _LeaderboardTile extends StatelessWidget {
               children: [
                 Text(
                   teamName,
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontSize: 15,
-                    fontWeight: FontWeight.w700,
-                    color: isMe ? AppColors.gold : AppColors.ivory,
+                    fontWeight: FontWeight.w800,
+                    color: Colors.white,
                   ),
                 ),
                 Text(
                   status,
                   style: TextStyle(
                     fontSize: 12,
-                    color: AppColors.ivoryMuted,
+                    color: Colors.white.withValues(alpha: 0.8),
                   ),
                 ),
               ],
             ),
           ),
+          // "VOCÊ" quando é a própria equipe
+          if (isMe) ...[
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+              margin: const EdgeInsets.only(right: 10),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.25),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: const Text(
+                'VOCÊ',
+                style: TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 0.5,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ],
           Text(
             '$points pts',
-            style: TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w700,
-              color: isMe ? AppColors.gold : AppColors.ivory,
+            style: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w900,
+              color: Colors.white,
             ),
           ),
         ],

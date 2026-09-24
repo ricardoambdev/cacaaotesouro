@@ -168,18 +168,24 @@ class LeaderboardEntry {
   final int points;
   final String status;
 
+  /// Cor da equipe (ex.: 'preta' / 'laranja') — usada na classificação.
+  final String color;
+
   const LeaderboardEntry({
     required this.team,
     required this.points,
     required this.status,
+    this.color = '',
   });
 
   factory LeaderboardEntry.fromJson(Map<String, dynamic> json) {
     // 'team' pode vir como string (nome) ou como objeto {id,name,color}.
     String teamName;
+    String teamColor = '';
     final teamRaw = json['team'];
     if (teamRaw is Map) {
       teamName = (teamRaw['name'] as String?) ?? '';
+      teamColor = (teamRaw['color'] as String?) ?? '';
     } else {
       teamName = (teamRaw as String?) ?? '';
     }
@@ -188,6 +194,7 @@ class LeaderboardEntry {
       team: teamName,
       points: (json['points'] as num?)?.toInt() ?? 0,
       status: (json['status'] as String?) ?? '',
+      color: teamColor,
     );
   }
 }

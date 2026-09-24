@@ -212,7 +212,8 @@ final class ApiController
             if ($treasure !== null) {
                 $currentTreasure = [
                     'id'           => (int) $treasure['id'],
-                    'name'         => (string) $treasure['name'],
+                    // A equipe vê "Tesouro N" (posição na ordem dela)
+                    'name'         => $this->treasureLabelForTeam($team, $currentTreasureId),
                     'clue'         => (string) $treasure['clue'],
                     // ATENÇÃO: o campo `description` guarda o LOCAL REAL do
                     // tesouro e é EXCLUSIVO DO ADMIN. Ele nunca pode entrar
@@ -717,7 +718,7 @@ final class ApiController
                 if ($nextTreasure !== null) {
                     $next = [
                         'id'           => (int) $nextTreasure['id'],
-                        'name'         => (string) $nextTreasure['name'],
+                        'name'         => $this->treasureLabelForTeam($team, (int) $nextTreasure['id']),
                         'clue'         => (string) $nextTreasure['clue'],
                         // `description` (local real) é SÓ DO ADMIN — nunca vai
                         // para o app das equipes.
@@ -763,6 +764,20 @@ final class ApiController
     }
 
     /**
+     * Nome do tesouro como a EQUIPE vê: "Tesouro N", onde N é a posição dele
+     * na ordem de jogo da equipe (1 = o primeiro que ela procura).
+     *
+     * O nome cadastrado no painel continua valendo para a organização.
+     */
+    private function treasureLabelForTeam(array $team, int $treasureId): string
+    {
+        $order = GameRepository::treasureOrderForTeam($team);
+        $pos = array_search($treasureId, $order, true);
+
+        return 'Tesouro ' . ($pos === false ? 1 : (int) $pos + 1);
+    }
+
+    /**
      * GET /api/team/current
      *
      * Tesouro atual da equipe (id, name, clue) ou sinalização do desafio
@@ -787,7 +802,8 @@ final class ApiController
             if ($row !== null) {
                 $treasure = [
                     'id'           => (int) $row['id'],
-                    'name'         => (string) $row['name'],
+                    // A equipe vê "Tesouro N" (posição na ordem dela)
+                    'name'         => $this->treasureLabelForTeam($team, (int) $row['id']),
                     'clue'         => (string) $row['clue'],
                     'has_location' => $this->hasLocation($row),
                     'with_guardian' => (int) ($row['with_guardian'] ?? 0) === 1,
