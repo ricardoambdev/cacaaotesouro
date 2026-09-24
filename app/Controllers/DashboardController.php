@@ -200,10 +200,26 @@ final class DashboardController
         $newPoints = max(0, (int) $team['points'] + $delta);
         TeamRepository::updateGameState($teamId, ['points' => $newPoints]);
 
-        // Marcar como DESCLASSIFICADO (mantém o registro e a selfie para
-        // auditoria; o tesouro NÃO pode ser refeito pela equipe).
+        // Marca como DESCLASSIFICADO e ZERA o progresso: a equipe precisa
+        // REFAZER o tesouro (check-in, selfie e charada de novo).
+        //
+        // A marca `disqualified` fica gravada de propósito: é o que impede
+        // esta equipe de ganhar os +10 de "primeira a encontrar" neste
+        // tesouro para sempre.
         $upd = $pdo->prepare(
-            'UPDATE team_treasure_progress SET disqualified = 1, updated_at = NOW() '
+            'UPDATE team_treasure_progress SET '
+            . 'disqualified = 1, '
+            . 'riddle_correct = 0, '
+            . 'found_at = NULL, '
+            . 'points_awarded = 0, '
+            . 'selfie_points = 0, '
+            . 'selfie_path = NULL, '
+            . 'local_bonus = 0, '
+            . 'first_bonus = 0, '
+            . 'gps_confirmed = 0, '
+            . 'attempts = 0, '
+            . 'assigned_riddle = NULL, '
+            . 'updated_at = NOW() '
             . 'WHERE team_id = :team_id AND treasure_id = :treasure_id'
         );
         $upd->execute([':team_id' => $teamId, ':treasure_id' => $treasureId]);
@@ -211,7 +227,8 @@ final class DashboardController
         GameRepository::logPoints($teamId, $delta, 'desclassificação do tesouro "' . $treasureName . '"');
 
         flash_set('success', sprintf(
-            'Tesouro "%s" desclassificado da %s (%d pontos).',
+            'Tesouro "%s" desclassificado da %s (%d pontos). A equipe pode refazê-lo '
+            . '(sem direito aos +10 de primeira a encontrar).',
             (string) $treasureName,
             (string) $team['name'],
             $delta

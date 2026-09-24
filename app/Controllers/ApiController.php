@@ -395,16 +395,11 @@ final class ApiController
         // mesmo resultado (re-exibe a charada assinalada).
         $existing = GameRepository::progress($teamId, $treasureId);
 
-        if ($existing !== null && (int) ($existing['disqualified'] ?? 0) === 1) {
-            // Tesouro desclassificado pelo admin: NÃO pode ser refeito.
-            return $this->json($response, [
-                'success' => false,
-                'error'   => 'Este tesouro foi desclassificado e não pode ser refeito.',
-                'code'    => 'treasure_disqualified',
-            ], 403);
-        }
+        // Tesouro desclassificado pelo admin: a equipe PODE REFAZER
+        // (o progresso foi zerado na desclassificação).
+        // A marca `disqualified` só impede os +10 de "primeira a encontrar".
 
-        if ($existing !== null && (int) $existing['gps_confirmed'] === 1) {
+        if ($existing !== null && (int) $existing['gps_confirmed'] === 1 && (int) ($existing['disqualified'] ?? 0) === 0) {
             return $this->json($response, [
                 'success'         => true,
                 'message'         => 'Você já fez check-in neste tesouro. Envie a selfie no local para liberar a charada.',
@@ -637,7 +632,11 @@ final class ApiController
             // Bônus: PRIMEIRO a encontrar este tesouro (+10 pontos). Vale a
             // primeira equipe que acertar a charada — checado ANTES de gravar
             // o acerto desta equipe.
-            $firstBonus = GameRepository::isFirstFinder($treasureId, $teamId);
+            //
+            // Quem foi DESCLASSIFICADO neste tesouro perde esse bônus para
+            // sempre (mesmo refazendo e acertando de novo).
+            $wasDisqualified = (int) ($progress['disqualified'] ?? 0) === 1;
+            $firstBonus = !$wasDisqualified && GameRepository::isFirstFinder($treasureId, $teamId);
 
             $this->updateProgress($teamId, $treasureId, [
                 'riddle_correct' => 1,

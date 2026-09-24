@@ -107,10 +107,12 @@ final class GameRepository
             return false;
         }
 
-        $disqualified = (int) ($progress['disqualified'] ?? 0) === 1;
-        $found = (int) ($progress['riddle_correct'] ?? 0) === 1;
-
-        return $disqualified || $found;
+        // Só o ACERTO da charada conta como resolvido.
+        //
+        // A desclassificação NÃO encerra o tesouro: a equipe precisa refazê-lo
+        // (a marca `disqualified` continua gravada apenas para impedir que ela
+        // ganhe os +10 de "primeira a encontrar" neste tesouro).
+        return (int) ($progress['riddle_correct'] ?? 0) === 1;
     }
 
     /**

@@ -97,6 +97,16 @@ Quando isso está ligado:
 > foto** pode fazer a equipe **perder o tesouro** (a organização confere as
 > fotos no painel e pode desclassificar).
 
+#### O que acontece quando um tesouro é DESCLASSIFICADO
+- A equipe **perde todos os pontos daquele tesouro** (+20 da charada, +5 da
+  selfie, +5 do local e +10 de primeira a encontrar).
+- O tesouro **volta a ficar pendente**: a equipe precisa **REFAZER** — check-in,
+  selfie e charada de novo.
+- Ao refazer, ela **ganha de novo** os pontos normais (+20, +5, +5), **mas NUNCA
+  mais os +10 de "primeira a encontrar"** naquele tesouro.
+- Se a OUTRA equipe ainda não tiver encontrado, ela passa a ser a primeira
+  válida e pode ganhar os +10.
+
 ---
 
 ## 5. Pontuação
