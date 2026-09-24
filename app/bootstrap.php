@@ -177,6 +177,10 @@ $app->post('/jogo', [GameController::class, 'status'])->add($mw['authRequired'])
 // (a tela do evento). O endereço antigo /telao deixa de existir.
 $app->get('/t/{slug}', [GameController::class, 'telao']);
 
+// Atalho: admin logado que digitar /telao é levado ao endereço secreto.
+// Quem não está logado recebe 404 (as equipes não acham o telão adivinhando).
+$app->get('/telao', [GameController::class, 'telaoShortcut']);
+
 // QR code (SVG) do link secreto do telão.
 $app->get('/t/{slug}/qr.svg', [GameController::class, 'telaoQr']);
 

@@ -240,6 +240,25 @@ final class GameController
      * é renderizada fora do layout autenticado.
      */
     /**
+     * GET /telao — atalho conveniente para o ADMIN logado.
+     *
+     * O telão de verdade fica em /t/<sequência secreta>. Este atalho existe
+     * só para não precisar decorar a sequência: quem estiver logado no
+     * painel é redirecionado para lá. Para quem NÃO está logado devolve 404
+     * (as equipes não descobrem o telão por adivinhação).
+     */
+    public function telaoShortcut(Request $request, Response $response): Response
+    {
+        if (!isset($_SESSION['user'])) {
+            return $response->withStatus(404);
+        }
+
+        return $response
+            ->withHeader('Location', '/t/' . VaultRepository::telaoSlug())
+            ->withStatus(302);
+    }
+
+    /**
      * GET /t/{slug} — TELÃO público (tela do evento), em URL secreta.
      *
      * O endereço não é /telao: é uma sequência aleatória, para só a
