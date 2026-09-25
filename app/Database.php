@@ -204,6 +204,24 @@ final class Database
             'TINYINT(1) NOT NULL DEFAULT 0'
         );
 
+        // Migração: cada CHARADA pode ser habilitada/desabilitada na mão.
+        // Desabilitada = a equipe que está nela fica em espera ("aguardando a
+        // liberação do próximo tesouro") até a organização habilitar.
+        self::ensureSimpleColumn(
+            $pdo,
+            $driver,
+            'treasures',
+            'riddle1_enabled',
+            'TINYINT(1) NOT NULL DEFAULT 1'
+        );
+        self::ensureSimpleColumn(
+            $pdo,
+            $driver,
+            'treasures',
+            'riddle2_enabled',
+            'TINYINT(1) NOT NULL DEFAULT 1'
+        );
+
         // Nome dos tesouros: sempre "Tesouro N" (posição na lista).
         self::normalizeTreasureNames($pdo);
 
@@ -596,6 +614,9 @@ final class Database
             'team_locations.device_id' => 'VARCHAR(64) NOT NULL DEFAULT \'\'',
             'team_devices.name'        => 'VARCHAR(60) NOT NULL DEFAULT \'\'',
             'treasures.with_guardian'  => 'TINYINT(1) NOT NULL DEFAULT 0',
+            // Cada charada pode ser habilitada/pausada pela organização.
+            'treasures.riddle1_enabled' => 'TINYINT(1) NOT NULL DEFAULT 1',
+            'treasures.riddle2_enabled' => 'TINYINT(1) NOT NULL DEFAULT 1',
         ];
 
         if (($allowed[$table . '.' . $column] ?? null) !== $definition) {

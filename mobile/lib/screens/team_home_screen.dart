@@ -483,6 +483,12 @@ class _TeamHomeScreenState extends State<TeamHomeScreen> {
           ],
         ),
       );
+    } on RiddlePausedException catch (e) {
+      // A organização pausou a charada deste tesouro: o jogo espera aqui.
+      if (!mounted) return;
+      setState(() => _flowState = TreasureFlowState.viewingClue);
+      _showSnackBar(e.message, isError: false);
+      await _loadState();
     } on ApiException catch (e) {
       if (!mounted) return;
       setState(() => _flowState = TreasureFlowState.viewingClue);
@@ -659,6 +665,12 @@ class _TeamHomeScreenState extends State<TeamHomeScreen> {
 
       // Atualizar estado (pontos/placar) sem alterar o fluxo da tela
       _refreshStateKeepFlow();
+    } on RiddlePausedException catch (e) {
+      // A organização pausou a charada: a equipe volta para a tela de espera.
+      if (!mounted) return;
+      setState(() => _flowState = TreasureFlowState.viewingClue);
+      _showSnackBar(e.message, isError: false);
+      await _loadState();
     } on ApiException catch (e) {
       if (!mounted) return;
       setState(() => _flowState = TreasureFlowState.showingRiddle);
@@ -799,9 +811,15 @@ class _TeamHomeScreenState extends State<TeamHomeScreen> {
   /// Está atualizando manualmente (tela "Aguardando o Desafio Final").
   bool _refreshing = false;
 
-  /// Botão "Atualizar" da espera do Desafio Final.
+  /// Botão "Atualizar" das telas de espera (charada pausada / Desafio Final
+  /// bloqueado). Recarrega o estado e avisa quando algo foi liberado.
   Future<void> _refreshManual() async {
     if (_refreshing) return;
+
+    // Como estava antes, para saber se algo foi LIBERADO agora.
+    final wasRiddlePaused = _gameState?.currentTreasure?.riddlePaused == true;
+    final wasFinalBlocked =
+        _gameState?.finalAvailable == true && _gameState?.finalBlocked == true;
 
     setState(() => _refreshing = true);
 
@@ -809,21 +827,35 @@ class _TeamHomeScreenState extends State<TeamHomeScreen> {
       final state = await _apiService.teamState();
       if (!mounted) return;
 
+      final riddleReleased = wasRiddlePaused &&
+          state.currentTreasure != null &&
+          !state.currentTreasure!.riddlePaused;
+      final finalReleased =
+          wasFinalBlocked && state.finalAvailable && !state.finalBlocked;
+
       setState(() {
         _gameState = state;
 
         // Liberou o Desafio Final? Entra no desafio na hora.
-        if (state.finalAvailable && !state.finalBlocked) {
+        if (finalReleased) {
           _flowState = TreasureFlowState.finalChallenge;
+        }
+
+        // Liberou a charada? Volta para a dica/normal do tesouro.
+        if (riddleReleased) {
+          _flowState = TreasureFlowState.viewingClue;
         }
       });
 
-      if (state.finalAvailable && !state.finalBlocked) {
+      if (riddleReleased) {
         _soundService.playNotification();
-
-        if (mounted) {
-          _showSnackBar('O Desafio Final foi liberado! Boa sorte!', isError: false);
-        }
+        _showSnackBar('O tesouro foi liberado! Boa sorte!', isError: false);
+      } else if (finalReleased) {
+        _soundService.playNotification();
+        _showSnackBar(
+          'O Desafio Final foi liberado! Boa sorte!',
+          isError: false,
+        );
       }
     } catch (_) {
       if (mounted) {
@@ -1195,6 +1227,12 @@ class _TeamHomeScreenState extends State<TeamHomeScreen> {
 
   Widget _buildTreasureTab() {
     if (_gameState == null) return const SizedBox();
+
+    // CHARADA PAUSADA pela organização: o jogo para aqui. A equipe espera
+    // até liberarem a charada (a tela volta sozinha no próximo "Atualizar").
+    if (_gameState!.currentTreasure?.riddlePaused == true) {
+      return _buildRiddlePausedState();
+    }
 
     // Sem tesouro atual e não é final → aguardando
     if (_gameState!.currentTreasure == null && !_gameState!.finalAvailable) {
@@ -2143,11 +2181,14 @@ class _TeamHomeScreenState extends State<TeamHomeScreen> {
     );
   }
 
-  /// "Aguardando..." — o Desafio Final ainda não foi liberado pela organização.
+  /// "Aguardando..." — a CHARADA (ou o tesouro) ainda não foi liberada.
   ///
-  /// Tem o botão de atualizar: quando a organização liberar, a equipe entra
-  /// no desafio sem precisar fazer mais nada.
-  Widget _buildFinalAwaiting() {
+  /// Pode ser a charada pausada pela organização ou o Desafio Final bloqueado.
+  /// Tem o botão de atualizar: quando liberarem, o jogo volta na hora.
+  Widget _buildWaitingForRelease({
+    required String message,
+    required IconData icon,
+  }) {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32),
@@ -2161,11 +2202,7 @@ class _TeamHomeScreenState extends State<TeamHomeScreen> {
                 shape: BoxShape.circle,
                 border: Border.all(color: AppColors.gold, width: 2),
               ),
-              child: const Icon(
-                Icons.hourglass_top_rounded,
-                color: AppColors.gold,
-                size: 56,
-              ),
+              child: Icon(icon, color: AppColors.gold, size: 56),
             ),
             const SizedBox(height: 28),
             const Text(
@@ -2179,10 +2216,10 @@ class _TeamHomeScreenState extends State<TeamHomeScreen> {
               ),
             ),
             const SizedBox(height: 14),
-            const Text(
-              'Estamos aguardando a liberação do Desafio Final.',
+            Text(
+              message,
               textAlign: TextAlign.center,
-              style: TextStyle(
+              style: const TextStyle(
                 color: AppColors.ivory,
                 fontSize: 17,
                 height: 1.5,
@@ -2191,7 +2228,7 @@ class _TeamHomeScreenState extends State<TeamHomeScreen> {
             ),
             const SizedBox(height: 8),
             Text(
-              'Toque em atualizar quando a organização avisar.',
+              'Toque em atualizar para verificar.',
               textAlign: TextAlign.center,
               style: TextStyle(
                 color: AppColors.ivory.withValues(alpha: 0.6),
@@ -2234,6 +2271,22 @@ class _TeamHomeScreenState extends State<TeamHomeScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  /// Charada pausada pela organização — o jogo espera a liberação.
+  Widget _buildRiddlePausedState() {
+    return _buildWaitingForRelease(
+      message: 'Estamos aguardando a liberação do próximo tesouro.',
+      icon: Icons.hourglass_top_rounded,
+    );
+  }
+
+  /// "Aguardando..." — o Desafio Final ainda não foi liberado pela organização.
+  Widget _buildFinalAwaiting() {
+    return _buildWaitingForRelease(
+      message: 'Estamos aguardando a liberação do Desafio Final.',
+      icon: Icons.hourglass_top_rounded,
     );
   }
 

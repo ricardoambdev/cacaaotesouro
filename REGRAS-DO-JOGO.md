@@ -150,6 +150,27 @@ A organização pode esconder **QR codes falsos** espalhados pelo caminho:
   armadilha do Quico!"*) e **volta para a tela inicial**.
 - Serve para divertir e despistar as equipes.
 
+### 5.1 ⏸️ Pausar uma charada (segurar a equipe)
+
+Cada tesouro tem **duas charadas** (a equipe recebe uma delas). No cadastro do
+tesouro, **cada charada tem sua própria chave de habilitada**:
+
+- **Habilitada (padrão):** o jogo segue normal.
+- **Desmarcada (pausada):** a equipe que estiver nessa charada **para no
+  tesouro** — o app mostra a tela **"Aguardando..."** com a mensagem
+  *"Estamos aguardando a liberação do próximo tesouro."* e o botão **Atualizar**.
+- Ao **habilitar e salvar**, o jogo volta ao normal e a **dica/charada** aparece
+  de novo (no app, basta tocar em **Atualizar**).
+
+Regra do "quem pausa":
+
+- A equipe **já tem** uma charada sorteada → vale a chave **daquela** charada.
+- A equipe **ainda não tem** charada sorteada → o tesouro só pausa se as
+  **duas** estiverem pausadas.
+
+Serve para **segurar o ritmo** da gincana: a equipe chega ao tesouro, faz o
+check-in e a selfie, e fica esperando até você liberar a charada.
+
 ---
 
 ## 6. Tesouros: código, local e QR

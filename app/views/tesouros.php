@@ -111,6 +111,24 @@ $isRandomOrder = ($game['treasureOrder'] ?? 'estabelecida') === 'aleatorio';
                                     <?= icon('family_restroom', 14) ?> Com responsáveis
                                 </span>
                             <?php endif; ?>
+
+                            <?php
+                            $r1On = (int) ($treasure['riddle1_enabled'] ?? 1) === 1;
+                            $r2On = (int) ($treasure['riddle2_enabled'] ?? 1) === 1;
+                            ?>
+                            <?php if (!$r1On && !$r2On): ?>
+                                <span class="badge badge-warning" title="As duas charadas estão pausadas: as equipes param neste tesouro">
+                                    <?= icon('pause_circle', 14) ?> Charadas pausadas
+                                </span>
+                            <?php elseif (!$r1On): ?>
+                                <span class="badge badge-warning" title="A charada 1 está pausada">
+                                    <?= icon('pause_circle', 14) ?> Charada 1 pausada
+                                </span>
+                            <?php elseif (!$r2On): ?>
+                                <span class="badge badge-warning" title="A charada 2 está pausada">
+                                    <?= icon('pause_circle', 14) ?> Charada 2 pausada
+                                </span>
+                            <?php endif; ?>
                         </div>
                     </div>
 

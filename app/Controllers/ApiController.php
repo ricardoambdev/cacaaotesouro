@@ -51,6 +51,41 @@ final class ApiController
     /** Bônus da PRIMEIRA equipe a encontrar o tesouro. */
     private const FIRST_BONUS_POINTS = 10;
 
+    /**
+     * Mensagem mostrada quando a charada (ou o desafio final) está PAUSADA
+     * esperando a organização liberar.
+     */
+    private const WAITING_RELEASE_MESSAGE = 'Estamos aguardando a liberação do próximo tesouro.';
+
+    /**
+     * A charada que a equipe vai receber neste tesouro está PAUSADA?
+     *
+     * Cada charada (1 e 2) tem seu próprio liga/desliga. Se a equipe já tem
+     * uma charada assinalada, vale o liga/desliga DELA; se ainda não tem,
+     * o tesouro só pausa quando as DUAS estão pausadas (aí não há o que sortear).
+     *
+     * @param array<string, mixed>      $treasure
+     * @param array<string, mixed>|null $progress
+     */
+    private static function riddlePaused(array $treasure, ?array $progress): bool
+    {
+        $oneEnabled = (int) ($treasure['riddle1_enabled'] ?? 1) === 1;
+        $twoEnabled = (int) ($treasure['riddle2_enabled'] ?? 1) === 1;
+
+        $assigned = (int) ($progress['assigned_riddle'] ?? 0);
+
+        if ($assigned === 1) {
+            return !$oneEnabled;
+        }
+
+        if ($assigned === 2) {
+            return !$twoEnabled;
+        }
+
+        // Sem charada assinalada ainda: só pausa se não houver nenhuma ativa.
+        return !$oneEnabled && !$twoEnabled;
+    }
+
     // ==================================================================
     // Autenticação de EQUIPE
     // ==================================================================
@@ -239,6 +274,10 @@ final class ApiController
                 // charada depois (check-in + selfie já feitos, charada pendente).
                 $progress = GameRepository::progress($teamId, $currentTreasureId);
 
+                // CHARADA PAUSADA: a equipe fica em espera até a organização
+                // habilitar a charada que ela vai receber.
+                $currentTreasure['riddle_paused'] = self::riddlePaused($treasure, $progress);
+
                 if ($progress !== null && (int) $progress['gps_confirmed'] === 1) {
                     $assignedRiddle = (int) ($progress['assigned_riddle'] ?? 0);
 
@@ -377,6 +416,18 @@ final class ApiController
                 'message'  => (string) ($decoy['message'] ?? 'Você caiu numa armadilha!'),
                 'error'    => (string) ($decoy['message'] ?? 'Você caiu numa armadilha!'),
             ], 200);
+        }
+
+        // Charada PAUSADA pela organização: a equipe fica na tela de espera
+        // ("Estamos aguardando a liberação do próximo tesouro") até liberar.
+        if (self::riddlePaused($treasure, GameRepository::progress($teamId, $treasureId))) {
+            return $this->json($response, [
+                'success'       => false,
+                'code'          => 'riddle_paused',
+                'riddle_paused' => true,
+                'error'         => self::WAITING_RELEASE_MESSAGE,
+                'message'       => self::WAITING_RELEASE_MESSAGE,
+            ], 423);
         }
 
         if ($qrCode === '' || $qrCode !== (string) $treasure['qr_content']) {
@@ -647,6 +698,18 @@ final class ApiController
                 'success' => false,
                 'error'   => 'Este tesouro já foi resolvido.',
             ], 400);
+        }
+
+        // Charada PAUSADA pela organização no meio do caminho: a equipe
+        // espera na tela de liberação até habilitarem de novo.
+        if (self::riddlePaused($treasure, $progress)) {
+            return $this->json($response, [
+                'success'       => false,
+                'code'          => 'riddle_paused',
+                'riddle_paused' => true,
+                'error'         => self::WAITING_RELEASE_MESSAGE,
+                'message'       => self::WAITING_RELEASE_MESSAGE,
+            ], 423);
         }
 
         $assignedRiddle = (int) ($progress['assigned_riddle'] ?? 0);

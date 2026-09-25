@@ -156,6 +156,25 @@ $hasQr = $qrPath !== '';
                     <div class="error-inline"></div>
                     <p class="form-help-text">Somente dígitos, de 1 a 8.</p>
                 </div>
+
+                <!-- Habilitada / pausada -->
+                <div class="form-group" style="border:1px solid rgba(247,236,212,0.12); border-radius:12px; padding:12px; margin-top:4px;">
+                    <input type="hidden" name="riddle1_enabled" value="0">
+                    <label style="display:flex; align-items:center; gap:10px; cursor:pointer; margin:0;">
+                        <input type="checkbox" name="riddle1_enabled" value="1"
+                               style="width:18px; height:18px; accent-color:#22C55E;"
+                               <?= ($value('riddle1_enabled', '1') === '1') ? 'checked' : '' ?>>
+                        <span style="font-weight:700; color:#f7ecd4;">
+                            Charada 1 habilitada
+                        </span>
+                    </label>
+                    <p class="form-help-text" style="margin:8px 0 0;">
+                        <strong style="color:#F59E0B;">Desmarcada:</strong> a equipe que estiver
+                        nesta charada fica em espera na tela
+                        <em>"Estamos aguardando a liberação do próximo tesouro."</em>
+                        até você habilitar e salvar.
+                    </p>
+                </div>
             </div>
 
             <!-- Card: Charada 2 -->
@@ -189,6 +208,25 @@ $hasQr = $qrPath !== '';
                     </div>
                     <div class="error-inline"></div>
                     <p class="form-help-text">Somente dígitos, de 1 a 8. Cada equipe recebe uma das duas charadas.</p>
+                </div>
+
+                <!-- Habilitada / pausada -->
+                <div class="form-group" style="border:1px solid rgba(247,236,212,0.12); border-radius:12px; padding:12px; margin-top:4px;">
+                    <input type="hidden" name="riddle2_enabled" value="0">
+                    <label style="display:flex; align-items:center; gap:10px; cursor:pointer; margin:0;">
+                        <input type="checkbox" name="riddle2_enabled" value="1"
+                               style="width:18px; height:18px; accent-color:#22C55E;"
+                               <?= ($value('riddle2_enabled', '1') === '1') ? 'checked' : '' ?>>
+                        <span style="font-weight:700; color:#f7ecd4;">
+                            Charada 2 habilitada
+                        </span>
+                    </label>
+                    <p class="form-help-text" style="margin:8px 0 0;">
+                        <strong style="color:#F59E0B;">Desmarcada:</strong> a equipe que estiver
+                        nesta charada fica em espera na tela
+                        <em>"Estamos aguardando a liberação do próximo tesouro."</em>
+                        até você habilitar e salvar.
+                    </p>
                 </div>
             </div>
         </div>

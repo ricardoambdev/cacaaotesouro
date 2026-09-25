@@ -374,7 +374,7 @@ final class TreasureController
     {
         $body = (array) $request->getParsedBody();
 
-        return [
+        $data = [
             'code'        => strtoupper(trim((string) ($body['code'] ?? ''))),
             // O NOME não é editável: é sempre "Tesouro N" (posição na lista),
             // definido automaticamente ao criar/reordenar.
@@ -387,6 +387,20 @@ final class TreasureController
             // Este tesouro deve ser encontrado na companhia dos responsáveis?
             'with_guardian' => isset($body['with_guardian']) ? '1' : '0',
         ];
+
+        // Cada charada pode estar HABILITADA ou PAUSADA (pausada = a equipe
+        // que está nela fica em espera até a organização liberar).
+        //
+        // Só mexe quando o campo vem no formulário: quem NÃO manda o campo
+        // (ex.: o app admin antigo) não pausa as charadas sem querer. No
+        // formulário web o campo sempre vem (hidden=0 + checkbox=1).
+        foreach (['riddle1_enabled', 'riddle2_enabled'] as $flag) {
+            if (array_key_exists($flag, $body)) {
+                $data[$flag] = ((string) $body[$flag] === '1') ? '1' : '0';
+            }
+        }
+
+        return $data;
     }
 
     /**
