@@ -182,6 +182,14 @@ final class ApiController
                 // Sai só ESTE aparelho (a equipe pode continuar em outros).
                 TeamRepository::removeDevice($teamId, $deviceId);
 
+                // Apaga JÁ a posição deste aparelho: ele sai na hora da lista
+                // de dispositivos conectados e do mapa (não fica "fantasma"
+                // esperando os 30s do timeout).
+                $del = Database::get()->prepare(
+                    'DELETE FROM team_locations WHERE device_id = :device_id'
+                );
+                $del->execute([':device_id' => $deviceId]);
+
                 if (TeamRepository::deviceCount($teamId) === 0) {
                     // Nenhum aparelho ativo: a equipe sai do mapa do painel.
                     TeamRepository::setSessionToken($teamId, null);

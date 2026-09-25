@@ -846,12 +846,16 @@ $cartoKey = trim((string) app_config('map.carto_key', ''));
 
             const cores = { laranja: '#F97316', preta: '#94a3b8' };
 
-            // Agrupa por equipe
+            // Agrupa por equipe — só aparelhos CONECTADOS (online).
+            // Quem saiu do jogo (ou está sem sinal) não aparece na lista.
             const porEquipe = { laranja: [], preta: [] };
 
             (devices || []).forEach(dev => {
                 const key = (dev.color || '').toLowerCase();
-                if (porEquipe[key]) porEquipe[key].push(dev);
+                if (!porEquipe[key]) return;
+                if (!dev.online) return;
+
+                porEquipe[key].push(dev);
             });
 
             Object.keys(lists).forEach(key => {
@@ -870,10 +874,8 @@ $cartoKey = trim((string) app_config('map.carto_key', ''));
                 lista.forEach(dev => {
                     const btn = document.createElement('button');
                     btn.type = 'button';
-                    btn.className = 'sb-device-btn' + (dev.online ? '' : ' is-offline');
-                    btn.title = dev.online
-                        ? 'Clique para centralizar no mapa'
-                        : 'Sem posição no momento';
+                    btn.className = 'sb-device-btn';
+                    btn.title = 'Clique para centralizar no mapa';
 
                     const dot = document.createElement('span');
                     dot.className = 'sb-device-dot';

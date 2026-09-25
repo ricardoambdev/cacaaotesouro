@@ -219,6 +219,14 @@ class _TeamBusyScreenState extends State<TeamBusyScreen> {
 
   Future<void> _onSair() async {
     _pollTimer?.cancel();
+
+    // Avisa o servidor para este aparelho sair da lista de conectados.
+    try {
+      await ApiService().teamLogout();
+    } catch (_) {
+      // Sem rede: segue com a saída local de qualquer forma.
+    }
+
     await DeviceService().clearCredentials();
     if (!mounted) return;
     Navigator.pushReplacement(

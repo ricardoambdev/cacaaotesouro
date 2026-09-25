@@ -304,6 +304,9 @@ Na página **Desafio Final** do painel existe a caixa **"Bloquear o Desafio Fina
 - Endereço **público**: `/telao` (sem login — abra em qualquer máquina).
 - Mostra: **placar das equipes**, **mapa** com **cada aparelho conectado**
   (nome + cor da equipe) e as **selfies** mais recentes.
+- A lista **"Dispositivos conectados"** só mostra quem está **conectado agora**:
+  ao **sair do jogo** (Sair no app) o aparelho some **na hora**, e um aparelho que
+  parou de enviar posição (app fechado, sem sinal) some em **até 30 segundos**.
 - Use no **projetor**, em tela cheia.
 
 ---
