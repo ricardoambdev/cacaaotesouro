@@ -81,7 +81,7 @@ Serve tanto para a organização quanto para explicar às equipes.
   - e **avançam sozinhos** para o próximo tesouro.
 - **Todos** os aparelhos da equipe aparecem no mapa, **cada um com o seu nome**.
 
-### 4.4 👨‍👩‍👧 Tesouro que precisa dos RESPONSÁVEIS
+### 4.4 👨‍👩‍👧👩‍🏫 Tesouro que precisa de um RESPONSÁVEL ou de um PROFESSOR
 Alguns tesouros podem ser configurados (no painel, ao editar o tesouro) para
 serem encontrados **na companhia dos responsáveis**.
 
@@ -447,11 +447,12 @@ O cofre **não abre** (mostra *"O cofre ainda não foi liberado"*).
 **As equipes veem o local real dos tesouros no app?**
 Não. O campo "Local do tesouro" é **exclusivo do admin**.
 
-**O que é um tesouro "com responsáveis"?**
+**O que é um tesouro "com responsável" ou "com professor"?**
 É um tesouro marcado no painel para ser encontrado na companhia de um
-responsável. O app avisa isso **na tela do tesouro** e **na selfie** (com um
-modal antes de abrir a câmera), avisando que **pelo menos um responsável deve
-aparecer na foto** — sob risco de **desclassificar o tesouro**.
+responsável **ou** de um professor. O app avisa isso **na tela do tesouro** e
+**na selfie** (com um modal antes de abrir a câmera), avisando que **pelo menos
+um responsável (ou um professor) deve aparecer na foto** — sob risco de
+**desclassificar o tesouro**.
 
 ---
 

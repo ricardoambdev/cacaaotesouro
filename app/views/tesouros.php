@@ -107,8 +107,12 @@ $isRandomOrder = ($game['treasureOrder'] ?? 'estabelecida') === 'aleatorio';
                             <?php endif; ?>
 
                             <?php if ((int) ($treasure['with_guardian'] ?? 0) === 1): ?>
-                                <span class="badge badge-info" title="Deve ser encontrado na companhia dos responsáveis">
-                                    <?= icon('family_restroom', 14) ?> Com responsáveis
+                                <span class="badge badge-info" title="Deve ser encontrado na companhia de um responsável">
+                                    <?= icon('family_restroom', 14) ?> Com responsável
+                                </span>
+                            <?php elseif ((int) ($treasure['with_teacher'] ?? 0) === 1): ?>
+                                <span class="badge badge-info" title="Deve ser encontrado na companhia de um professor">
+                                    <?= icon('school', 14) ?> Com professor
                                 </span>
                             <?php endif; ?>
 

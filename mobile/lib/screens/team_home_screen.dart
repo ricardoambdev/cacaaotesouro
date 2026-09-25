@@ -506,9 +506,31 @@ class _TeamHomeScreenState extends State<TeamHomeScreen> {
     }
   }
 
+  /// Quem deve acompanhar o tesouro atual (textos das mensagens).
+  ///
+  /// Responsável ou professor: quem deve acompanhar o tesouro.
+  String get _companionQuem =>
+      (_gameState?.currentTreasure?.withTeacher == true)
+          ? 'professor'
+          : 'responsável';
+
+  String get _companionQuemUpper =>
+      (_gameState?.currentTreasure?.withTeacher == true)
+          ? 'PROFESSOR'
+          : 'RESPONSÁVEL';
+
+  /// Ícone: professor = escola, responsável = família.
+  IconData get _companionIcon =>
+      (_gameState?.currentTreasure?.withTeacher == true)
+          ? Icons.school
+          : Icons.family_restroom;
+
   Future<void> _takeSelfie() async {
-    // ── Tesouro que exige responsável: avisa ANTES de abrir a câmera ──
-    if (_gameState?.currentTreasure?.withGuardian == true) {
+    // ── Tesouro que exige responsável/professor: avisa ANTES da câmera ──
+    if (_gameState?.currentTreasure?.hasCompanion == true) {
+      final quem = _companionQuem;              // "responsável" | "professor"
+      final quemUpper = _companionQuemUpper;    // "RESPONSÁVEL" | "PROFESSOR"
+
       final ok = await showDialog<bool>(
         context: context,
         barrierDismissible: false,
@@ -519,14 +541,14 @@ class _TeamHomeScreenState extends State<TeamHomeScreen> {
             side: const BorderSide(color: Colors.redAccent, width: 2),
           ),
           title: Row(
-            children: const [
-              Icon(Icons.warning_amber_rounded,
+            children: [
+              const Icon(Icons.warning_amber_rounded,
                   color: Colors.white, size: 28),
-              SizedBox(width: 8),
+              const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  'RESPONSÁVEL NA SELFIE',
-                  style: TextStyle(
+                  '$quemUpper NA SELFIE',
+                  style: const TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.w900,
                     fontSize: 17,
@@ -535,13 +557,13 @@ class _TeamHomeScreenState extends State<TeamHomeScreen> {
               ),
             ],
           ),
-          content: const Text(
-            'Para registrar este tesouro, pelo menos UM RESPONSÁVEL precisa '
+          content: Text(
+            'Para registrar este tesouro, pelo menos UM $quemUpper precisa '
             'aparecer na selfie junto com a equipe.\n\n'
-            '⚠️ Se a selfie for enviada SEM o responsável, o tesouro pode ser '
+            '⚠️ Se a selfie for enviada SEM o $quem, o tesouro pode ser '
             'DESCLASSIFICADO da sua equipe (a organização vai conferir a foto).\n\n'
-            'Chame o responsável e tire a foto com ele aparecendo.',
-            style: TextStyle(
+            'Chame o $quem e tire a foto com ele aparecendo.',
+            style: const TextStyle(
               color: Colors.white,
               fontSize: 14,
               height: 1.5,
@@ -1683,9 +1705,10 @@ class _TeamHomeScreenState extends State<TeamHomeScreen> {
       child: Column(
         children: [
           // ══════════════════════════════════════════════════
-          //  AVISO BEM VISÍVEL: precisa dos responsáveis
+          //  AVISO BEM VISÍVEL: precisa de responsável ou professor
+          //  (responsável ou professor)
           // ══════════════════════════════════════════════════
-          if (treasure.withGuardian) ...[
+          if (treasure.hasCompanion) ...[
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(18),
@@ -1710,13 +1733,13 @@ class _TeamHomeScreenState extends State<TeamHomeScreen> {
                 children: [
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
-                    children: const [
-                      Icon(Icons.warning_amber_rounded,
+                    children: [
+                      const Icon(Icons.warning_amber_rounded,
                           color: Colors.white, size: 30),
-                      SizedBox(width: 8),
+                      const SizedBox(width: 8),
                       Text(
                         'ATENÇÃO!',
-                        style: TextStyle(
+                        style: const TextStyle(
                           color: Colors.white,
                           fontSize: 20,
                           fontWeight: FontWeight.w900,
@@ -1726,10 +1749,12 @@ class _TeamHomeScreenState extends State<TeamHomeScreen> {
                     ],
                   ),
                   const SizedBox(height: 10),
-                  const Text(
-                    'Este tesouro deve ser encontrado na companhia dos seus RESPONSÁVEIS.',
+                  Text(
+                    _companionQuemUpper == 'PROFESSOR'
+                        ? 'Este tesouro deve ser encontrado na companhia de um PROFESSOR.'
+                        : 'Este tesouro deve ser encontrado na companhia dos seus RESPONSÁVEIS.',
                     textAlign: TextAlign.center,
-                    style: TextStyle(
+                    style: const TextStyle(
                       color: Colors.white,
                       fontSize: 15,
                       fontWeight: FontWeight.w700,
@@ -1737,12 +1762,12 @@ class _TeamHomeScreenState extends State<TeamHomeScreen> {
                     ),
                   ),
                   const SizedBox(height: 8),
-                  const Text(
-                    'Pelo menos UM responsável precisa estar com a equipe — '
-                    'e aparecer na selfie. Tesouro sem responsável pode ser '
+                  Text(
+                    'Pelo menos UM $_companionQuem precisa estar com a equipe — '
+                    'e aparecer na selfie. Tesouro sem $_companionQuem pode ser '
                     'DESCLASSIFICADO.',
                     textAlign: TextAlign.center,
-                    style: TextStyle(
+                    style: const TextStyle(
                       color: Colors.white,
                       fontSize: 13,
                       height: 1.4,
@@ -1965,8 +1990,8 @@ class _TeamHomeScreenState extends State<TeamHomeScreen> {
                 ),
                 const SizedBox(height: 18),
 
-                // ── Aviso: responsáveis na selfie (tesouro exige) ──
-                if (_gameState?.currentTreasure?.withGuardian == true) ...[
+                // ── Aviso: responsável/professor na selfie (tesouro exige) ──
+                if (_gameState?.currentTreasure?.hasCompanion == true) ...[
                   Container(
                     width: double.infinity,
                     padding: const EdgeInsets.all(14),
@@ -1980,14 +2005,15 @@ class _TeamHomeScreenState extends State<TeamHomeScreen> {
                       border: Border.all(color: Colors.redAccent, width: 2),
                     ),
                     child: Column(
-                      children: const [
-                        Icon(Icons.family_restroom,
-                            color: Colors.white, size: 32),
-                        SizedBox(height: 8),
+                      children: [
+                        Icon(_companionIcon, color: Colors.white, size: 32),
+                        const SizedBox(height: 8),
                         Text(
-                          'OS RESPONSÁVEIS DEVEM APARECER NA SELFIE',
+                          _companionQuemUpper == 'PROFESSOR'
+                              ? 'O PROFESSOR DEVE APARECER NA SELFIE'
+                              : 'OS RESPONSÁVEIS DEVEM APARECER NA SELFIE',
                           textAlign: TextAlign.center,
-                          style: TextStyle(
+                          style: const TextStyle(
                             color: Colors.white,
                             fontSize: 15,
                             fontWeight: FontWeight.w900,
@@ -1995,13 +2021,13 @@ class _TeamHomeScreenState extends State<TeamHomeScreen> {
                             letterSpacing: 0.5,
                           ),
                         ),
-                        SizedBox(height: 8),
+                        const SizedBox(height: 8),
                         Text(
-                          'Este tesouro só vale se pelo menos UM responsável '
-                          'aparecer na foto junto com a equipe. '
-                          'Sem o responsável, o tesouro pode ser DESCLASSIFICADO.',
+                          'Este tesouro só vale se pelo menos UM $_companionQuem '
+                          'aparecer na foto junto com a equipe. Sem o $_companionQuem, '
+                          'o tesouro pode ser DESCLASSIFICADO.',
                           textAlign: TextAlign.center,
-                          style: TextStyle(
+                          style: const TextStyle(
                             color: Colors.white,
                             fontSize: 13,
                             height: 1.45,

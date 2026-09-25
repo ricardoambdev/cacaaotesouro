@@ -204,6 +204,16 @@ final class Database
             'TINYINT(1) NOT NULL DEFAULT 0'
         );
 
+        // Migração: o tesouro pode exigir um RESPONSÁVEL ("with_guardian")
+        // OU um PROFESSOR ("with_teacher").
+        self::ensureSimpleColumn(
+            $pdo,
+            $driver,
+            'treasures',
+            'with_teacher',
+            'TINYINT(1) NOT NULL DEFAULT 0'
+        );
+
         // Migração: o TESOURO pode ser PAUSADO pela organização. Pausado = as
         // equipes que estiverem nele ficam em espera ("aguardando a liberação
         // do próximo tesouro") até a organização liberar.
@@ -606,6 +616,8 @@ final class Database
             'team_locations.device_id' => 'VARCHAR(64) NOT NULL DEFAULT \'\'',
             'team_devices.name'        => 'VARCHAR(60) NOT NULL DEFAULT \'\'',
             'treasures.with_guardian'  => 'TINYINT(1) NOT NULL DEFAULT 0',
+            // Responsável ou professor.
+            'treasures.with_teacher'   => 'TINYINT(1) NOT NULL DEFAULT 0',
             // Tesouro pausado (segura as equipes até a organização liberar).
             'treasures.paused'          => 'TINYINT(1) NOT NULL DEFAULT 0',
         ];

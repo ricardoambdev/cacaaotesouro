@@ -27,7 +27,9 @@ class _TreasureEditScreenState extends State<TreasureEditScreen> {
   final _clueController = TextEditingController();
 
   /// Este tesouro deve ser encontrado na companhia dos responsáveis?
-  bool _withGuardian = false;
+  /// Responsável ou professor: '' (nenhum) | 'guardian' | 'teacher'.
+  /// Só UM pode ser escolhido.
+  String _companion = '';
 
   /// O TESOURO está pausado? Pausado = as equipes param nele até liberar.
   bool _paused = false;
@@ -87,7 +89,9 @@ class _TreasureEditScreenState extends State<TreasureEditScreen> {
         _nameController.text = (data['name'] as String?) ?? '';
         _descriptionController.text = (data['description'] as String?) ?? '';
         _clueController.text = (data['clue'] as String?) ?? '';
-        _withGuardian = (data['with_guardian'] as num?)?.toInt() == 1;
+        final g = (data['with_guardian'] as num?)?.toInt() == 1;
+        final t = (data['with_teacher'] as num?)?.toInt() == 1;
+        _companion = t ? 'teacher' : (g ? 'guardian' : '');
         _paused = (data['paused'] as num?)?.toInt() == 1;
         _completedCount = (data['completed_count'] as num?)?.toInt() ?? 0;
         _riddle1Controller.text = (data['riddle1'] as String?) ?? '';
@@ -219,7 +223,7 @@ class _TreasureEditScreenState extends State<TreasureEditScreen> {
       await _apiService.adminUpdateTreasure(widget.treasureId, {
         'description': _descriptionController.text.trim(),
         'clue': _clueController.text.trim(),
-        'with_guardian': _withGuardian ? 1 : 0,
+        'companion': _companion,   // '' | 'guardian' | 'teacher'
         'paused': _paused ? 1 : 0,
         'riddle1': _riddle1Controller.text.trim(),
         'answer1': _answer1Controller.text.trim(),
@@ -527,6 +531,7 @@ class _TreasureEditScreenState extends State<TreasureEditScreen> {
             const SizedBox(height: 14),
 
             // ── Encontro com os responsáveis ────────────
+            // ── Responsável ou professor ─────────────────
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(14),
@@ -537,42 +542,73 @@ class _TreasureEditScreenState extends State<TreasureEditScreen> {
                   color: Colors.orangeAccent.withValues(alpha: 0.3),
                 ),
               ),
-              child: Row(
+              child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Icon(Icons.family_restroom,
-                      color: Colors.orangeAccent, size: 22),
-                  const SizedBox(width: 12),
-                  const Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Encontro com os responsáveis',
+                  Row(
+                    children: const [
+                      Icon(Icons.groups,
+                          color: Colors.orangeAccent, size: 22),
+                      SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          'Responsável ou professor?',
                           style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w700,
                             color: AppColors.ivory,
                           ),
                         ),
-                        SizedBox(height: 4),
-                        Text(
-                          'O app avisa bem visível que este tesouro precisa ser '
-                          'encontrado com pelo menos UM responsável, e que ele '
-                          'deve aparecer na selfie — sob risco de desclassificar.',
-                          style: TextStyle(
-                            fontSize: 12,
-                            height: 1.4,
-                            color: AppColors.ivoryMuted,
-                          ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  const Text(
+                    'O app avisa bem visível que este tesouro precisa ser '
+                    'encontrado com pelo menos UM responsável (ou um professor), '
+                    'e que ele deve aparecer na selfie — sob risco de '
+                    'desclassificar.',
+                    style: TextStyle(
+                      fontSize: 12,
+                      height: 1.4,
+                      color: AppColors.ivoryMuted,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  RadioGroup<String>(
+                    groupValue: _companion,
+                    onChanged: (v) => setState(() => _companion = v ?? ''),
+                    child: Column(
+                      children: const [
+                        RadioListTile<String>(
+                          contentPadding: EdgeInsets.zero,
+                          dense: true,
+                          value: '',
+                          activeColor: AppColors.gold,
+                          title: Text('Nenhum',
+                              style: TextStyle(
+                                  color: AppColors.ivory, fontSize: 14)),
+                        ),
+                        RadioListTile<String>(
+                          contentPadding: EdgeInsets.zero,
+                          dense: true,
+                          value: 'guardian',
+                          activeColor: AppColors.gold,
+                          title: Text('Acompanhado por um responsável',
+                              style: TextStyle(
+                                  color: AppColors.ivory, fontSize: 14)),
+                        ),
+                        RadioListTile<String>(
+                          contentPadding: EdgeInsets.zero,
+                          dense: true,
+                          value: 'teacher',
+                          activeColor: AppColors.gold,
+                          title: Text('Acompanhado por um professor',
+                              style: TextStyle(
+                                  color: AppColors.ivory, fontSize: 14)),
                         ),
                       ],
                     ),
-                  ),
-                  Switch(
-                    value: _withGuardian,
-                    activeColor: AppColors.gold,
-                    onChanged: (v) => setState(() => _withGuardian = v),
                   ),
                 ],
               ),

@@ -402,6 +402,20 @@ final class TreasureController
     {
         $body = (array) $request->getParsedBody();
 
+        // Responsável ou professor: '' (nenhum) | 'guardian' | 'teacher'.
+        // Só UM pode ser escolhido. Aceita também os campos antigos/booleanos.
+        $companion = (string) ($body['companion'] ?? '');
+
+        if (!in_array($companion, ['guardian', 'teacher'], true)) {
+            if (isset($body['with_teacher']) && form_flag($body['with_teacher'])) {
+                $companion = 'teacher';
+            } elseif (isset($body['with_guardian']) && form_flag($body['with_guardian'])) {
+                $companion = 'guardian';
+            } else {
+                $companion = '';
+            }
+        }
+
         $data = [
             // O CÓDIGO ("T01"...) NÃO vem do formulário: é a posição na ordem,
             // gravado automaticamente por TreasureRepository::syncIdentity().
@@ -413,8 +427,11 @@ final class TreasureController
             'answer1'     => trim((string) ($body['answer1'] ?? '')),
             'riddle2'     => trim((string) ($body['riddle2'] ?? '')),
             'answer2'     => trim((string) ($body['answer2'] ?? '')),
-            // Este tesouro deve ser encontrado na companhia dos responsáveis?
-            'with_guardian' => isset($body['with_guardian']) ? '1' : '0',
+            // Este tesouro deve ser encontrado na companhia de um RESPONSÁVEL
+            // ou de um PROFESSOR? (o formulário manda um único campo
+            // `companion`: '' | 'guardian' | 'teacher').
+            'with_guardian' => $companion === 'guardian' ? '1' : '0',
+            'with_teacher'  => $companion === 'teacher' ? '1' : '0',
         ];
 
         // O TESOURO pode ser pausado (as equipes param nele até liberar).

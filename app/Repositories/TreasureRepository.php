@@ -34,6 +34,7 @@ final class TreasureRepository
         'sort_order',
         'active',
         'with_guardian',
+        'with_teacher',
         'paused',
     ];
 
@@ -101,11 +102,11 @@ final class TreasureRepository
             'INSERT INTO treasures '
             . '(code, name, description, clue, riddle1, answer1, riddle2, answer2, '
             . 'qr_content, qr_svg_path, lat, lng, sort_order, active, created_at, '
-            . 'paused) '
+            . 'with_guardian, with_teacher, paused) '
             . 'VALUES '
             . '(:code, :name, :description, :clue, :riddle1, :answer1, :riddle2, :answer2, '
             . ':qr_content, :qr_svg_path, :lat, :lng, :sort_order, :active, :created_at, '
-            . ':paused)'
+            . ':with_guardian, :with_teacher, :paused)'
         );
 
         $stmt->execute([
@@ -126,6 +127,7 @@ final class TreasureRepository
             ':created_at'    => (string) ($data['created_at'] ?? date('Y-m-d H:i:s')),
             // Tesouro pausado (padrão: não).
             ':paused'      => (int) ($data['paused'] ?? 0),
+            ':with_teacher' => (int) ($data['with_teacher'] ?? 0),
         ]);
 
         return (int) $pdo->lastInsertId();
@@ -155,7 +157,8 @@ final class TreasureRepository
 
                 if ($column === 'lat' || $column === 'lng') {
                     $params[":$column"] = self::nullIfEmpty($data[$column] ?? null);
-                } elseif ($column === 'sort_order' || $column === 'active' || $column === 'with_guardian') {
+                } elseif ($column === 'sort_order' || $column === 'active'
+                    || $column === 'with_guardian' || $column === 'with_teacher') {
                     $params[":$column"] = (int) $data[$column];
                 } else {
                     $params[":$column"] = (string) $data[$column];

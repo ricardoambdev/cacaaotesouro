@@ -10,6 +10,12 @@ class GameTreasure {
   /// Este tesouro deve ser encontrado na companhia dos responsáveis?
   final bool withGuardian;
 
+  /// ...ou na companhia de um PROFESSOR?
+  final bool withTeacher;
+
+  /// Este tesouro exige um responsável ou um professor?
+  bool get hasCompanion => withGuardian || withTeacher;
+
   /// O TESOURO está PAUSADO pela organização?
   ///
   /// Enquanto estiver pausado o jogo para aqui: a equipe vê a tela
@@ -41,6 +47,7 @@ class GameTreasure {
     this.clue,
     this.hasLocation = false,
     this.withGuardian = false,
+    this.withTeacher = false,
     this.isPaused = false,
     this.checkedIn = false,
     this.selfieSent = false,
@@ -63,6 +70,7 @@ class GameTreasure {
       clue: json['clue'] as String?,
       hasLocation: json['has_location'] == true,
       withGuardian: json['with_guardian'] == true,
+      withTeacher: json['with_teacher'] == true,
       isPaused: json['paused'] == true,
       checkedIn: json['checked_in'] == true,
       selfieSent: json['selfie_sent'] == true,

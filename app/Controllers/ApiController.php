@@ -255,8 +255,9 @@ final class ApiController
                     // tesouro e é EXCLUSIVO DO ADMIN. Ele nunca pode entrar
                     // aqui (nem em nenhum retorno do app das equipes).
                     'has_location' => $this->hasLocation($treasure),
-                    // Este tesouro precisa ser encontrado COM OS RESPONSÁVEIS?
+                    // Responsável ou professor.
                     'with_guardian' => (int) ($treasure['with_guardian'] ?? 0) === 1,
+                    'with_teacher'  => (int) ($treasure['with_teacher'] ?? 0) === 1,
                     'checked_in'    => false,
                     'selfie_sent'   => false,
                     'riddle_answered' => false,
@@ -860,6 +861,7 @@ final class ApiController
                         // para o app das equipes.
                         'has_location' => $this->hasLocation($nextTreasure),
                         'with_guardian' => (int) ($nextTreasure['with_guardian'] ?? 0) === 1,
+                        'with_teacher'  => (int) ($nextTreasure['with_teacher'] ?? 0) === 1,
                     ];
                 }
             }
@@ -948,6 +950,7 @@ final class ApiController
                     'clue'         => (string) $row['clue'],
                     'has_location' => $this->hasLocation($row),
                     'with_guardian' => (int) ($row['with_guardian'] ?? 0) === 1,
+                    'with_teacher'  => (int) ($row['with_teacher'] ?? 0) === 1,
                 ];
             }
         }
@@ -2114,7 +2117,35 @@ final class ApiController
                 }
             }
 
-            $pauseUpdate['paused'] = $wantsPause ? '1' : '0';
+        $pauseUpdate['paused'] = $wantsPause ? '1' : '0';
+
+        }
+
+        // Responsável ou professor: '' (nenhum) | 'guardian' | 'teacher'.
+        // Só mexe quando o cliente manda o campo
+        // (app antigo que não manda não apaga a escolha sem querer).
+        $companionUpdate = [];
+        $temCompanion = array_key_exists('companion', $body)
+            || array_key_exists('with_guardian', $body)
+            || array_key_exists('with_teacher', $body);
+
+        if ($temCompanion) {
+            $companion = (string) ($body['companion'] ?? '');
+
+            if (!in_array($companion, ['guardian', 'teacher'], true)) {
+                if (form_flag($body['with_teacher'] ?? null)) {
+                    $companion = 'teacher';
+                } elseif (form_flag($body['with_guardian'] ?? null)) {
+                    $companion = 'guardian';
+                } else {
+                    $companion = '';
+                }
+            }
+
+            $companionUpdate = [
+                'with_guardian' => $companion === 'guardian' ? '1' : '0',
+                'with_teacher'  => $companion === 'teacher' ? '1' : '0',
+            ];
         }
 
         TreasureRepository::update((int) $treasure['id'], [
@@ -2125,9 +2156,7 @@ final class ApiController
             'answer1'     => $answer1,
             'riddle2'     => $riddle2,
             'answer2'     => $answer2,
-            // Precisa ser encontrado na companhia dos responsáveis?
-            'with_guardian' => !empty($body['with_guardian']) ? '1' : '0',
-        ] + $pauseUpdate);
+        ] + $companionUpdate + $pauseUpdate);
 
         $updated = TreasureRepository::find((int) $treasure['id']);
 
@@ -2850,6 +2879,7 @@ final class ApiController
             'lng'         => self::lngOrNull($treasure),
             'active'      => (int) $treasure['active'],
             'with_guardian' => (int) ($treasure['with_guardian'] ?? 0),
+            'with_teacher'  => (int) ($treasure['with_teacher'] ?? 0),
             // Tesouro pausado + quantas equipes já completaram (trava a pausa).
             'paused'          => (int) ($treasure['paused'] ?? 0),
             'completed_count' => GameRepository::treasureCompletedCount((int) $treasure['id']),
