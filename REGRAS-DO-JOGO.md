@@ -300,6 +300,29 @@ Na página **Desafio Final** do painel existe a caixa **"Bloquear o Desafio Fina
 - **Desmarcada = liberado:** tudo volta ao normal — o app entra no desafio na
   hora em que a equipe toca **Atualizar**.
 
+### 10.3 🏆 Fim de jogo (o app BLOQUEIA e mostra a vencedora)
+
+Quando uma equipe acerta o **Desafio Final**:
+
+- Ela é marcada como **vencedora**, o jogo é **encerrado** (`gameActive = 0`,
+  `winnerTeamId`) e ela **não pode mais jogar** (check-in, selfie e respostas
+  ficam bloqueados — antes dava para responder o desafio de novo e ganhar os
+  pontos outra vez).
+- **Reentrando no app** (qualquer aparelho, qualquer equipe), o app abre na tela
+  **bloqueada** de fim de jogo com a **equipe vencedora**, os **pontos** e o
+  troféu:
+  - quem venceu vê **"VOCÊS VENCERAM!"**;
+  - a outra equipe vê **"FIM DE JOGO"** com o nome da vencedora.
+- Os **outros aparelhos** que estão com o app aberto caem nessa tela em até 5s
+  (via sincronização).
+
+### 10.4 🏆 Tela da vencedora no TELÃO
+
+Quando o jogo encerra, o **telão** mostra automaticamente uma tela cheia com
+**troféu, confete e o nome da equipe vencedora** (na cor da equipe) e os pontos.
+O operador pode fechar no **✕** (ou **Esc**) para voltar ao placar — a tela só
+reaparece se o vencedor mudar.
+
 ---
 
 ## 11. 📺 Telão

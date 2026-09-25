@@ -306,13 +306,43 @@ final class ApiController
 
         usort($leaderboard, static fn (array $a, array $b): int => $b['points'] <=> $a['points']);
 
+        // ── FIM DE JOGO ─────────────────────────────────────────────
+        // A equipe que acertou o desafio final vence e o jogo encerra. Quem
+        // entrar de novo (ou o outro time) cai na tela de vencedor — o app
+        // não volta para o desafio final.
+        $teamStatus = (string) ($team['status'] ?? 'playing');
+        $winner = self::winnerPayload();
+
+        $gameOver = $teamStatus === 'finished'
+            || $winner !== null
+            || (string) SettingsRepository::get('gameStatus', 'playing') === 'finished';
+
+        if ($gameOver && $winner === null && $leaderboard !== []) {
+            // Jogo encerrado pela organização sem ninguém ter acertado o
+            // desafio final: vence quem tem mais pontos.
+            $top = $leaderboard[0];
+
+            $winner = [
+                'id'          => (int) $top['id'],
+                'name'        => (string) $top['name'],
+                'color'       => (string) $top['color'],
+                'points'      => (int) $top['points'],
+                'finished_at' => null,
+            ];
+        }
+
         $data = [
             'success' => true,
             'team'    => [
+                'id'           => $teamId,
                 'points'       => (int) $team['points'],
-                'status'       => (string) ($team['status'] ?? 'playing'),
+                'status'       => $teamStatus,
                 'current_step' => (int) $team['current_step'],
             ],
+            // Fim de jogo: o app bloqueia e mostra a equipe vencedora.
+            'game_over'       => $gameOver,
+            'team_won'        => $winner !== null && (int) $winner['id'] === $teamId,
+            'winner'          => $winner,
             'gameActive'      => (string) SettingsRepository::get('gameActive', '0'),
             'game_status'     => (string) SettingsRepository::get('gameStatus', 'playing'),
             'game_start_date' => (string) SettingsRepository::get('gameStartDate', ''),
@@ -363,6 +393,13 @@ final class ApiController
 
         if ($block !== null) {
             return $this->json($response, ['success' => false] + $block, 400);
+        }
+
+        // Equipe que JÁ venceu: o jogo acabou para ela.
+        $fim = $this->finishedBlock($team);
+
+        if ($fim !== null) {
+            return $this->json($response, ['success' => false] + $fim, 423);
         }
 
         $body = (array) $request->getParsedBody();
@@ -536,6 +573,13 @@ final class ApiController
         $teamId = (int) $team['id'];
         $treasureId = (int) ($body['treasure_id'] ?? 0);
 
+        // Equipe que JÁ venceu (acertou o desafio final): o jogo acabou.
+        $fim = $this->finishedBlock($team);
+
+        if ($fim !== null) {
+            return $this->json($response, ['success' => false] + $fim, 423);
+        }
+
         $progress = GameRepository::progress($teamId, $treasureId);
 
         if ($progress === null || (int) $progress['gps_confirmed'] !== 1) {
@@ -645,6 +689,13 @@ final class ApiController
 
         if ($block !== null) {
             return $this->json($response, ['success' => false] + $block, 400);
+        }
+
+        // Equipe que JÁ venceu: o jogo acabou para ela.
+        $fim = $this->finishedBlock($team);
+
+        if ($fim !== null) {
+            return $this->json($response, ['success' => false] + $fim, 423);
         }
 
         $body = (array) $request->getParsedBody();
@@ -931,6 +982,20 @@ final class ApiController
             return $this->json($response, ['success' => false] + $block, 400);
         }
 
+        // A equipe JÁ terminou (acertou o desafio final antes)? Então o jogo
+        // acabou para ela: bloqueia e devolve quem venceu. Sem isto dava para
+        // responder o desafio final de novo e ganhar os pontos outra vez.
+        if ((string) ($team['status'] ?? 'playing') === 'finished') {
+            return $this->json($response, [
+                'success'   => false,
+                'code'      => 'game_over',
+                'game_over' => true,
+                'team_won'  => true,
+                'error'     => 'Vocês já acertaram o desafio final. O jogo terminou!',
+                'winner'    => self::winnerPayload((int) $team['id']),
+            ], 423);
+        }
+
         if (!GameRepository::finalAvailable($team)) {
             return $this->json($response, [
                 'success' => false,
@@ -955,8 +1020,10 @@ final class ApiController
 
             $winner = null;
 
-            // A primeira equipe a terminar encerra a partida.
-            if (SettingsRepository::get('gameActive', '0') === '1') {
+            // A primeira equipe a terminar encerra a partida. Vale SEMPRE:
+            // mesmo que `gameActive` esteja zerado (jogo nunca "iniciado" pelo
+            // painel), quem acertou o desafio final é a vencedora.
+            if ((string) SettingsRepository::get('winnerTeamId', '') === '') {
                 SettingsRepository::update([
                     'gameActive'   => '0',
                     'winnerTeamId' => (string) $teamId,
@@ -1096,6 +1163,10 @@ final class ApiController
         $currentTreasureId = GameRepository::currentTreasureId($team);
         $finalAvailable = GameRepository::finalAvailable($team);
 
+        // Fim de jogo (alguém acertou o desafio final / organização encerrou):
+        // os OUTROS aparelhos usam isto para cair na tela do vencedor.
+        $winner = self::winnerPayload();
+
         return $this->json($response, [
             'success'          => true,
             'signature'        => $progress['signature'],
@@ -1104,6 +1175,11 @@ final class ApiController
             'points'           => (int) TeamRepository::find($teamId)['points'],
             'current_treasure_id' => $currentTreasureId,
             'final_available'  => $finalAvailable,
+            'game_over'        => (string) ($team['status'] ?? 'playing') === 'finished'
+                || $winner !== null
+                || (string) SettingsRepository::get('gameStatus', 'playing') === 'finished',
+            'team_won'         => $winner !== null && (int) $winner['id'] === $teamId,
+            'winner'           => $winner,
         ]);
     }
 
@@ -1250,6 +1326,7 @@ final class ApiController
                 'color'         => (string) $row['color'],
                 'points'        => (int) $row['points'],
                 'status'        => (string) ($row['status'] ?? 'playing'),
+                'finished_at'   => $row['finished_at'] ?? null,
                 'found_count'   => GameRepository::foundCount($teamId),
                 'online'        => $online,
                 'last_location' => $lastLocation,
@@ -1296,9 +1373,45 @@ final class ApiController
             ];
         }
 
+        // ── EQUIPE VENCEDORA ────────────────────────────────────────
+        // Quem acertou o Desafio Final primeiro marca `finished_at` e vira a
+        // vencedora (o jogo é encerrado). O telão mostra a tela do vencedor.
+        $winnerId = (int) SettingsRepository::get('winnerTeamId', '0');
+        $winner = null;
+
+        foreach ($teams as $t) {
+            $isWinner = $winnerId > 0
+                ? (int) $t['id'] === $winnerId
+                : ($t['status'] === 'finished' && $t['finished_at'] !== null);
+
+            if (!$isWinner) {
+                continue;
+            }
+
+            // Sem `winnerTeamId` gravado: fica com quem terminou primeiro.
+            if ($winner !== null && (string) $t['finished_at'] >= (string) $winner['finished_at']) {
+                continue;
+            }
+
+            $winner = $t;
+        }
+
+        if ($winner !== null) {
+            $winner = [
+                'id'          => (int) $winner['id'],
+                'name'        => (string) $winner['name'],
+                'color'       => (string) $winner['color'],
+                'points'      => (int) $winner['points'],
+                'found_count' => (int) $winner['found_count'],
+                'finished_at' => $winner['finished_at'],
+            ];
+        }
+
         return $this->json($response, [
             'success'   => true,
             'teams'     => $teams,
+            // Equipe vencedora (null enquanto ninguém terminou o desafio final).
+            'winner'    => $winner,
             // Um item por APARELHO conectado (nome + cor da equipe + posição).
             'devices'   => $devices,
             'treasures' => $treasures,
@@ -2563,6 +2676,69 @@ final class ApiController
      *
      * @return array{code: string, error: string}|null
      */
+    /**
+     * Dados da equipe VENCEDORA (quem acertou o desafio final primeiro).
+     *
+     * Preferência: `winnerTeamId` (gravado ao encerrar o jogo) e, se não
+     * houver, a equipe marcada como `finished` que terminou antes.
+     *
+     * @return array<string, mixed>|null
+     */
+    private static function winnerPayload(?int $exceptTeamId = null): ?array
+    {
+        $winnerId = (int) SettingsRepository::get('winnerTeamId', '0');
+        $winner = null;
+
+        foreach (TeamRepository::all() as $team) {
+            $isFinished = (string) ($team['status'] ?? 'playing') === 'finished';
+            $finishedAt = $team['finished_at'] ?? null;
+            $isWinner = $winnerId > 0
+                ? (int) $team['id'] === $winnerId
+                : ($isFinished && $finishedAt !== null);
+
+            if (!$isWinner) {
+                continue;
+            }
+
+            if ($winner !== null && (string) $finishedAt >= (string) $winner['finished_at']) {
+                continue;
+            }
+
+            $winner = [
+                'id'          => (int) $team['id'],
+                'name'        => (string) $team['name'],
+                'color'       => (string) $team['color'],
+                'points'      => (int) $team['points'],
+                'finished_at' => $finishedAt,
+            ];
+        }
+
+        return $winner;
+    }
+
+    /**
+     * A equipe já VENCEU (acertou o desafio final)? Então o jogo acabou para
+     * ela: nenhuma ação (check-in, selfie, resposta) é permitida — senão daria
+     * para continuar somando pontos depois de ganhar.
+     *
+     * @param array<string, mixed> $team
+     * @return array<string, mixed>|null
+     */
+    private function finishedBlock(array $team): ?array
+    {
+        if ((string) ($team['status'] ?? 'playing') !== 'finished') {
+            return null;
+        }
+
+        return [
+            'code'      => 'game_over',
+            'game_over' => true,
+            'team_won'  => true,
+            'error'     => 'O jogo terminou: sua equipe já acertou o desafio final!',
+            'winner'    => self::winnerPayload((int) $team['id']),
+        ];
+    }
+
     private function gameBlock(bool $checkTime = true): ?array
     {
         $status = (string) SettingsRepository::get('gameStatus', 'playing');

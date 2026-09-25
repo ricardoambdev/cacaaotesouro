@@ -86,6 +86,11 @@ class _TeamHomeScreenState extends State<TeamHomeScreen> {
 
   /// Cena sonora atual. Muda quando a tela visível muda.
   String _currentSoundScene() {
+    // Jogo encerrado: nada de som (a tela é só o vencedor).
+    if (_gameState?.gameOver == true) {
+      return 'nenhuma';
+    }
+
     final result = _answerResult;
 
     // Erro da charada: som em loop até sair da tela.
@@ -943,6 +948,16 @@ class _TeamHomeScreenState extends State<TeamHomeScreen> {
       final data = await _apiService.teamSync();
       final signature = (data['signature'] as String?) ?? '';
 
+      // ── FIM DE JOGO ────────────────────────────────
+      // Outro aparelho acertou o desafio final (ou a organização encerrou):
+      // recarrega o estado para cair na tela da equipe vencedora.
+      if (data['game_over'] == true && _gameState?.gameOver != true) {
+        _soundService.stopLoop();
+        _soundService.stopBackgroundMusic();
+        await _loadState();
+        return;
+      }
+
       if (signature.isEmpty) return;
 
       // Primeira leitura: só guarda (não avisa).
@@ -1039,6 +1054,14 @@ class _TeamHomeScreenState extends State<TeamHomeScreen> {
     // Mantém os sons em sincronia com a tela visível: som de erro em loop na
     // tela de erro da charada e música de fundo no desafio final.
     _syncSounds();
+
+    // ── JOGO ENCERRADO ──────────────────────────────
+    // Alguém acertou o Desafio Final (ou a organização encerrou): o jogo
+    // fica BLOQUEADO e só mostra a equipe vencedora. Nada de charada, mapa,
+    // cofre ou desafio final.
+    if (_gameState != null && _gameState!.gameOver) {
+      return _buildGameOverScreen();
+    }
 
     // ── Abas dinâmicas ──────────────────────────────
     // A aba Cofre só aparece quando a equipe alcançou o desafio final.
@@ -1239,6 +1262,145 @@ class _TeamHomeScreenState extends State<TeamHomeScreen> {
     if (_flowState == TreasureFlowState.finalResult) return false;
 
     return true;
+  }
+
+  /// TELA DE FIM DE JOGO — o app fica bloqueado e mostra a equipe vencedora.
+  ///
+  /// Aparece quando alguém acerta o Desafio Final (ou a organização encerra o
+  /// jogo). Não dá para voltar para o tesouro, o cofre ou o desafio final.
+  Widget _buildGameOverScreen() {
+    final winner = _gameState?.winner;
+    final teamWon = _gameState?.teamWon == true;
+    final winnerColor = _parseColor(winner?.color ?? '');
+    final nome = (winner?.name.isNotEmpty ?? false)
+        ? winner!.name
+        : 'Equipe vencedora';
+
+    return Scaffold(
+      backgroundColor: AppColors.navyDark,
+      body: SafeArea(
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(28),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(26),
+                  decoration: BoxDecoration(
+                    color: AppColors.gold.withValues(alpha: 0.14),
+                    shape: BoxShape.circle,
+                    border: Border.all(color: AppColors.gold, width: 3),
+                  ),
+                  child: const Icon(
+                    Icons.emoji_events,
+                    color: AppColors.gold,
+                    size: 76,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                Text(
+                  teamWon ? 'VOCÊS VENCERAM!' : 'FIM DE JOGO',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    color: AppColors.gold,
+                    fontSize: 34,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 1,
+                  ),
+                ),
+                const SizedBox(height: 26),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 22,
+                    vertical: 24,
+                  ),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        winnerColor.withValues(alpha: 0.95),
+                        winnerColor.withValues(alpha: 0.65),
+                      ],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: AppColors.gold, width: 2),
+                  ),
+                  child: Column(
+                    children: [
+                      const Text(
+                        'EQUIPE VENCEDORA',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 3,
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      Text(
+                        nome,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 30,
+                          fontWeight: FontWeight.w900,
+                          height: 1.15,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        '${winner?.points ?? 0} pontos',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 20,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 26),
+                Text(
+                  teamWon
+                      ? 'Parabéns! Vocês acertaram o Desafio Final e '
+                          'venceram a Caça ao Tesouro. 🎉'
+                      : 'A Caça ao Tesouro terminou. '
+                          'Obrigado por participar!',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    color: AppColors.ivory,
+                    fontSize: 16,
+                    height: 1.5,
+                  ),
+                ),
+                const SizedBox(height: 34),
+                OutlinedButton.icon(
+                  onPressed: _logout,
+                  icon: const Icon(Icons.logout, size: 18),
+                  label: const Text('Sair'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppColors.ivoryMuted,
+                    side: BorderSide(
+                      color: AppColors.ivoryMuted.withValues(alpha: 0.5),
+                    ),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 26,
+                      vertical: 12,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
   }
 
   Widget _buildTreasureTab() {

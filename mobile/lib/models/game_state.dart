@@ -79,6 +79,30 @@ class MessageKindStyle {
   }
 }
 
+/// Equipe vencedora da gincana (quem acertou o Desafio Final primeiro).
+class GameWinner {
+  final int id;
+  final String name;
+  final String color;
+  final int points;
+
+  const GameWinner({
+    required this.id,
+    required this.name,
+    required this.color,
+    this.points = 0,
+  });
+
+  factory GameWinner.fromJson(Map<String, dynamic> json) {
+    return GameWinner(
+      id: (json['id'] as num?)?.toInt() ?? 0,
+      name: (json['name'] as String?) ?? 'Equipe',
+      color: (json['color'] as String?) ?? '',
+      points: (json['points'] as num?)?.toInt() ?? 0,
+    );
+  }
+}
+
 /// Estado completo do jogo retornado por GET /api/team/state.
 class GameState {
   final bool gameActive;
@@ -101,6 +125,16 @@ class GameState {
   final String? gameEndTime;
   final List<TeamMessage> messages;
 
+  /// O jogo TERMINOU (alguém acertou o Desafio Final ou a organização
+  /// encerrou): o app bloqueia e mostra a equipe vencedora.
+  final bool gameOver;
+
+  /// A vencedora é a PRÓPRIA equipe deste aparelho.
+  final bool teamWon;
+
+  /// Dados da equipe vencedora (null enquanto o jogo está rolando).
+  final GameWinner? winner;
+
   const GameState({
     required this.gameActive,
     required this.story,
@@ -119,6 +153,9 @@ class GameState {
     this.gameStartTime,
     this.gameEndTime,
     this.messages = const [],
+    this.gameOver = false,
+    this.teamWon = false,
+    this.winner,
   });
 
   factory GameState.fromJson(Map<String, dynamic> json) {
@@ -162,6 +199,11 @@ class GameState {
       gameStartTime: json['game_start_time'] as String?,
       gameEndTime: json['game_end_time'] as String?,
       messages: messagesList,
+      gameOver: json['game_over'] == true,
+      teamWon: json['team_won'] == true,
+      winner: json['winner'] != null
+          ? GameWinner.fromJson(json['winner'] as Map<String, dynamic>)
+          : null,
     );
   }
 }

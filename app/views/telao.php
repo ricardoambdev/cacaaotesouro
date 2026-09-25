@@ -534,6 +534,143 @@ $cartoKey = trim((string) app_config('map.carto_key', ''));
             0%, 100% { transform: translateY(0); }
             50% { transform: translateY(-4px); }
         }
+        /* ============================================================
+           TELA DA EQUIPE VENCEDORA (aparece quando o jogo encerra)
+           ============================================================ */
+        .winner-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 5000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+            background: radial-gradient(circle at 50% 40%,
+                rgba(249, 115, 22, 0.22), rgba(5, 11, 18, 0.97) 62%);
+            backdrop-filter: blur(6px);
+            text-align: center;
+        }
+
+        .winner-overlay.visible {
+            display: flex;
+            animation: winner-fade 0.5s ease-out;
+        }
+
+        @keyframes winner-fade {
+            from { opacity: 0; }
+            to   { opacity: 1; }
+        }
+
+        .winner-box {
+            max-width: 1100px;
+            padding: 54px 72px;
+            border-radius: 28px;
+            border: 3px solid #F97316;
+            box-shadow: 0 0 70px rgba(249, 115, 22, 0.45);
+            animation: winner-pop 0.6s cubic-bezier(0.2, 1.5, 0.4, 1);
+        }
+
+        @keyframes winner-pop {
+            from { transform: scale(0.75); opacity: 0; }
+            to   { transform: scale(1);    opacity: 1; }
+        }
+
+        .winner-trophy {
+            font-size: 96px;
+            line-height: 1;
+            animation: winner-bounce 1.6s ease-in-out infinite;
+        }
+
+        @keyframes winner-bounce {
+            0%, 100% { transform: translateY(0); }
+            50%      { transform: translateY(-14px); }
+        }
+
+        .winner-title {
+            margin: 10px 0 4px;
+            font-family: 'Pirata One', 'Comic Sans MS', serif;
+            font-size: 44px;
+            letter-spacing: 6px;
+            color: #FDE68A;
+            text-transform: uppercase;
+        }
+
+        .winner-caption {
+            font-size: 15px;
+            font-weight: 700;
+            letter-spacing: 5px;
+            text-transform: uppercase;
+            color: rgba(247, 236, 212, 0.65);
+            margin-bottom: 18px;
+        }
+
+        .winner-name {
+            font-family: 'Pirata One', 'Comic Sans MS', serif;
+            font-size: 82px;
+            line-height: 1.05;
+            color: #FFFFFF;
+            text-shadow: 0 4px 24px rgba(0, 0, 0, 0.55);
+            margin-bottom: 18px;
+        }
+
+        .winner-points {
+            display: inline-block;
+            padding: 10px 26px;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.14);
+            border: 2px solid rgba(255, 255, 255, 0.35);
+            font-size: 26px;
+            font-weight: 800;
+            color: #FFFFFF;
+        }
+
+        .winner-close {
+            position: absolute;
+            top: 26px;
+            right: 32px;
+            width: 46px;
+            height: 46px;
+            border-radius: 50%;
+            border: 2px solid rgba(247, 236, 212, 0.35);
+            background: rgba(5, 11, 18, 0.6);
+            color: #F7ECD4;
+            font-size: 22px;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .winner-close:hover {
+            background: rgba(249, 115, 22, 0.25);
+            border-color: #F97316;
+            color: #FFFFFF;
+        }
+
+        /* Confete caindo */
+        .winner-confetti {
+            position: absolute;
+            inset: 0;
+            overflow: hidden;
+            pointer-events: none;
+        }
+
+        .winner-confetti i {
+            position: absolute;
+            top: -12vh;
+            width: 12px;
+            height: 20px;
+            border-radius: 2px;
+            opacity: 0.9;
+            animation: confetti-fall linear infinite;
+        }
+
+        @keyframes confetti-fall {
+            0%   { transform: translateY(0) rotate(0deg); }
+            100% { transform: translateY(125vh) rotate(720deg); }
+        }
+
         .leaflet-popup-content { color: #0a1724; }
     </style>
 </head>
@@ -721,6 +858,7 @@ $cartoKey = trim((string) app_config('map.carto_key', ''));
                 renderDevices(data.devices || []);
                 renderDevicesList(data.devices || []);
                 renderSelfies(data.selfies || []);
+                renderWinner(data.winner || null);
 
                 /* Fit bounds on first load */
                 if (firstLoad) {
@@ -976,6 +1114,87 @@ $cartoKey = trim((string) app_config('map.carto_key', ''));
         });
 
         /* ============================================================
+           TELA DA EQUIPE VENCEDORA
+           Aparece quando alguém acerta o desafio final (o jogo encerra).
+           O operador pode fechar no ✕ / Esc — e ela volta se o vencedor mudar.
+           ============================================================ */
+        let winnerShownId = null;
+        let winnerDismissedId = null;
+
+        const CORES_EQUIPE = {
+            laranja: ['#F97316', '#B45309'],
+            preta:   ['#1F2937', '#0B0F14'],
+        };
+
+        function buildConfetti(box) {
+            const conf = document.getElementById('winner-confetti');
+            const cores = ['#F97316', '#FDE68A', '#FFFFFF', '#F59E0B'];
+            let html = '';
+
+            for (let i = 0; i < 36; i++) {
+                const left = (i * 2.7 + (i % 5) * 3) % 100;
+                const delay = ((i % 9) * 0.45).toFixed(2);
+                const dur = (4.5 + (i % 6) * 0.6).toFixed(2);
+                const cor = cores[i % cores.length];
+                const w = 8 + (i % 4) * 3;
+
+                html += '<i style="left:' + left + '%;background:' + cor
+                    + ';animation-duration:' + dur + 's;animation-delay:' + delay
+                    + 's;width:' + w + 'px"></i>';
+            }
+
+            conf.innerHTML = html;
+        }
+
+        function renderWinner(winner) {
+            const overlay = document.getElementById('winner-overlay');
+
+            // Sem vencedor (jogo rolando): garante que a tela está escondida.
+            if (!winner) {
+                overlay.classList.remove('visible');
+                winnerShownId = null;
+                winnerDismissedId = null;
+                return;
+            }
+
+            // O operador fechou a tela deste vencedor: não reabre sozinha.
+            if (winnerDismissedId !== null && winnerDismissedId === winner.id) {
+                return;
+            }
+
+            const box = document.getElementById('winner-box');
+            const cores = CORES_EQUIPE[(winner.color || '').toLowerCase()]
+                || ['#334155', '#0B0F14'];
+
+            box.style.background = 'linear-gradient(135deg, '
+                + cores[0] + ' 0%, ' + cores[1] + ' 100%)';
+
+            document.getElementById('winner-name').textContent = winner.name || 'Equipe';
+            document.getElementById('winner-points').textContent =
+                (winner.points || 0) + ' pontos';
+
+            // Só anima/reinicia quando o vencedor MUDA.
+            if (winnerShownId !== winner.id) {
+                winnerShownId = winner.id;
+                buildConfetti(box);
+            }
+
+            overlay.classList.add('visible');
+        }
+
+        document.getElementById('winner-close').addEventListener('click', function () {
+            winnerDismissedId = winnerShownId;
+            document.getElementById('winner-overlay').classList.remove('visible');
+        });
+
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') {
+                winnerDismissedId = winnerShownId;
+                document.getElementById('winner-overlay').classList.remove('visible');
+            }
+        });
+
+        /* ============================================================
            INIT
            ============================================================ */
         initMap();
@@ -984,5 +1203,24 @@ $cartoKey = trim((string) app_config('map.carto_key', ''));
 
     })();
     </script>
-</body>
+    <!-- ============================================================
+         TELA DA EQUIPE VENCEDORA (fim de jogo)
+         ============================================================ -->
+    <div class="winner-overlay" id="winner-overlay">
+        <div class="winner-confetti" id="winner-confetti"></div>
+
+        <button type="button" class="winner-close" id="winner-close"
+                title="Voltar ao placar (Esc)">✕</button>
+
+        <div class="winner-box" id="winner-box">
+            <div class="winner-trophy">🏆</div>
+            <div class="winner-title">Fim de Jogo</div>
+            <div class="winner-caption">Equipe vencedora</div>
+            <div class="winner-name" id="winner-name">—</div>
+            <div class="winner-points" id="winner-points">0 pontos</div>
+        </div>
+    </div>
+
+    </body>
 </html>
+
