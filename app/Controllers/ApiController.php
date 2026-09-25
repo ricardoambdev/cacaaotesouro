@@ -1402,6 +1402,15 @@ final class ApiController
             $winner = $t;
         }
 
+        // Jogo encerrado pela ORGANIZAÇÃO (sem ninguém acertar o desafio
+        // final): a vencedora é quem tem mais pontos.
+        if ($winner === null
+            && (string) SettingsRepository::get('gameStatus', 'playing') === 'finished') {
+            $ranking = $teams;
+            usort($ranking, static fn (array $a, array $b): int => $b['points'] <=> $a['points']);
+            $winner = $ranking[0] ?? null;
+        }
+
         if ($winner !== null) {
             $winner = [
                 'id'          => (int) $winner['id'],
@@ -1418,6 +1427,9 @@ final class ApiController
             'teams'     => $teams,
             // Equipe vencedora (null enquanto ninguém terminou o desafio final).
             'winner'    => $winner,
+            // Jogo encerrado (para o telão saber que não é mais "ao vivo").
+            'game_over' => $winner !== null
+                || (string) SettingsRepository::get('gameStatus', 'playing') === 'finished',
             // Um item por APARELHO conectado (nome + cor da equipe + posição).
             'devices'   => $devices,
             'treasures' => $treasures,

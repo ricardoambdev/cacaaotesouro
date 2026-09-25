@@ -1173,14 +1173,50 @@ $cartoKey = trim((string) app_config('map.carto_key', ''));
             document.getElementById('winner-points').textContent =
                 (winner.points || 0) + ' pontos';
 
-            // Só anima/reinicia quando o vencedor MUDA.
+            // Só anima/toca quando o vencedor MUDA (não a cada 5s).
             if (winnerShownId !== winner.id) {
                 winnerShownId = winner.id;
                 buildConfetti(box);
+                tocarRisada();
             }
 
             overlay.classList.add('visible');
         }
+
+        /* ============================================================
+           SOM DA VITÓRIA (risada — a mesma do aplicativo)
+           O navegador só deixa tocar áudio depois de alguma interação do
+           usuário. Tentamos na hora e, se for bloqueado, toca no primeiro
+           clique/tecla/toque do operador.
+           ============================================================ */
+        let somBloqueado = false;
+
+        function tocarRisada() {
+            const audio = document.getElementById('winner-sound');
+            if (!audio) return;
+
+            audio.currentTime = 0;
+
+            const tentar = audio.play();
+
+            if (tentar && typeof tentar.catch === 'function') {
+                tentar
+                    .then(() => { somBloqueado = false; })
+                    .catch(() => {
+                        // Autoplay bloqueado: toca na primeira interação.
+                        somBloqueado = true;
+                    });
+            }
+        }
+
+        ['click', 'keydown', 'touchstart'].forEach(function (evento) {
+            document.addEventListener(evento, function () {
+                if (somBloqueado) {
+                    somBloqueado = false;
+                    tocarRisada();
+                }
+            }, { once: false, passive: true });
+        });
 
         document.getElementById('winner-close').addEventListener('click', function () {
             winnerDismissedId = winnerShownId;
@@ -1206,6 +1242,10 @@ $cartoKey = trim((string) app_config('map.carto_key', ''));
     <!-- ============================================================
          TELA DA EQUIPE VENCEDORA (fim de jogo)
          ============================================================ -->
+    <!-- Risada da vitória: MESMO áudio que o aplicativo toca ao acertar a
+         senha do desafio final. -->
+    <audio id="winner-sound" src="/assets/sons/risada.mp3" preload="auto"></audio>
+
     <div class="winner-overlay" id="winner-overlay">
         <div class="winner-confetti" id="winner-confetti"></div>
 
