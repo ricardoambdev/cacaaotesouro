@@ -93,8 +93,9 @@ class _TeamHomeScreenState extends State<TeamHomeScreen> {
 
     final result = _answerResult;
 
-    // Erro da charada: som em loop até sair da tela.
-    if (_flowState == TreasureFlowState.answerResult &&
+    // Erro (charada OU desafio final): som em loop até sair da tela.
+    if ((_flowState == TreasureFlowState.answerResult ||
+            _flowState == TreasureFlowState.finalResult) &&
         result != null &&
         !result.correct) {
       return 'erro';
@@ -701,11 +702,10 @@ class _TeamHomeScreenState extends State<TeamHomeScreen> {
 
       if (!mounted) return;
 
-      // Som do desafio final: acerto = risada comemorativa; erro = choro.
+      // Som do desafio final: acerto = risada comemorativa. O erro entra em
+      // loop pelo _syncSounds(), ao renderizar a tela de resultado.
       if (result.correct) {
         _soundService.playRisada();
-      } else {
-        _soundService.playChoro();
       }
 
       setState(() {
@@ -2472,6 +2472,82 @@ class _TeamHomeScreenState extends State<TeamHomeScreen> {
     final result = _answerResult;
     if (result == null) return const SizedBox();
 
+    // ── ERRO: mesmo visual dos tesouros (GIF + som em loop + tentar de novo) ──
+    if (!result.correct) {
+      return Center(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(14),
+                child: Image.asset(
+                  'assets/images/chorando.gif',
+                  width: double.infinity,
+                  height: 240,
+                  fit: BoxFit.contain,
+                ),
+              ),
+              const SizedBox(height: 20),
+              const Text(
+                'Resposta Incorreta',
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w800,
+                  color: Colors.redAccent,
+                ),
+              ),
+              const SizedBox(height: 10),
+              Text(
+                result.message,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 15,
+                  color: AppColors.ivory,
+                  height: 1.5,
+                ),
+              ),
+              const SizedBox(height: 10),
+              const Text(
+                'Vocês podem tentar quantas vezes quiserem.\n(Errar a senha final não tira pontos.)',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.ivoryMuted,
+                  height: 1.5,
+                ),
+              ),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () => setState(
+                      () => _flowState = TreasureFlowState.finalChallenge),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.gold,
+                    foregroundColor: AppColors.navyDark,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                  ),
+                  child: const Text(
+                    'Tentar Novamente',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32),
@@ -2481,57 +2557,35 @@ class _TeamHomeScreenState extends State<TeamHomeScreen> {
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: result.correct
-                    ? AppColors.gold.withValues(alpha: 0.15)
-                    : Colors.redAccent.withValues(alpha: 0.15),
+                color: AppColors.gold.withValues(alpha: 0.15),
                 shape: BoxShape.circle,
               ),
-              child: Icon(
-                result.correct ? Icons.emoji_events : Icons.sentiment_dissatisfied,
-                color: result.correct ? AppColors.gold : Colors.redAccent,
+              child: const Icon(
+                Icons.emoji_events,
+                color: AppColors.gold,
                 size: 52,
               ),
             ),
             const SizedBox(height: 24),
-            if (result.correct) ...[
-              const Text(
-                'VOCÊ VENCEU!',
-                style: TextStyle(
-                  fontSize: 26,
-                  fontWeight: FontWeight.w900,
-                  letterSpacing: 3,
+            const Text(
+              'VOCÊ VENCEU!',
+              style: TextStyle(
+                fontSize: 26,
+                fontWeight: FontWeight.w900,
+                letterSpacing: 3,
+                color: AppColors.gold,
+              ),
+            ),
+            const SizedBox(height: 8),
+            if (result.points > 0)
+              Text(
+                '+${result.points} pontos',
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
                   color: AppColors.gold,
                 ),
               ),
-              const SizedBox(height: 8),
-              if (result.points > 0)
-                Text(
-                  '+${result.points} pontos',
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.gold,
-                  ),
-                ),
-            ] else ...[
-              const Text(
-                'Resposta Incorreta',
-                style: TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.w700,
-                  color: Colors.redAccent,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                result.message,
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontSize: 15,
-                  color: AppColors.ivory,
-                ),
-              ),
-            ],
           ],
         ),
       ),
@@ -2582,10 +2636,10 @@ class _TeamHomeScreenState extends State<TeamHomeScreen> {
           ),
           const SizedBox(height: 14),
           const Text(
-            'COFRE DA GINCANA',
+            'Cofre',
             style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w700,
+              fontSize: 20,
+              fontWeight: FontWeight.w900,
               letterSpacing: 3,
               color: AppColors.gold,
             ),
@@ -2618,9 +2672,9 @@ class _TeamHomeScreenState extends State<TeamHomeScreen> {
                 ),
                 const SizedBox(height: 12),
                 _vaultStep(1,
-                    'Encontre o código de 9 dígitos escondido no mundo físico.'),
+                    'Através de três dicas encontre os 9 dígitos para resolver o cofre.'),
                 _vaultStep(2,
-                    'Vá até o LOCAL do cofre: a página do cofre só abre para quem estiver perto dele (no raio de 100 m).'),
+                    'O Cofre ficará posicionado em um local do colégio.'),
                 _vaultStep(3,
                     'No local, acesse a página do cofre e digite os 9 dígitos.'),
                 _vaultStep(4,

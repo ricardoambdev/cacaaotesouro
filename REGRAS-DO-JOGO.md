@@ -280,7 +280,8 @@ Se não for possível usar o cofre físico, usa-se o **cofre virtual**.
 - A equipe digita a **senha** (a mesma que o cofre revela).
 - **Acertou** → pontos configuráveis (padrão +100), **a partida é encerrada** e
   a equipe vira a **vencedora** (a primeira que terminar).
-- **Errou** → **não perde pontos**; pode tentar de novo.
+- **Errou** → **não perde pontos**: aparece a tela de erro (GIF chorando + som de
+  erro em loop, igual às charadas) com o botão **"Tentar Novamente"**.
 - Enquanto o desafio está aberto, toca uma **música de fundo** e, ao acertar,
   toca a **risada** comemorativa.
 
