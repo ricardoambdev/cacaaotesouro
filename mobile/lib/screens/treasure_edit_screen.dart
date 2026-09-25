@@ -45,6 +45,9 @@ class _TreasureEditScreenState extends State<TreasureEditScreen> {
 
   // ── Dados do tesouro ──────────────────────────────
   String _code = '';
+
+  /// Nome automático do tesouro ("Tesouro N" — a posição na lista).
+  String _name = '';
   bool _hasCoord = false;
   double? _lat;
   double? _lng;
@@ -80,6 +83,7 @@ class _TreasureEditScreenState extends State<TreasureEditScreen> {
 
       setState(() {
         _code = (data['code'] as String?) ?? '';
+        _name = (data['name'] as String?) ?? '';
         _nameController.text = (data['name'] as String?) ?? '';
         _descriptionController.text = (data['description'] as String?) ?? '';
         _clueController.text = (data['clue'] as String?) ?? '';
@@ -421,7 +425,9 @@ class _TreasureEditScreenState extends State<TreasureEditScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          _code.isNotEmpty ? 'Tesouro $_code' : 'Tesouro',
+          _name.isNotEmpty
+              ? _name
+              : (_code.isNotEmpty ? 'Tesouro $_code' : 'Tesouro'),
           style: const TextStyle(fontWeight: FontWeight.w700),
         ),
       ),

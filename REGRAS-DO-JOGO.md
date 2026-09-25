@@ -150,6 +150,24 @@ A organização pode esconder **QR codes falsos** espalhados pelo caminho:
   armadilha do Quico!"*) e **volta para a tela inicial**.
 - Serve para divertir e despistar as equipes.
 
+### 5.0 🔢 Código e nome são a POSIÇÃO do tesouro
+
+O **código** e o **nome** do tesouro **não são digitados nem editáveis** —
+eles vêm da **posição dele na ordem**:
+
+| Posição | Nome | Código |
+|---|---|---|
+| 1º | Tesouro 1 | T01 |
+| 2º | Tesouro 2 | T02 |
+| ... | ... | ... |
+| 10º | Tesouro 10 | T10 |
+
+Para mudar, **arraste os tesouros** na listagem: quem passa a ser o 2º vira
+"Tesouro 2 / T02", e quem era o 2º assume a nova posição dele. Ao **excluir**
+um tesouro do meio, os de baixo **sobem** e são renumerados automaticamente.
+
+---
+
 ### 5.1 ⏸️ Pausar um TESOURO (segurar as equipes)
 
 No cadastro do tesouro existe a chave **"Pausar este tesouro"**:

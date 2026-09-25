@@ -65,21 +65,6 @@ final class TreasureRepository
     }
 
     /**
-     * Busca um tesouro pelo código único (T01, T02, ...).
-     *
-     * @return array<string, mixed>|null
-     */
-    public static function findByCode(string $code): ?array
-    {
-        $stmt = Database::get()->prepare('SELECT * FROM treasures WHERE code = :code');
-        $stmt->execute([':code' => trim($code)]);
-
-        $row = $stmt->fetch(PDO::FETCH_ASSOC);
-
-        return $row === false ? null : $row;
-    }
-
-    /**
      * Tesouros ativos na ordem de jogo.
      *
      * @return array<int, array<string, mixed>>
@@ -159,6 +144,12 @@ final class TreasureRepository
         $params = [':id' => $id];
 
         foreach (self::COLUMNS as $column) {
+            // NOME e CÓDIGO são automáticos (posição na ordem): nunca vêm do
+            // formulário. Quem os atualiza é syncIdentity().
+            if ($column === 'name' || $column === 'code') {
+                continue;
+            }
+
             if (array_key_exists($column, $data)) {
                 $sets[] = "$column = :$column";
 
@@ -187,6 +178,107 @@ final class TreasureRepository
     }
 
     /**
+     * O NOME e o CÓDIGO do tesouro são SEMPRE a posição dele na ordem:
+     *
+     *   posição 1  → "Tesouro 1" / "T01"
+     *   posição 10 → "Tesouro 10" / "T10"
+     *
+     * Não são digitados nem editáveis: quem muda é a POSIÇÃO (arrastar/reordenar).
+     * Este método reescreve os dois a partir de `sort_order`.
+     *
+     * O `code` tem índice UNIQUE, então a troca é feita em DUAS passadas: na
+     * primeira os códigos viram um valor temporário único e só depois recebem o
+     * valor final (senão a troca T01↔T02 colidiria no meio do caminho).
+     */
+    public static function syncIdentity(?PDO $pdo = null): void
+    {
+        $pdo = $pdo ?? Database::get();
+
+        $stmt = $pdo->query(
+            'SELECT id, name, code, sort_order FROM treasures ORDER BY sort_order ASC, id ASC'
+        );
+
+        if ($stmt === false) {
+            return;
+        }
+
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        if ($rows === []) {
+            return;
+        }
+
+        $tempCode = $pdo->prepare('UPDATE treasures SET code = :code WHERE id = :id');
+        $final = $pdo->prepare(
+            'UPDATE treasures SET name = :name, code = :code, sort_order = :sort_order, '
+            . 'updated_at = :updated_at WHERE id = :id'
+        );
+        $renumber = $pdo->prepare(
+            'UPDATE treasures SET sort_order = :sort_order, updated_at = :updated_at WHERE id = :id'
+        );
+
+        $now = date('Y-m-d H:i:s');
+
+        // 0ª passada: fecha buracos na ordem (ex.: depois de excluir o 3º, os
+        // de baixo sobem e a posição volta a ser 1, 2, 3...).
+        foreach ($rows as $index => $row) {
+            $position = $index + 1;
+
+            if ((int) $row['sort_order'] !== $position) {
+                $renumber->execute([
+                    ':sort_order' => $position,
+                    ':updated_at' => $now,
+                    ':id'         => (int) $row['id'],
+                ]);
+            }
+        }
+
+        foreach ($rows as $index => $row) {
+            $code = self::codeForPosition($index + 1);
+
+            if ((string) $row['code'] === $code) {
+                continue;
+            }
+
+            // 1ª passada: tira o código antigo do caminho.
+            $tempCode->execute([
+                ':code' => '__migrando_' . (int) $row['id'],
+                ':id'   => (int) $row['id'],
+            ]);
+        }
+
+        foreach ($rows as $index => $row) {
+            $position = $index + 1;
+            $name = self::nameForPosition($position);
+            $code = self::codeForPosition($position);
+
+            if ((string) $row['name'] === $name && (string) $row['code'] === $code) {
+                continue;
+            }
+
+            $final->execute([
+                ':name'       => $name,
+                ':code'       => $code,
+                ':sort_order' => $position,
+                ':updated_at' => $now,
+                ':id'         => (int) $row['id'],
+            ]);
+        }
+    }
+
+    /** Nome automático do tesouro na posição informada. */
+    public static function nameForPosition(int $position): string
+    {
+        return 'Tesouro ' . $position;
+    }
+
+    /** Código automático do tesouro na posição (1 → T01, 10 → T10). */
+    public static function codeForPosition(int $position): string
+    {
+        return 'T' . str_pad((string) $position, 2, '0', STR_PAD_LEFT);
+    }
+
+    /**
      * Exclui um tesouro pelo id.
      */
     public static function delete(int $id): void
@@ -204,10 +296,10 @@ final class TreasureRepository
     {
         $pdo = Database::get();
 
-        // O NOME do tesouro é sempre "Tesouro N" (posição na lista), então
-        // ele é reescrito junto com a nova ordem.
+        // Grava só a POSIÇÃO: o NOME ("Tesouro N") e o CÓDIGO ("T0N") são
+        // derivados dela em syncIdentity().
         $stmt = $pdo->prepare(
-            'UPDATE treasures SET sort_order = :sort_order, name = :name, '
+            'UPDATE treasures SET sort_order = :sort_order, '
             . 'updated_at = :updated_at WHERE id = :id'
         );
 
@@ -217,11 +309,12 @@ final class TreasureRepository
             foreach (array_values($orderedIds) as $index => $id) {
                 $stmt->execute([
                     ':sort_order' => $index + 1,
-                    ':name'       => 'Tesouro ' . ($index + 1),
                     ':updated_at' => date('Y-m-d H:i:s'),
                     ':id'         => (int) $id,
                 ]);
             }
+
+            self::syncIdentity($pdo);
 
             $pdo->commit();
         } catch (\Throwable $e) {

@@ -218,8 +218,9 @@ final class Database
             'TINYINT(1) NOT NULL DEFAULT 0'
         );
 
-        // Nome dos tesouros: sempre "Tesouro N" (posição na lista).
-        self::normalizeTreasureNames($pdo);
+        // Nome ("Tesouro N") e código ("T0N") são SEMPRE a posição do
+        // tesouro na ordem — nunca digitados à mão.
+        self::normalizeTreasureIdentity($pdo);
 
         $pdo->exec(
             'CREATE TABLE IF NOT EXISTS team_treasure_progress ('
@@ -405,24 +406,19 @@ final class Database
         }
     }
 
-    private static function normalizeTreasureNames(PDO $pdo): void
+    /**
+     * O NOME ("Tesouro N") e o CÓDIGO ("T0N") do tesouro são sempre a POSIÇÃO
+     * dele na ordem — não são digitados nem editáveis no painel nem no app.
+     *
+     * Normaliza qualquer valor antigo/errado (de versões anteriores, quando o
+     * código era digitado à mão) sempre que o app sobe.
+     */
+    private static function normalizeTreasureIdentity(PDO $pdo): void
     {
         try {
-            if (app_config('db.driver', 'sqlite') === 'mysql') {
-                $pdo->exec(
-                    'UPDATE treasures SET name = CONCAT(\'Tesouro \', sort_order) '
-                    . 'WHERE name <> CONCAT(\'Tesouro \', sort_order)'
-                );
-
-                return;
-            }
-
-            $pdo->exec(
-                'UPDATE treasures SET name = \'Tesouro \' || sort_order '
-                . 'WHERE name <> \'Tesouro \' || sort_order'
-            );
-        } catch (PDOException $e) {
-            error_log('Database::normalizeTreasureNames: ' . $e->getMessage());
+            \App\Repositories\TreasureRepository::syncIdentity($pdo);
+        } catch (\Throwable $e) {
+            error_log('Database::normalizeTreasureIdentity: ' . $e->getMessage());
         }
     }
 

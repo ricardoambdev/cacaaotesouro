@@ -149,12 +149,16 @@ final class TreasureController
         // automaticamente como um código aleatório alfanumérico de 20 chars.
         $data['qr_content'] = random_alnum(20);
         $data['sort_order'] = TreasureRepository::nextSortOrder();
-        // Nome automático: "Tesouro N" (posição na lista).
-        $data['name'] = 'Tesouro ' . $data['sort_order'];
+        // NOME e CÓDIGO são automáticos pela POSIÇÃO: "Tesouro N" / "T0N".
+        $data['name'] = TreasureRepository::nameForPosition((int) $data['sort_order']);
+        $data['code'] = TreasureRepository::codeForPosition((int) $data['sort_order']);
         $data['active'] = 0; // só ativa quando o admin confirmar a coordenada no app
         $data['qr_svg_path'] = '';
 
         $id = TreasureRepository::create($data);
+
+        // Garante nome/código coerentes com a posição (idempotente).
+        TreasureRepository::syncIdentity();
 
         // Gera o QR SVG com o conteúdo recém-criado.
         try {
@@ -216,10 +220,11 @@ final class TreasureController
             redirect('/tesouros/' . $id . '/editar');
         }
 
-        // O nome é automático: sempre "Tesouro N" (posição na lista).
-        $data['name'] = 'Tesouro ' . (int) ($treasure['sort_order'] ?? 1);
-
+        // NOME e CÓDIGO são automáticos (posição na ordem) — não vêm do
+        // formulário e não são alterados aqui. syncIdentity() garante isso.
         TreasureRepository::update($id, $data);
+
+        TreasureRepository::syncIdentity();
 
         // Regenera o QR SVG apenas se ainda não existir arquivo.
         $hasImage = $data['qr_svg_path'] !== ''
@@ -398,7 +403,8 @@ final class TreasureController
         $body = (array) $request->getParsedBody();
 
         $data = [
-            'code'        => strtoupper(trim((string) ($body['code'] ?? ''))),
+            // O CÓDIGO ("T01"...) NÃO vem do formulário: é a posição na ordem,
+            // gravado automaticamente por TreasureRepository::syncIdentity().
             // O NOME não é editável: é sempre "Tesouro N" (posição na lista),
             // definido automaticamente ao criar/reordenar.
             'description' => trim((string) ($body['description'] ?? '')),
@@ -437,20 +443,7 @@ final class TreasureController
     {
         $errors = [];
 
-        // code: obrigatório, 2-50 chars, único.
-        if ($data['code'] === '') {
-            $errors[] = 'O código do tesouro é obrigatório.';
-        } elseif (strlen($data['code']) < 2 || strlen($data['code']) > 50) {
-            $errors[] = 'O código deve ter de 2 a 50 caracteres.';
-        } elseif (!preg_match('/^[A-Za-z0-9_-]+$/', $data['code'])) {
-            $errors[] = 'O código deve conter apenas letras, números, _ ou -.';
-        } else {
-            $owner = TreasureRepository::findByCode($data['code']);
-
-            if ($owner !== null && ($ignoreId === null || (int) $owner['id'] !== $ignoreId)) {
-                $errors[] = 'Já existe um tesouro com o código "' . $data['code'] . '".';
-            }
-        }
+        // O CÓDIGO e o NOME são automáticos (posição na ordem) — nada a validar.
 
         foreach ([
             'description' => 'a descrição',

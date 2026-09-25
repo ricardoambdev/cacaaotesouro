@@ -65,22 +65,26 @@ $hasQr = $qrPath !== '';
                 </h2>
 
                 <div class="form-group">
-                    <label for="code">Código *</label>
-                    <input type="text" id="code" name="code" class="form-input" maxlength="50"
-                           value="<?= e($value('code')) ?>" placeholder="Ex.: T11" required>
+                    <label>Código do tesouro</label>
+                    <input type="text" class="form-input" disabled
+                           value="<?= e($isEdit ? (string) ($treasure['code'] ?? '') : \App\Repositories\TreasureRepository::codeForPosition(\App\Repositories\TreasureRepository::nextSortOrder())) ?>">
                     <div class="error-inline"></div>
-                    <p class="form-help-text">Identificador único (2 a 50 caracteres). Ex.: T01, T02...</p>
+                    <p class="form-help-text">
+                        <?= icon('lock', 13) ?>
+                        Automático pela <strong>posição</strong> do tesouro (1º = T01, 2º = T02...).
+                        Não é possível digitar nem trocar — reordene a lista para mudar.
+                    </p>
                 </div>
 
                 <div class="form-group">
                     <label>Nome do tesouro</label>
                     <input type="text" class="form-input" disabled
-                           value="<?= e($isEdit ? (string) ($treasure['name'] ?? '') : 'Tesouro ' . (\App\Repositories\TreasureRepository::nextSortOrder())) ?>">
+                           value="<?= e($isEdit ? (string) ($treasure['name'] ?? '') : \App\Repositories\TreasureRepository::nameForPosition(\App\Repositories\TreasureRepository::nextSortOrder())) ?>">
                     <div class="error-inline"></div>
                     <p class="form-help-text">
-                        O nome é <strong>automático</strong>: sempre <strong>"Tesouro N"</strong>,
-                        onde N é a posição do tesouro na lista. Para mudar a ordem,
-                        arraste os tesouros na listagem.
+                        <?= icon('lock', 13) ?>
+                        Automático pela <strong>posição</strong>: sempre <strong>"Tesouro N"</strong>.
+                        Para mudar a ordem, arraste os tesouros na listagem.
                     </p>
                 </div>
 
