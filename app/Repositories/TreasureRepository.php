@@ -34,8 +34,7 @@ final class TreasureRepository
         'sort_order',
         'active',
         'with_guardian',
-        'riddle1_enabled',
-        'riddle2_enabled',
+        'paused',
     ];
 
     /**
@@ -117,11 +116,11 @@ final class TreasureRepository
             'INSERT INTO treasures '
             . '(code, name, description, clue, riddle1, answer1, riddle2, answer2, '
             . 'qr_content, qr_svg_path, lat, lng, sort_order, active, created_at, '
-            . 'riddle1_enabled, riddle2_enabled) '
+            . 'paused) '
             . 'VALUES '
             . '(:code, :name, :description, :clue, :riddle1, :answer1, :riddle2, :answer2, '
             . ':qr_content, :qr_svg_path, :lat, :lng, :sort_order, :active, :created_at, '
-            . ':riddle1_enabled, :riddle2_enabled)'
+            . ':paused)'
         );
 
         $stmt->execute([
@@ -140,9 +139,8 @@ final class TreasureRepository
             ':sort_order'    => (int) ($data['sort_order'] ?? 0),
             ':active'        => (int) ($data['active'] ?? 0),
             ':created_at'    => (string) ($data['created_at'] ?? date('Y-m-d H:i:s')),
-            // Cada charada pode estar habilitada ou pausada (padrão: habilitada).
-            ':riddle1_enabled' => (int) ($data['riddle1_enabled'] ?? 1),
-            ':riddle2_enabled' => (int) ($data['riddle2_enabled'] ?? 1),
+            // Tesouro pausado (padrão: não).
+            ':paused'      => (int) ($data['paused'] ?? 0),
         ]);
 
         return (int) $pdo->lastInsertId();

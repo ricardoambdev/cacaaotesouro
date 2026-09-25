@@ -204,22 +204,18 @@ final class Database
             'TINYINT(1) NOT NULL DEFAULT 0'
         );
 
-        // Migração: cada CHARADA pode ser habilitada/desabilitada na mão.
-        // Desabilitada = a equipe que está nela fica em espera ("aguardando a
-        // liberação do próximo tesouro") até a organização habilitar.
+        // Migração: o TESOURO pode ser PAUSADO pela organização. Pausado = as
+        // equipes que estiverem nele ficam em espera ("aguardando a liberação
+        // do próximo tesouro") até a organização liberar.
+        //
+        // Só pode ser pausado enquanto NENHUMA equipe o completou (regra
+        // aplicada no controller) — depois disso a chave fica travada.
         self::ensureSimpleColumn(
             $pdo,
             $driver,
             'treasures',
-            'riddle1_enabled',
-            'TINYINT(1) NOT NULL DEFAULT 1'
-        );
-        self::ensureSimpleColumn(
-            $pdo,
-            $driver,
-            'treasures',
-            'riddle2_enabled',
-            'TINYINT(1) NOT NULL DEFAULT 1'
+            'paused',
+            'TINYINT(1) NOT NULL DEFAULT 0'
         );
 
         // Nome dos tesouros: sempre "Tesouro N" (posição na lista).
@@ -614,9 +610,8 @@ final class Database
             'team_locations.device_id' => 'VARCHAR(64) NOT NULL DEFAULT \'\'',
             'team_devices.name'        => 'VARCHAR(60) NOT NULL DEFAULT \'\'',
             'treasures.with_guardian'  => 'TINYINT(1) NOT NULL DEFAULT 0',
-            // Cada charada pode ser habilitada/pausada pela organização.
-            'treasures.riddle1_enabled' => 'TINYINT(1) NOT NULL DEFAULT 1',
-            'treasures.riddle2_enabled' => 'TINYINT(1) NOT NULL DEFAULT 1',
+            // Tesouro pausado (segura as equipes até a organização liberar).
+            'treasures.paused'          => 'TINYINT(1) NOT NULL DEFAULT 0',
         ];
 
         if (($allowed[$table . '.' . $column] ?? null) !== $definition) {

@@ -58,32 +58,16 @@ final class ApiController
     private const WAITING_RELEASE_MESSAGE = 'Estamos aguardando a liberação do próximo tesouro.';
 
     /**
-     * A charada que a equipe vai receber neste tesouro está PAUSADA?
+     * O TESOURO está PAUSADO pela organização?
      *
-     * Cada charada (1 e 2) tem seu próprio liga/desliga. Se a equipe já tem
-     * uma charada assinalada, vale o liga/desliga DELA; se ainda não tem,
-     * o tesouro só pausa quando as DUAS estão pausadas (aí não há o que sortear).
+     * Pausado = as equipes param nele: o app mostra "Estamos aguardando a
+     * liberação do próximo tesouro." até a organização liberar no painel.
      *
-     * @param array<string, mixed>      $treasure
-     * @param array<string, mixed>|null $progress
+     * @param array<string, mixed> $treasure
      */
-    private static function riddlePaused(array $treasure, ?array $progress): bool
+    private static function treasurePaused(array $treasure): bool
     {
-        $oneEnabled = (int) ($treasure['riddle1_enabled'] ?? 1) === 1;
-        $twoEnabled = (int) ($treasure['riddle2_enabled'] ?? 1) === 1;
-
-        $assigned = (int) ($progress['assigned_riddle'] ?? 0);
-
-        if ($assigned === 1) {
-            return !$oneEnabled;
-        }
-
-        if ($assigned === 2) {
-            return !$twoEnabled;
-        }
-
-        // Sem charada assinalada ainda: só pausa se não houver nenhuma ativa.
-        return !$oneEnabled && !$twoEnabled;
+        return (int) ($treasure['paused'] ?? 0) === 1;
     }
 
     // ==================================================================
@@ -276,7 +260,7 @@ final class ApiController
 
                 // CHARADA PAUSADA: a equipe fica em espera até a organização
                 // habilitar a charada que ela vai receber.
-                $currentTreasure['riddle_paused'] = self::riddlePaused($treasure, $progress);
+                $currentTreasure['paused'] = self::treasurePaused($treasure);
 
                 if ($progress !== null && (int) $progress['gps_confirmed'] === 1) {
                     $assignedRiddle = (int) ($progress['assigned_riddle'] ?? 0);
@@ -420,11 +404,11 @@ final class ApiController
 
         // Charada PAUSADA pela organização: a equipe fica na tela de espera
         // ("Estamos aguardando a liberação do próximo tesouro") até liberar.
-        if (self::riddlePaused($treasure, GameRepository::progress($teamId, $treasureId))) {
+        if (self::treasurePaused($treasure)) {
             return $this->json($response, [
                 'success'       => false,
-                'code'          => 'riddle_paused',
-                'riddle_paused' => true,
+                'code'            => 'treasure_paused',
+                'treasure_paused' => true,
                 'error'         => self::WAITING_RELEASE_MESSAGE,
                 'message'       => self::WAITING_RELEASE_MESSAGE,
             ], 423);
@@ -702,11 +686,11 @@ final class ApiController
 
         // Charada PAUSADA pela organização no meio do caminho: a equipe
         // espera na tela de liberação até habilitarem de novo.
-        if (self::riddlePaused($treasure, $progress)) {
+        if (self::treasurePaused($treasure)) {
             return $this->json($response, [
                 'success'       => false,
-                'code'          => 'riddle_paused',
-                'riddle_paused' => true,
+                'code'            => 'treasure_paused',
+                'treasure_paused' => true,
                 'error'         => self::WAITING_RELEASE_MESSAGE,
                 'message'       => self::WAITING_RELEASE_MESSAGE,
             ], 423);
@@ -1965,6 +1949,30 @@ final class ApiController
             ], 400);
         }
 
+        // ── PAUSA DO TESOURO ───────────────────────────────────────
+        // Só pode pausar enquanto NENHUMA equipe completou o tesouro.
+        $pauseUpdate = [];
+
+        if (array_key_exists('paused', $body)) {
+            $wantsPause = form_flag($body['paused'] ?? null);
+
+            if ($wantsPause) {
+                $completed = GameRepository::treasureCompletedCount((int) $treasure['id']);
+
+                if ($completed > 0) {
+                    return $this->json($response, [
+                        'success' => false,
+                        'error'   => $completed === 1
+                            ? 'Este tesouro não pode ser pausado: 1 equipe já o completou.'
+                            : 'Este tesouro não pode ser pausado: ' . $completed
+                                . ' equipes já o completaram.',
+                    ], 400);
+                }
+            }
+
+            $pauseUpdate['paused'] = $wantsPause ? '1' : '0';
+        }
+
         TreasureRepository::update((int) $treasure['id'], [
             'name'        => $name,
             'description' => $description,
@@ -1975,7 +1983,7 @@ final class ApiController
             'answer2'     => $answer2,
             // Precisa ser encontrado na companhia dos responsáveis?
             'with_guardian' => !empty($body['with_guardian']) ? '1' : '0',
-        ]);
+        ] + $pauseUpdate);
 
         $updated = TreasureRepository::find((int) $treasure['id']);
 
@@ -2635,6 +2643,9 @@ final class ApiController
             'lng'         => self::lngOrNull($treasure),
             'active'      => (int) $treasure['active'],
             'with_guardian' => (int) ($treasure['with_guardian'] ?? 0),
+            // Tesouro pausado + quantas equipes já completaram (trava a pausa).
+            'paused'          => (int) ($treasure['paused'] ?? 0),
+            'completed_count' => GameRepository::treasureCompletedCount((int) $treasure['id']),
             'qr_svg_path' => (string) $treasure['qr_svg_path'],
         ];
     }

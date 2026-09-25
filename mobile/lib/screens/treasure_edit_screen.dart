@@ -29,10 +29,11 @@ class _TreasureEditScreenState extends State<TreasureEditScreen> {
   /// Este tesouro deve ser encontrado na companhia dos responsáveis?
   bool _withGuardian = false;
 
-  /// Cada charada pode estar habilitada ou pausada. Pausada = a equipe que
-  /// está nela fica em espera até a organização liberar.
-  bool _riddle1Enabled = true;
-  bool _riddle2Enabled = true;
+  /// O TESOURO está pausado? Pausado = as equipes param nele até liberar.
+  bool _paused = false;
+
+  /// Quantas equipes já completaram o tesouro (trava a pausa quando > 0).
+  int _completedCount = 0;
   final _riddle1Controller = TextEditingController();
   final _answer1Controller = TextEditingController();
   final _riddle2Controller = TextEditingController();
@@ -83,8 +84,8 @@ class _TreasureEditScreenState extends State<TreasureEditScreen> {
         _descriptionController.text = (data['description'] as String?) ?? '';
         _clueController.text = (data['clue'] as String?) ?? '';
         _withGuardian = (data['with_guardian'] as num?)?.toInt() == 1;
-        _riddle1Enabled = (data['riddle1_enabled'] as num?)?.toInt() != 0;
-        _riddle2Enabled = (data['riddle2_enabled'] as num?)?.toInt() != 0;
+        _paused = (data['paused'] as num?)?.toInt() == 1;
+        _completedCount = (data['completed_count'] as num?)?.toInt() ?? 0;
         _riddle1Controller.text = (data['riddle1'] as String?) ?? '';
         _answer1Controller.text = (data['answer1'] as String?) ?? '';
         _riddle2Controller.text = (data['riddle2'] as String?) ?? '';
@@ -110,25 +111,24 @@ class _TreasureEditScreenState extends State<TreasureEditScreen> {
     }
   }
 
-  /// Validação client-side de respostas (1-8 dígitos).
-  /// Chave liga/desliga de uma charada. Desmarcada = a equipe que estiver
-  /// nesta charada fica em espera até a organização liberar.
-  Widget _buildRiddleEnabledSwitch({
-    required bool value,
-    required String title,
-    required ValueChanged<bool> onChanged,
-  }) {
+  /// Chave liga/desliga do TESOURO. Ligada = pausado: as equipes param
+  /// aqui na tela "Estamos aguardando a liberação do próximo tesouro.".
+  ///
+  /// Só dá para pausar enquanto NENHUMA equipe completou o tesouro.
+  Widget _buildPausedSwitch() {
+    final canPause = _completedCount == 0;
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: value
-            ? Colors.green.withValues(alpha: 0.10)
-            : Colors.orange.withValues(alpha: 0.14),
+        color: _paused
+            ? Colors.red.withValues(alpha: 0.14)
+            : Colors.green.withValues(alpha: 0.10),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: value
-              ? Colors.green.withValues(alpha: 0.35)
-              : Colors.orange.withValues(alpha: 0.5),
+          color: _paused
+              ? Colors.redAccent.withValues(alpha: 0.55)
+              : Colors.green.withValues(alpha: 0.35),
         ),
       ),
       child: Column(
@@ -136,27 +136,50 @@ class _TreasureEditScreenState extends State<TreasureEditScreen> {
         children: [
           SwitchListTile(
             contentPadding: EdgeInsets.zero,
-            value: value,
-            onChanged: onChanged,
-            activeThumbColor: Colors.green,
-            title: Text(
-              title,
-              style: const TextStyle(
+            value: _paused,
+            onChanged: canPause
+                ? (v) => setState(() => _paused = v)
+                : null,
+            activeThumbColor: Colors.redAccent,
+            secondary: Icon(
+              _paused ? Icons.pause_circle : Icons.play_circle,
+              color: _paused ? Colors.redAccent : Colors.green,
+            ),
+            title: const Text(
+              'Pausar este tesouro',
+              style: TextStyle(
                 color: AppColors.ivory,
                 fontWeight: FontWeight.w700,
                 fontSize: 15,
               ),
             ),
           ),
-          if (!value)
+          if (!canPause)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8, left: 2, right: 2),
+              child: Text(
+                _completedCount == 1
+                    ? '🔒 1 equipe já completou este tesouro — a pausa só vale '
+                        'enquanto nenhuma equipe o completou.'
+                    : '🔒 $_completedCount equipes já completaram este tesouro — '
+                        'a pausa só vale enquanto nenhuma equipe o completou.',
+                style: const TextStyle(
+                  color: Colors.orangeAccent,
+                  fontSize: 12.5,
+                  height: 1.4,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            )
+          else if (_paused)
             const Padding(
               padding: EdgeInsets.only(bottom: 8, left: 2, right: 2),
               child: Text(
-                'PAUSADA: a equipe que estiver nesta charada fica na tela '
+                'PAUSADO: as equipes param neste tesouro e veem '
                 '"Estamos aguardando a liberação do próximo tesouro." '
-                'até você habilitar e salvar.',
+                'até você liberar.',
                 style: TextStyle(
-                  color: Colors.orangeAccent,
+                  color: Colors.redAccent,
                   fontSize: 12.5,
                   height: 1.4,
                   fontWeight: FontWeight.w600,
@@ -168,6 +191,7 @@ class _TreasureEditScreenState extends State<TreasureEditScreen> {
     );
   }
 
+  /// Validação client-side de respostas (1-8 dígitos).
   String? _validateAnswer(String? value, String fieldName) {
     if (value == null || value.trim().isEmpty) {
       return '$fieldName é obrigatório';
@@ -192,8 +216,7 @@ class _TreasureEditScreenState extends State<TreasureEditScreen> {
         'description': _descriptionController.text.trim(),
         'clue': _clueController.text.trim(),
         'with_guardian': _withGuardian ? 1 : 0,
-        'riddle1_enabled': _riddle1Enabled ? 1 : 0,
-        'riddle2_enabled': _riddle2Enabled ? 1 : 0,
+        'paused': _paused ? 1 : 0,
         'riddle1': _riddle1Controller.text.trim(),
         'answer1': _answer1Controller.text.trim(),
         'riddle2': _riddle2Controller.text.trim(),
@@ -598,12 +621,6 @@ class _TreasureEditScreenState extends State<TreasureEditScreen> {
 
             const SizedBox(height: 12),
 
-            _buildRiddleEnabledSwitch(
-              value: _riddle1Enabled,
-              title: 'Charada 1 habilitada',
-              onChanged: (v) => setState(() => _riddle1Enabled = v),
-            ),
-
             const SizedBox(height: 28),
 
             // ── Charada 2 ───────────────────────────────
@@ -653,11 +670,7 @@ class _TreasureEditScreenState extends State<TreasureEditScreen> {
 
             const SizedBox(height: 12),
 
-            _buildRiddleEnabledSwitch(
-              value: _riddle2Enabled,
-              title: 'Charada 2 habilitada',
-              onChanged: (v) => setState(() => _riddle2Enabled = v),
-            ),
+            _buildPausedSwitch(),
 
             const SizedBox(height: 32),
 

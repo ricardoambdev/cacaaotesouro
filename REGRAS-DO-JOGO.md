@@ -150,26 +150,25 @@ A organização pode esconder **QR codes falsos** espalhados pelo caminho:
   armadilha do Quico!"*) e **volta para a tela inicial**.
 - Serve para divertir e despistar as equipes.
 
-### 5.1 ⏸️ Pausar uma charada (segurar a equipe)
+### 5.1 ⏸️ Pausar um TESOURO (segurar as equipes)
 
-Cada tesouro tem **duas charadas** (a equipe recebe uma delas). No cadastro do
-tesouro, **cada charada tem sua própria chave de habilitada**:
+No cadastro do tesouro existe a chave **"Pausar este tesouro"**:
 
-- **Habilitada (padrão):** o jogo segue normal.
-- **Desmarcada (pausada):** a equipe que estiver nessa charada **para no
-  tesouro** — o app mostra a tela **"Aguardando..."** com a mensagem
+- **Ligada (pausado):** as equipes **param neste tesouro** — o app mostra a tela
+  **"Aguardando..."** com a mensagem
   *"Estamos aguardando a liberação do próximo tesouro."* e o botão **Atualizar**.
-- Ao **habilitar e salvar**, o jogo volta ao normal e a **dica/charada** aparece
-  de novo (no app, basta tocar em **Atualizar**).
+  Nem o check-in nem a resposta funcionam enquanto estiver pausado.
+- **Desligada (padrão):** o jogo segue normal.
+- Ao **liberar e salvar**, o jogo volta ao normal e a **dica** aparece de novo
+  (no app, basta tocar em **Atualizar**).
 
-Regra do "quem pausa":
+> 🔒 **Regra da pausa:** só é possível pausar um tesouro enquanto **NENHUMA
+> equipe o completou**. Depois que qualquer equipe passa por ele, a chave fica
+> **travada** (a tela mostra *"Pausa do tesouro indisponível"*) — segurar uma
+> equipe num tesouro que a outra já resolveu seria injusto.
 
-- A equipe **já tem** uma charada sorteada → vale a chave **daquela** charada.
-- A equipe **ainda não tem** charada sorteada → o tesouro só pausa se as
-  **duas** estiverem pausadas.
-
-Serve para **segurar o ritmo** da gincana: a equipe chega ao tesouro, faz o
-check-in e a selfie, e fica esperando até você liberar a charada.
+Serve para **segurar o ritmo** da gincana: você deixa o próximo tesouro pausado
+e libera só quando quiser que as equipes avancem.
 
 ---
 

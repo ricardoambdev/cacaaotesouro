@@ -396,9 +396,9 @@ class ApiService {
       );
     }
 
-    // Charada PAUSADA: o jogo fica em espera até a organização liberar.
-    if (body['code'] == 'riddle_paused') {
-      throw RiddlePausedException(
+    // Tesouro PAUSADO: o jogo fica em espera até a organização liberar.
+    if (body['code'] == 'treasure_paused') {
+      throw TreasurePausedException(
         (body['message'] as String?) ??
             'Estamos aguardando a liberação do próximo tesouro.',
       );
@@ -481,9 +481,9 @@ class ApiService {
       return AnswerResult.fromJson(body);
     }
 
-    // Charada PAUSADA no meio do caminho: o jogo fica em espera.
-    if (body['code'] == 'riddle_paused') {
-      throw RiddlePausedException(
+    // Tesouro PAUSADO no meio do caminho: o jogo fica em espera.
+    if (body['code'] == 'treasure_paused') {
+      throw TreasurePausedException(
         (body['message'] as String?) ??
             'Estamos aguardando a liberação do próximo tesouro.',
       );
@@ -1073,12 +1073,12 @@ class DecoyQrException extends ApiException {
   DecoyQrException(super.message);
 }
 
-/// A charada deste tesouro está PAUSADA pela organização (HTTP 423).
+/// O TESOURO está PAUSADO pela organização (HTTP 423).
 ///
 /// O app mostra a tela de espera ("Estamos aguardando a liberação do
 /// próximo tesouro.") com o botão de atualizar até liberarem.
-class RiddlePausedException extends ApiException {
-  RiddlePausedException(super.message);
+class TreasurePausedException extends ApiException {
+  TreasurePausedException(super.message);
 }
 
 /// Exceção lançada quando outro aparelho já está logado com a equipe (409).

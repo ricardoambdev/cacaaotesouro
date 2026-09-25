@@ -86,6 +86,7 @@ final class TreasureController
                 'treasure' => null,
                 'old'      => $old,
                 'errors'   => [],
+                'completedCount' => 0,
             ]),
             $user
         ));
@@ -120,6 +121,8 @@ final class TreasureController
                 'errors'   => [],
                 'teams'    => $teams,
                 'progress' => self::teamProgressForTreasure($id, $teams),
+                // Quantas equipes já completaram (trava a pausa quando > 0).
+                'completedCount' => GameRepository::treasureCompletedCount($id),
             ]),
             $user
         ));
@@ -192,6 +195,26 @@ final class TreasureController
             $data['qr_content'] = random_alnum(20);
         }
         $data['qr_svg_path'] = (string) ($treasure['qr_svg_path'] ?? '');
+
+        // ── PAUSA DO TESOURO ───────────────────────────────────────
+        // Só é permitido pausar enquanto NENHUMA equipe completou o tesouro.
+        // Depois disso a chave fica travada (segurar uma equipe num tesouro
+        // que a outra já resolveu seria injusto).
+        $wantsPause = array_key_exists('paused', $data) && form_flag($data['paused']);
+        $completed = GameRepository::treasureCompletedCount($id);
+
+        if ($wantsPause && $completed > 0) {
+            unset($data['paused']); // mantém como estava
+
+            flash_set(
+                'error',
+                $completed === 1
+                    ? 'Este tesouro não pode ser pausado: 1 equipe já o completou.'
+                    : 'Este tesouro não pode ser pausado: ' . $completed
+                        . ' equipes já o completaram.'
+            );
+            redirect('/tesouros/' . $id . '/editar');
+        }
 
         // O nome é automático: sempre "Tesouro N" (posição na lista).
         $data['name'] = 'Tesouro ' . (int) ($treasure['sort_order'] ?? 1);
@@ -388,16 +411,13 @@ final class TreasureController
             'with_guardian' => isset($body['with_guardian']) ? '1' : '0',
         ];
 
-        // Cada charada pode estar HABILITADA ou PAUSADA (pausada = a equipe
-        // que está nela fica em espera até a organização liberar).
+        // O TESOURO pode ser pausado (as equipes param nele até liberar).
         //
         // Só mexe quando o campo vem no formulário: quem NÃO manda o campo
-        // (ex.: o app admin antigo) não pausa as charadas sem querer. No
-        // formulário web o campo sempre vem (hidden=0 + checkbox=1).
-        foreach (['riddle1_enabled', 'riddle2_enabled'] as $flag) {
-            if (array_key_exists($flag, $body)) {
-                $data[$flag] = ((string) $body[$flag] === '1') ? '1' : '0';
-            }
+        // (ex.: app antigo) não pausa nada sem querer. No formulário web o
+        // campo sempre vem (hidden=0 + checkbox=1).
+        if (array_key_exists('paused', $body)) {
+            $data['paused'] = form_flag($body['paused']) ? '1' : '0';
         }
 
         return $data;

@@ -10,11 +10,11 @@ class GameTreasure {
   /// Este tesouro deve ser encontrado na companhia dos responsáveis?
   final bool withGuardian;
 
-  /// A charada que a equipe vai receber neste tesouro está PAUSADA?
+  /// O TESOURO está PAUSADO pela organização?
   ///
-  /// Enquanto estiver pausada o jogo para aqui: a equipe vê a tela
+  /// Enquanto estiver pausado o jogo para aqui: a equipe vê a tela
   /// "Estamos aguardando a liberação do próximo tesouro." até a organização
-  /// habilitar a charada.
+  /// liberar o tesouro.
 
   // Campos do estado (retornados em current_treasure)
   final bool checkedIn;
@@ -32,8 +32,8 @@ class GameTreasure {
   final bool active;
   final String? qrContent;
 
-  /// A charada deste tesouro está pausada (jogo em espera).
-  final bool riddlePaused;
+  /// O tesouro está pausado (as equipes param aqui até liberarem).
+  final bool isPaused;
 
   const GameTreasure({
     required this.id,
@@ -41,7 +41,7 @@ class GameTreasure {
     this.clue,
     this.hasLocation = false,
     this.withGuardian = false,
-    this.riddlePaused = false,
+    this.isPaused = false,
     this.checkedIn = false,
     this.selfieSent = false,
     this.riddleAnswered = false,
@@ -63,7 +63,7 @@ class GameTreasure {
       clue: json['clue'] as String?,
       hasLocation: json['has_location'] == true,
       withGuardian: json['with_guardian'] == true,
-      riddlePaused: json['riddle_paused'] == true,
+      isPaused: json['paused'] == true,
       checkedIn: json['checked_in'] == true,
       selfieSent: json['selfie_sent'] == true,
       riddleAnswered: json['riddle_answered'] == true,

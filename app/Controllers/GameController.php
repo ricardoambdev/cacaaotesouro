@@ -146,7 +146,7 @@ final class GameController
             if (array_key_exists('finalBlocked', $body)) {
                 // O formulário sempre envia o campo (hidden=0 + checkbox=1),
                 // então desmarcar realmente desbloqueia.
-                $blocked = (string) $body['finalBlocked'] === '1' ? '1' : '0';
+                $blocked = form_flag($body['finalBlocked']) ? '1' : '0';
                 SettingsRepository::update(['finalBlocked' => $blocked]);
             }
 

@@ -483,8 +483,8 @@ class _TeamHomeScreenState extends State<TeamHomeScreen> {
           ],
         ),
       );
-    } on RiddlePausedException catch (e) {
-      // A organização pausou a charada deste tesouro: o jogo espera aqui.
+    } on TreasurePausedException catch (e) {
+      // A organização pausou este tesouro: o jogo espera aqui.
       if (!mounted) return;
       setState(() => _flowState = TreasureFlowState.viewingClue);
       _showSnackBar(e.message, isError: false);
@@ -665,8 +665,8 @@ class _TeamHomeScreenState extends State<TeamHomeScreen> {
 
       // Atualizar estado (pontos/placar) sem alterar o fluxo da tela
       _refreshStateKeepFlow();
-    } on RiddlePausedException catch (e) {
-      // A organização pausou a charada: a equipe volta para a tela de espera.
+    } on TreasurePausedException catch (e) {
+      // A organização pausou o tesouro: a equipe volta para a tela de espera.
       if (!mounted) return;
       setState(() => _flowState = TreasureFlowState.viewingClue);
       _showSnackBar(e.message, isError: false);
@@ -817,7 +817,7 @@ class _TeamHomeScreenState extends State<TeamHomeScreen> {
     if (_refreshing) return;
 
     // Como estava antes, para saber se algo foi LIBERADO agora.
-    final wasRiddlePaused = _gameState?.currentTreasure?.riddlePaused == true;
+    final wasTreasurePaused = _gameState?.currentTreasure?.isPaused == true;
     final wasFinalBlocked =
         _gameState?.finalAvailable == true && _gameState?.finalBlocked == true;
 
@@ -827,9 +827,9 @@ class _TeamHomeScreenState extends State<TeamHomeScreen> {
       final state = await _apiService.teamState();
       if (!mounted) return;
 
-      final riddleReleased = wasRiddlePaused &&
+      final treasureReleased = wasTreasurePaused &&
           state.currentTreasure != null &&
-          !state.currentTreasure!.riddlePaused;
+          !state.currentTreasure!.isPaused;
       final finalReleased =
           wasFinalBlocked && state.finalAvailable && !state.finalBlocked;
 
@@ -841,13 +841,13 @@ class _TeamHomeScreenState extends State<TeamHomeScreen> {
           _flowState = TreasureFlowState.finalChallenge;
         }
 
-        // Liberou a charada? Volta para a dica/normal do tesouro.
-        if (riddleReleased) {
+        // Liberou o tesouro? Volta para a dica/normal do tesouro.
+        if (treasureReleased) {
           _flowState = TreasureFlowState.viewingClue;
         }
       });
 
-      if (riddleReleased) {
+      if (treasureReleased) {
         _soundService.playNotification();
         _showSnackBar('O tesouro foi liberado! Boa sorte!', isError: false);
       } else if (finalReleased) {
@@ -1228,10 +1228,10 @@ class _TeamHomeScreenState extends State<TeamHomeScreen> {
   Widget _buildTreasureTab() {
     if (_gameState == null) return const SizedBox();
 
-    // CHARADA PAUSADA pela organização: o jogo para aqui. A equipe espera
-    // até liberarem a charada (a tela volta sozinha no próximo "Atualizar").
-    if (_gameState!.currentTreasure?.riddlePaused == true) {
-      return _buildRiddlePausedState();
+    // TESOURO PAUSADO pela organização: o jogo para aqui. A equipe espera
+    // até liberarem o tesouro (a tela volta no próximo "Atualizar").
+    if (_gameState!.currentTreasure?.isPaused == true) {
+      return _buildTreasurePausedState();
     }
 
     // Sem tesouro atual e não é final → aguardando
@@ -2274,8 +2274,8 @@ class _TeamHomeScreenState extends State<TeamHomeScreen> {
     );
   }
 
-  /// Charada pausada pela organização — o jogo espera a liberação.
-  Widget _buildRiddlePausedState() {
+  /// Tesouro pausado pela organização — o jogo espera a liberação.
+  Widget _buildTreasurePausedState() {
     return _buildWaitingForRelease(
       message: 'Estamos aguardando a liberação do próximo tesouro.',
       icon: Icons.hourglass_top_rounded,

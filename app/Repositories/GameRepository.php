@@ -147,6 +147,24 @@ final class GameRepository
      * @param array<string, mixed> $team Linha da tabela teams
      */
     /**
+     * Quantas equipes já COMPLETARAM este tesouro (acertaram a charada)?
+     *
+     * Enquanto for 0, o tesouro pode ser pausado/liberado à vontade. Depois
+     * que alguma equipe passa por ele, a pausa é travada: segurar uma equipe
+     * num tesouro que a outra já resolveu seria injusto.
+     */
+    public static function treasureCompletedCount(int $treasureId): int
+    {
+        $stmt = Database::get()->prepare(
+            'SELECT COUNT(*) FROM team_treasure_progress '
+            . 'WHERE treasure_id = :id AND riddle_correct = 1 AND disqualified = 0'
+        );
+        $stmt->execute([':id' => $treasureId]);
+
+        return (int) $stmt->fetchColumn();
+    }
+
+    /**
      * O Desafio Final está BLOQUEADO pela organização?
      */
     public static function finalBlocked(): bool

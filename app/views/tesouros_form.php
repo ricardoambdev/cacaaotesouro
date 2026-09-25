@@ -122,6 +122,49 @@ $hasQr = $qrPath !== '';
                         </label>
                     </div>
                 </div>
+
+                <!-- Pausa do tesouro -->
+                <?php
+                $completedCount = (int) ($completedCount ?? 0);
+                $isPaused = (int) ($treasure['paused'] ?? 0) === 1
+                    || ($value('paused') === '1');
+                $canPause = $completedCount === 0;
+                ?>
+                <div class="form-group" style="margin-top:16px;">
+                    <div style="border:1px solid <?= $isPaused ? 'rgba(239,68,68,0.4)' : 'rgba(247,236,212,0.15)' ?>;border-radius:12px;padding:16px;background:<?= $isPaused ? 'rgba(239,68,68,0.07)' : 'rgba(255,255,255,0.02)' ?>;">
+                        <?php if ($canPause): ?>
+                            <div class="toggle-group">
+                                <div>
+                                    <div class="toggle-label-text">
+                                        ⏸️ Pausar este tesouro
+                                    </div>
+                                    <div class="toggle-label-desc">
+                                        Pausado, <strong>as equipes param neste tesouro</strong>: o app mostra
+                                        <em>"Estamos aguardando a liberação do próximo tesouro."</em> com o
+                                        botão <strong>Atualizar</strong> até você liberar.
+                                    </div>
+                                </div>
+                                <label class="toggle-switch">
+                                    <input type="hidden" name="paused" value="0">
+                                    <input type="checkbox" name="paused" value="1" <?= $isPaused ? 'checked' : '' ?>>
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                        <?php else: ?>
+                            <div class="toggle-label-text" style="color:rgba(247,236,212,0.75);">
+                                🔒 Pausa do tesouro indisponível
+                            </div>
+                            <div class="toggle-label-desc">
+                                <?= $completedCount === 1
+                                    ? '1 equipe já completou este tesouro'
+                                    : $completedCount . ' equipes já completaram este tesouro' ?>
+                                — a pausa só vale enquanto
+                                <strong>nenhuma equipe</strong> o completou.
+                            </div>
+                            <input type="hidden" name="paused" value="<?= $isPaused ? '1' : '0' ?>">
+                        <?php endif; ?>
+                    </div>
+                </div>
             </div>
 
             <!-- Card: Charada 1 -->
@@ -156,26 +199,7 @@ $hasQr = $qrPath !== '';
                     <div class="error-inline"></div>
                     <p class="form-help-text">Somente dígitos, de 1 a 8.</p>
                 </div>
-
-                <!-- Habilitada / pausada -->
-                <div class="form-group" style="border:1px solid rgba(247,236,212,0.12); border-radius:12px; padding:12px; margin-top:4px;">
-                    <input type="hidden" name="riddle1_enabled" value="0">
-                    <label style="display:flex; align-items:center; gap:10px; cursor:pointer; margin:0;">
-                        <input type="checkbox" name="riddle1_enabled" value="1"
-                               style="width:18px; height:18px; accent-color:#22C55E;"
-                               <?= ($value('riddle1_enabled', '1') === '1') ? 'checked' : '' ?>>
-                        <span style="font-weight:700; color:#f7ecd4;">
-                            Charada 1 habilitada
-                        </span>
-                    </label>
-                    <p class="form-help-text" style="margin:8px 0 0;">
-                        <strong style="color:#F59E0B;">Desmarcada:</strong> a equipe que estiver
-                        nesta charada fica em espera na tela
-                        <em>"Estamos aguardando a liberação do próximo tesouro."</em>
-                        até você habilitar e salvar.
-                    </p>
-                </div>
-            </div>
+</div>
 
             <!-- Card: Charada 2 -->
             <div class="settings-card">
@@ -208,25 +232,6 @@ $hasQr = $qrPath !== '';
                     </div>
                     <div class="error-inline"></div>
                     <p class="form-help-text">Somente dígitos, de 1 a 8. Cada equipe recebe uma das duas charadas.</p>
-                </div>
-
-                <!-- Habilitada / pausada -->
-                <div class="form-group" style="border:1px solid rgba(247,236,212,0.12); border-radius:12px; padding:12px; margin-top:4px;">
-                    <input type="hidden" name="riddle2_enabled" value="0">
-                    <label style="display:flex; align-items:center; gap:10px; cursor:pointer; margin:0;">
-                        <input type="checkbox" name="riddle2_enabled" value="1"
-                               style="width:18px; height:18px; accent-color:#22C55E;"
-                               <?= ($value('riddle2_enabled', '1') === '1') ? 'checked' : '' ?>>
-                        <span style="font-weight:700; color:#f7ecd4;">
-                            Charada 2 habilitada
-                        </span>
-                    </label>
-                    <p class="form-help-text" style="margin:8px 0 0;">
-                        <strong style="color:#F59E0B;">Desmarcada:</strong> a equipe que estiver
-                        nesta charada fica em espera na tela
-                        <em>"Estamos aguardando a liberação do próximo tesouro."</em>
-                        até você habilitar e salvar.
-                    </p>
                 </div>
             </div>
         </div>

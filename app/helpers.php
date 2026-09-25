@@ -132,6 +132,26 @@ function setting(string $key, $default = null)
 }
 
 /**
+ * Lê um campo de LIGA/DESLIGA de um formulário.
+ *
+ * O padrão é `hidden=0` + `checkbox=1` com o MESMO nome: o navegador envia o
+ * valor do checkbox por último, então "o último vale" (marcado = 1).
+ *
+ * Aceita também um array (quando o campo sai como `campo[]`), usando o último
+ * elemento — assim tanto o formulário quanto o JSON do app funcionam.
+ *
+ * @param mixed $value Valor bruto ($body['campo']).
+ */
+function form_flag($value): bool
+{
+    if (is_array($value)) {
+        $value = end($value);
+    }
+
+    return (string) $value === '1';
+}
+
+/**
  * Gera uma string aleatória alfanumérica (letras A-Z + dígitos 0-9,
  * sem caracteres ambíguos como 0/O/1/I) usando random_bytes.
  *
