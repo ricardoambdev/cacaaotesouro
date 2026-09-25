@@ -549,11 +549,29 @@
         });
     }
 
+    /**
+     * Nome e código do tesouro são a POSIÇÃO dele na lista — então, ao
+     * arrastar, atualiza na hora o número da ordem, o código ("T0N") e o
+     * nome ("Tesouro N"), sem precisar recarregar a página.
+     */
     function updateOrderNumbers() {
       var cards = list.querySelectorAll('.treasure-card[data-treasure-id]');
       cards.forEach(function (card, i) {
+        var position = i + 1;
+
         var badge = card.querySelector('.order-badge');
-        if (badge) badge.textContent = String(i + 1);
+        if (badge) badge.textContent = String(position);
+
+        var codeEl = card.querySelector('.treasure-code');
+        var code = 'T' + String(position).padStart(2, '0');
+        if (codeEl) codeEl.textContent = code;
+
+        var nameEl = card.querySelector('.treasure-name');
+        if (nameEl) nameEl.textContent = 'Tesouro ' + position;
+
+        // O arquivo baixado também leva o código no nome.
+        var downloadEl = card.querySelector('.download-btn[download]');
+        if (downloadEl) downloadEl.setAttribute('download', 'QR_' + code + '.svg');
       });
     }
 

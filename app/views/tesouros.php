@@ -88,8 +88,8 @@ $isRandomOrder = ($game['treasureOrder'] ?? 'estabelecida') === 'aleatorio';
                 <div class="treasure-card-body">
                     <div class="treasure-card-header">
                         <h3 class="treasure-card-name">
-                            <span class="badge badge-info"><?= e((string) ($treasure['code'] ?? '')) ?></span>
-                            Tesouro <?= (int) ($treasure['sort_order'] ?? $index + 1) ?>
+                            <span class="badge badge-info treasure-code"><?= e((string) ($treasure['code'] ?? '')) ?></span>
+                            <span class="treasure-name">Tesouro <?= (int) ($treasure['sort_order'] ?? $index + 1) ?></span>
                         </h3>
 
 
