@@ -318,18 +318,19 @@ $cartoKey = trim((string) app_config('map.carto_key', ''));
         #telao-map {
             width: 100%;
             height: 100%;
-            /* Fundo claro enquanto os tiles carregam (o mapa é cinza claro). */
-            background: #ECECEC;
+            /* Fundo claro enquanto os tiles carregam (o mapa é claro). */
+            background: #FBF8F3;
         }
 
         /* ============================================================
-           MAPA EM CINZA CLARO + LARANJA
-           O filtro vale SÓ para os tiles: os pinos, nomes e popups ficam
-           em outros panes do Leaflet e continuam com as cores originais.
+           MAPA CLARO COM AS VIAS EM LARANJA
+           O estilo Voyager já tem as vias principais em laranja/amarelo e
+           texto cinza-escuro; o filtro só SATURA esse laranja.
+           Cuidado: filtros com contrast()/brightness() num mapa claro
+           estouram tudo para branco e o mapa some (era o bug anterior).
            ============================================================ */
         .leaflet-tile-pane {
-            filter: grayscale(1) sepia(0.4) hue-rotate(-16deg) saturate(2.6)
-                brightness(1.05) contrast(0.95);
+            filter: saturate(2) hue-rotate(-14deg);
         }
 
         /* Controles do Leaflet legíveis sobre o mapa claro. */
@@ -494,7 +495,8 @@ $cartoKey = trim((string) app_config('map.carto_key', ''));
             font-family: 'Comic Sans MS', 'Segoe UI', sans-serif;
             white-space: nowrap;
             line-height: 1;
-            /* Sombra para o pino "saltar" do mapa cinza claro. */
+            /* Contorno branco + sombra: o pino "salta" do mapa claro. */
+            border: 3px solid #FFFFFF;
             box-shadow: 0 3px 10px rgba(10, 23, 36, 0.35);
         }
         .team-pin-label {
@@ -683,14 +685,17 @@ $cartoKey = trim((string) app_config('map.carto_key', ''));
                 attributionControl: true,
             });
 
-            /* CARTO: estilo CLARO (light_all) + chave da API quando configurada.
+            /* CARTO: estilo Voyager (claro, vias em laranja) + chave da API
+               quando configurada.
                A chave fica em data/install.php (fora do git) ou na env CARTO_API_KEY. */
             const CARTO_KEY = <?= json_encode($cartoKey, JSON_UNESCAPED_SLASHES) ?>;
 
+            /* Voyager: fundo claro, vias principais em laranja e texto
+               cinza-escuro — é o estilo que dá o contraste laranja/cinza. */
             const cartoTileUrl = CARTO_KEY
-                ? 'https://{s}.basemaps.cartocdn.com/rastertiles/light_all/{z}/{x}/{y}.png'
+                ? 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png'
                     + '?key=' + encodeURIComponent(CARTO_KEY)
-                : 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
+                : 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png';
 
             L.tileLayer(cartoTileUrl, {
                 maxZoom: 19,
