@@ -311,6 +311,40 @@ $siteName = $siteName ?? 'Caça ao Tesouro';
         #telao-map {
             width: 100%;
             height: 100%;
+            /* Fundo claro enquanto os tiles carregam (o mapa é cinza claro). */
+            background: #ECECEC;
+        }
+
+        /* ============================================================
+           MAPA EM CINZA CLARO + LARANJA
+           O filtro vale SÓ para os tiles: os pinos, nomes e popups ficam
+           em outros panes do Leaflet e continuam com as cores originais.
+           ============================================================ */
+        .leaflet-tile-pane {
+            filter: grayscale(1) sepia(0.4) hue-rotate(-16deg) saturate(2.6)
+                brightness(1.05) contrast(0.95);
+        }
+
+        /* Controles do Leaflet legíveis sobre o mapa claro. */
+        #telao-map .leaflet-control-zoom a {
+            background: #FFFFFF;
+            color: #B45309;
+            border-color: rgba(180, 83, 9, 0.25);
+            font-weight: 700;
+        }
+
+        #telao-map .leaflet-control-zoom a:hover {
+            background: #FFF3E6;
+            color: #F97316;
+        }
+
+        #telao-map .leaflet-control-attribution {
+            background: rgba(255, 255, 255, 0.85);
+            color: #4B5563;
+        }
+
+        #telao-map .leaflet-control-attribution a {
+            color: #B45309;
         }
 
         .telao-map-error {
@@ -453,6 +487,8 @@ $siteName = $siteName ?? 'Caça ao Tesouro';
             font-family: 'Comic Sans MS', 'Segoe UI', sans-serif;
             white-space: nowrap;
             line-height: 1;
+            /* Sombra para o pino "saltar" do mapa cinza claro. */
+            box-shadow: 0 3px 10px rgba(10, 23, 36, 0.35);
         }
         .team-pin-label {
             font-size: 9px;
@@ -640,9 +676,11 @@ $siteName = $siteName ?? 'Caça ao Tesouro';
                 attributionControl: true,
             });
 
-            L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
                 maxZoom: 19,
-                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+                subdomains: 'abcd',
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                    + ' &copy; <a href="https://carto.com/attributions">CARTO</a>',
             }).addTo(map);
         }
 
