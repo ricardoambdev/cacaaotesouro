@@ -652,6 +652,13 @@ class _TeamHomeScreenState extends State<TeamHomeScreen> {
 
       if (!mounted) return;
 
+      // Este aparelho RESPONDEU agora: guarda a assinatura nova na hora,
+      // antes de qualquer outra chamada. Assim o aviso de "outro aparelho
+      // concluiu o tesouro" nunca aparece nele (é a corrida do polling).
+      if (result.signature.isNotEmpty) {
+        _syncSignature = result.signature;
+      }
+
       // Som do acerto (o erro entra em loop pelo _syncSounds, ao renderizar
       // a tela de resultado).
       if (result.correct) {
@@ -947,6 +954,15 @@ class _TeamHomeScreenState extends State<TeamHomeScreen> {
       if (signature == _syncSignature) return;
 
       _syncSignature = signature;
+
+      // Este aparelho está na TELA DE RESULTADO (pontos + botão para o
+      // próximo tesouro / desafio final): quem respondeu foi ele. Aqui não
+      // entra o aviso de "outro aparelho concluiu" nem recarrega a tela —
+      // senão a equipe perderia os pontos e o botão de avançar.
+      if (_flowState == TreasureFlowState.answerResult ||
+          _flowState == TreasureFlowState.finalResult) {
+        return;
+      }
 
       // Som de notificação — importante para os outros aparelhos perceberem.
       _soundService.playNotification();

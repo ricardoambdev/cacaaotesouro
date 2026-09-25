@@ -825,6 +825,11 @@ final class ApiController
                 'breakdown'       => $breakdown,
                 'first_bonus'     => $firstBonus,
                 'selfie_required' => true,
+                // Assinatura JÁ atualizada do progresso da equipe. O app que
+                // respondeu guarda isto na hora: assim o aviso de "outro
+                // aparelho concluiu o tesouro" NUNCA aparece nele (só nos
+                // outros aparelhos, que veem a mudança pelo polling).
+                'signature'       => GameRepository::progressSignature($teamId)['signature'],
                 'next'            => [
                     'treasure'        => $next,
                     'final_available' => $finalAvailable,

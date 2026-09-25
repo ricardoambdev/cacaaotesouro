@@ -72,7 +72,10 @@ Serve tanto para a organização quanto para explicar às equipes.
 
 ### 4.3 Vários aparelhos na mesma equipe
 - A **mesma equipe pode entrar em vários celulares** ao mesmo tempo.
-- Quando **um** aparelho conclui um tesouro, os **outros**:
+- Quem **respondeu a charada** fica na tela de **pontos** com o botão para o
+  **próximo tesouro** (ou **Desafio Final**) — o aviso de "Tesouro concluído"
+  **nunca** aparece nele.
+- Os **outros** aparelhos da equipe:
   - tocam a **notificação**,
   - mostram o aviso **"Tesouro concluído!"**,
   - e **avançam sozinhos** para o próximo tesouro.

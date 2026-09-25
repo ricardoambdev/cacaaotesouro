@@ -263,6 +263,12 @@ class AnswerResult {
   final bool finalBlocked;
   final int attempts;
 
+  /// Assinatura do progresso da equipe JÁ atualizada (vem do servidor).
+  ///
+  /// O aparelho que respondeu guarda isto na hora, para o aviso de
+  /// "outro aparelho concluiu o tesouro" nunca aparecer nele.
+  final String signature;
+
   const AnswerResult({
     required this.correct,
     required this.message,
@@ -274,6 +280,7 @@ class AnswerResult {
     required this.finalAvailable,
     this.finalBlocked = false,
     required this.attempts,
+    this.signature = '',
   });
 
   factory AnswerResult.fromJson(Map<String, dynamic> json) {
@@ -299,6 +306,7 @@ class AnswerResult {
       finalAvailable: nextData?['final_available'] == true,
       finalBlocked: nextData?['final_blocked'] == true,
       attempts: (json['attempts'] as num?)?.toInt() ?? 1,
+      signature: (json['signature'] as String?) ?? '',
     );
   }
 }
