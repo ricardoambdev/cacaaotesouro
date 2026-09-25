@@ -779,6 +779,28 @@ $cartoKey = trim((string) app_config('map.carto_key', ''));
     <!-- ============================================================
          TELAO JS
          ============================================================ -->
+    <!-- ============================================================
+         TELA DA EQUIPE VENCEDORA (fim de jogo)
+         ============================================================ -->
+    <!-- Risada da vitória: MESMO áudio que o aplicativo toca ao acertar a
+         senha do desafio final. -->
+    <audio id="winner-sound" src="/assets/sons/risada.mp3" preload="auto"></audio>
+
+    <div class="winner-overlay" id="winner-overlay">
+        <div class="winner-confetti" id="winner-confetti"></div>
+
+        <button type="button" class="winner-close" id="winner-close"
+                title="Voltar ao placar (Esc)">✕</button>
+
+        <div class="winner-box" id="winner-box">
+            <div class="winner-trophy">🏆</div>
+            <div class="winner-title">Fim de Jogo</div>
+            <div class="winner-caption">Equipe vencedora</div>
+            <div class="winner-name" id="winner-name">—</div>
+            <div class="winner-points" id="winner-points">0 pontos</div>
+        </div>
+    </div>
+
     <script>
     (function () {
         'use strict';
@@ -1149,6 +1171,9 @@ $cartoKey = trim((string) app_config('map.carto_key', ''));
         function renderWinner(winner) {
             const overlay = document.getElementById('winner-overlay');
 
+            // Sem o elemento na página (versão antiga em cache), não faz nada.
+            if (!overlay) return;
+
             // Sem vencedor (jogo rolando): garante que a tela está escondida.
             if (!winner) {
                 overlay.classList.remove('visible');
@@ -1195,6 +1220,7 @@ $cartoKey = trim((string) app_config('map.carto_key', ''));
             const audio = document.getElementById('winner-sound');
             if (!audio) return;
 
+
             audio.currentTime = 0;
 
             const tentar = audio.play();
@@ -1218,15 +1244,21 @@ $cartoKey = trim((string) app_config('map.carto_key', ''));
             }, { once: false, passive: true });
         });
 
-        document.getElementById('winner-close').addEventListener('click', function () {
-            winnerDismissedId = winnerShownId;
-            document.getElementById('winner-overlay').classList.remove('visible');
-        });
+        const winnerClose = document.getElementById('winner-close');
+
+        if (winnerClose) {
+            winnerClose.addEventListener('click', function () {
+                winnerDismissedId = winnerShownId;
+                const ov = document.getElementById('winner-overlay');
+                if (ov) ov.classList.remove('visible');
+            });
+        }
 
         document.addEventListener('keydown', function (e) {
             if (e.key === 'Escape') {
                 winnerDismissedId = winnerShownId;
-                document.getElementById('winner-overlay').classList.remove('visible');
+                const ov = document.getElementById('winner-overlay');
+                if (ov) ov.classList.remove('visible');
             }
         });
 
@@ -1239,28 +1271,6 @@ $cartoKey = trim((string) app_config('map.carto_key', ''));
 
     })();
     </script>
-    <!-- ============================================================
-         TELA DA EQUIPE VENCEDORA (fim de jogo)
-         ============================================================ -->
-    <!-- Risada da vitória: MESMO áudio que o aplicativo toca ao acertar a
-         senha do desafio final. -->
-    <audio id="winner-sound" src="/assets/sons/risada.mp3" preload="auto"></audio>
-
-    <div class="winner-overlay" id="winner-overlay">
-        <div class="winner-confetti" id="winner-confetti"></div>
-
-        <button type="button" class="winner-close" id="winner-close"
-                title="Voltar ao placar (Esc)">✕</button>
-
-        <div class="winner-box" id="winner-box">
-            <div class="winner-trophy">🏆</div>
-            <div class="winner-title">Fim de Jogo</div>
-            <div class="winner-caption">Equipe vencedora</div>
-            <div class="winner-name" id="winner-name">—</div>
-            <div class="winner-points" id="winner-points">0 pontos</div>
-        </div>
-    </div>
-
     </body>
 </html>
 
