@@ -511,6 +511,14 @@ class ApiService {
       return AnswerResult.fromJson(body);
     }
 
+    // ERRAR a senha final NÃO é erro de requisição: a resposta vem avaliada
+    // (correct = false) e o app mostra a tela de erro com o botão de tentar
+    // de novo. Aceita também o formato antigo (success = false) para não
+    // quebrar com servidor desatualizado.
+    if (body.containsKey('correct') && body['correct'] == false) {
+      return AnswerResult.fromJson(body);
+    }
+
     throw ApiException(body['error'] as String? ?? 'Erro ao enviar resposta final.');
   }
 

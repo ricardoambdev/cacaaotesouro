@@ -1046,8 +1046,14 @@ final class ApiController
         }
 
         // SEM PENALIDADE: errar a senha final não tira pontos.
+        //
+        // IMPORTANTE: `success => true` (e não false)! Errar a senha NÃO é
+        // erro de requisição — o app precisa receber a resposta avaliada para
+        // mostrar a tela de erro (GIF + som em loop + "Tentar Novamente").
+        // Com `success => false` o app caía no erro genérico
+        // "Erro ao enviar a resposta final".
         return $this->json($response, [
-            'success' => false,
+            'success' => true,
             'correct' => false,
             'message' => 'Senha incorreta. Tente novamente!',
             'points'  => $points,
