@@ -40,6 +40,17 @@ $config = [
         'name'     => 'cacaaotesouro_session',
         'lifetime' => 60 * 60 * 24 * 7, // 7 dias
     ],
+
+    'map' => [
+        // Chave do CARTO (provedor dos tiles do mapa do telão).
+        //
+        // Fica aqui para subir junto com o `git pull` (produção não precisa
+        // de configuração extra). Pode ser trocada sem tocar no git via
+        //   data/install.php  →  'map' => ['carto_key' => '...']
+        // ou pela variável de ambiente CARTO_API_KEY (essas duas vencem).
+        'carto_key' => getenv('CARTO_API_KEY')
+            ?: 'cb1_3x87_1_235d0b5817fcdf15567d4fa0',
+    ],
 ];
 
 // Configuração gravada pelo instalador (data/install.php) — se existir,

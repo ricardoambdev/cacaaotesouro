@@ -13,6 +13,13 @@
  */
 
 $siteName = $siteName ?? 'Caça ao Tesouro';
+
+/**
+ * Chave do CARTO (tiles do mapa). NÃO fica no repositório — vem do
+ * data/install.php (arquivo local, ignorado pelo git) ou da variável de
+ * ambiente CARTO_API_KEY. Sem chave o mapa usa o endereço antigo (sem chave).
+ */
+$cartoKey = trim((string) app_config('map.carto_key', ''));
 ?><!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -676,7 +683,16 @@ $siteName = $siteName ?? 'Caça ao Tesouro';
                 attributionControl: true,
             });
 
-            L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+            /* CARTO: estilo CLARO (light_all) + chave da API quando configurada.
+               A chave fica em data/install.php (fora do git) ou na env CARTO_API_KEY. */
+            const CARTO_KEY = <?= json_encode($cartoKey, JSON_UNESCAPED_SLASHES) ?>;
+
+            const cartoTileUrl = CARTO_KEY
+                ? 'https://{s}.basemaps.cartocdn.com/rastertiles/light_all/{z}/{x}/{y}.png'
+                    + '?key=' + encodeURIComponent(CARTO_KEY)
+                : 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
+
+            L.tileLayer(cartoTileUrl, {
                 maxZoom: 19,
                 subdomains: 'abcd',
                 attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
