@@ -344,17 +344,19 @@ $cartoKey = trim((string) app_config('map.carto_key', ''));
             letter-spacing: 0.08em;
             color: rgba(247, 236, 212, 0.35);
             margin-bottom: 8px;
-            text-align: center;
+            /* Alinhado à esquerda, junto com a selfie grande e as miniaturas. */
+            text-align: left;
         }
 
-        /* Miniaturas: TODAS as selfies. As colunas se ajustam sozinhas, então
-           quanto mais selfies, menores ficam — sem estourar o espaço. */
+        /* Miniaturas: TODAS as selfies, do mesmo tamanho e alinhadas
+           à esquerda, na mesma linha da selfie grande. */
         .sb-selfies-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(42px, 1fr));
+            grid-template-columns: repeat(auto-fill, 52px);
             gap: 6px;
+            justify-content: start;
+            justify-items: start;
             align-content: start;
-            justify-items: center;
             overflow-y: auto;
             flex: 1 1 auto;
             min-height: 0;
@@ -362,18 +364,18 @@ $cartoKey = trim((string) app_config('map.carto_key', ''));
         }
 
         .sb-selfie-thumb {
-            width: 100%;
-            aspect-ratio: 1 / 1;
-            height: auto;
+            width: 52px;
+            height: 52px;
             border-radius: 8px;
             object-fit: cover;
-            border: 2px solid rgba(249, 115, 22, 0.3);
+            border: 1px solid rgba(249, 115, 22, 0.35);
             cursor: pointer;
-            transition: transform 0.15s ease, border-color 0.15s ease;
+            /* Só a borda anima — a miniatura NÃO aumenta no hover. */
+            transition: border-color 0.15s ease;
         }
 
         .sb-selfie-thumb:hover {
-            transform: scale(1.15);
+            border: 1px solid #F97316;
             border-color: #F97316;
         }
 
