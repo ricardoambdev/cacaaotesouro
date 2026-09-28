@@ -286,13 +286,15 @@ $cartoKey = trim((string) app_config('map.carto_key', ''));
         .sb-selfie-hero {
             position: relative;
             width: 100%;
-            aspect-ratio: 4 / 3;
             border-radius: 12px;
             overflow: hidden;
             background: rgba(5, 11, 18, 0.6);
             border: 2px solid rgba(249, 115, 22, 0.35);
-            margin-bottom: 12px;
-            flex-shrink: 0;
+            /* No RODAPE do painel: cresce e ocupa o espaco que sobrar. */
+            margin-top: 12px;
+            margin-bottom: 0;
+            flex: 1 1 auto;
+            min-height: 130px;
         }
 
         .sb-selfie-hero img {
@@ -358,7 +360,8 @@ $cartoKey = trim((string) app_config('map.carto_key', ''));
             justify-items: start;
             align-content: start;
             overflow-y: auto;
-            flex: 1 1 auto;
+            flex: 0 1 auto;
+            max-height: 40%;
             min-height: 0;
             scrollbar-width: thin;
         }
@@ -785,8 +788,10 @@ $cartoKey = trim((string) app_config('map.carto_key', ''));
                     </div>
                 </div>
                 <div class="sb-selfies" id="sb-laranja-selfies">
-                    <!-- Selfie GRANDE: troca sozinha entre as selfies
-                         deste time (em fade) -->
+                    <div class="sb-selfies-title">Selfies</div>
+                    <div class="sb-selfies-grid" id="sb-laranja-selfies-grid"></div>
+                    <!-- Selfie GRANDE no rodape do painel: troca sozinha
+                         entre as selfies deste time (em fade) -->
                     <div class="sb-selfie-hero" id="sb-laranja-hero">
                         <img id="sb-laranja-hero-a" alt="">
                         <img id="sb-laranja-hero-b" alt="">
@@ -795,8 +800,6 @@ $cartoKey = trim((string) app_config('map.carto_key', ''));
                         </div>
                         <div class="sb-selfie-hero-label" id="sb-laranja-hero-label"></div>
                     </div>
-                    <div class="sb-selfies-title">Selfies</div>
-                    <div class="sb-selfies-grid" id="sb-laranja-selfies-grid"></div>
                 </div>
             </div>
         </aside>
@@ -829,8 +832,10 @@ $cartoKey = trim((string) app_config('map.carto_key', ''));
                     </div>
                 </div>
                 <div class="sb-selfies" id="sb-preta-selfies">
-                    <!-- Selfie GRANDE: troca sozinha entre as selfies
-                         deste time (em fade) -->
+                    <div class="sb-selfies-title">Selfies</div>
+                    <div class="sb-selfies-grid" id="sb-preta-selfies-grid"></div>
+                    <!-- Selfie GRANDE no rodape do painel: troca sozinha
+                         entre as selfies deste time (em fade) -->
                     <div class="sb-selfie-hero" id="sb-preta-hero">
                         <img id="sb-preta-hero-a" alt="">
                         <img id="sb-preta-hero-b" alt="">
@@ -839,8 +844,6 @@ $cartoKey = trim((string) app_config('map.carto_key', ''));
                         </div>
                         <div class="sb-selfie-hero-label" id="sb-preta-hero-label"></div>
                     </div>
-                    <div class="sb-selfies-title">Selfies</div>
-                    <div class="sb-selfies-grid" id="sb-preta-selfies-grid"></div>
                 </div>
             </div>
         </aside>
