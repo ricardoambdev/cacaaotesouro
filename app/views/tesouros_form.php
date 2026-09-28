@@ -156,44 +156,28 @@ $hasQr = $qrPath !== '';
 
                 <!-- Pausa do tesouro -->
                 <?php
-                $completedCount = (int) ($completedCount ?? 0);
                 $isPaused = (int) ($treasure['paused'] ?? 0) === 1
                     || ($value('paused') === '1');
-                $canPause = $completedCount === 0;
                 ?>
                 <div class="form-group" style="margin-top:16px;">
                     <div style="border:1px solid <?= $isPaused ? 'rgba(239,68,68,0.4)' : 'rgba(247,236,212,0.15)' ?>;border-radius:12px;padding:16px;background:<?= $isPaused ? 'rgba(239,68,68,0.07)' : 'rgba(255,255,255,0.02)' ?>;">
-                        <?php if ($canPause): ?>
-                            <div class="toggle-group">
-                                <div>
-                                    <div class="toggle-label-text">
-                                        ⏸️ Pausar este tesouro
-                                    </div>
-                                    <div class="toggle-label-desc">
-                                        Pausado, <strong>as equipes param neste tesouro</strong>: o app mostra
-                                        <em>"Estamos aguardando a liberação do próximo tesouro."</em> com o
-                                        botão <strong>Atualizar</strong> até você liberar.
-                                    </div>
+                        <div class="toggle-group">
+                            <div>
+                                <div class="toggle-label-text">
+                                    ⏸️ Pausar este tesouro
                                 </div>
-                                <label class="toggle-switch">
-                                    <input type="hidden" name="paused" value="0">
-                                    <input type="checkbox" name="paused" value="1" <?= $isPaused ? 'checked' : '' ?>>
-                                    <span class="toggle-slider"></span>
-                                </label>
+                                <div class="toggle-label-desc">
+                                    Pausado, <strong>as equipes param neste tesouro</strong>: o app mostra
+                                    <em>"Estamos aguardando a liberação do próximo tesouro."</em> com o
+                                    botão <strong>Atualizar</strong> até você liberar.
+                                </div>
                             </div>
-                        <?php else: ?>
-                            <div class="toggle-label-text" style="color:rgba(247,236,212,0.75);">
-                                🔒 Pausa do tesouro indisponível
-                            </div>
-                            <div class="toggle-label-desc">
-                                <?= $completedCount === 1
-                                    ? '1 equipe já completou este tesouro'
-                                    : $completedCount . ' equipes já completaram este tesouro' ?>
-                                — a pausa só vale enquanto
-                                <strong>nenhuma equipe</strong> o completou.
-                            </div>
-                            <input type="hidden" name="paused" value="<?= $isPaused ? '1' : '0' ?>">
-                        <?php endif; ?>
+                            <label class="toggle-switch">
+                                <input type="hidden" name="paused" value="0">
+                                <input type="checkbox" name="paused" value="1" <?= $isPaused ? 'checked' : '' ?>>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
                     </div>
                 </div>
             </div>

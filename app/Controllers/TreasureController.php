@@ -201,25 +201,11 @@ final class TreasureController
         $data['qr_svg_path'] = (string) ($treasure['qr_svg_path'] ?? '');
 
         // ── PAUSA DO TESOURO ───────────────────────────────────────
-        // Só é permitido pausar enquanto NENHUMA equipe completou o tesouro.
-        // Depois disso a chave fica travada (segurar uma equipe num tesouro
-        // que a outra já resolveu seria injusto).
-        $wantsPause = array_key_exists('paused', $data) && form_flag($data['paused']);
-        $completed = GameRepository::treasureCompletedCount($id);
-
-        if ($wantsPause && $completed > 0) {
-            unset($data['paused']); // mantém como estava
-
-            flash_set(
-                'error',
-                $completed === 1
-                    ? 'Este tesouro não pode ser pausado: 1 equipe já o completou.'
-                    : 'Este tesouro não pode ser pausado: ' . $completed
-                        . ' equipes já o completaram.'
-            );
-            redirect('/tesouros/' . $id . '/editar');
-        }
-
+        // Pode pausar/liberar a QUALQUER momento — inclusive depois que uma
+        // equipe já completou o tesouro (a que já passou segue no próximo; a
+        // que ainda não chegou fica em espera). Tudo pelo servidor: o app da
+        // equipe só lê `current_treasure.paused`, então não precisa de APK novo.
+        //
         // NOME e CÓDIGO são automáticos (posição na ordem) — não vêm do
         // formulário e não são alterados aqui. syncIdentity() garante isso.
         TreasureRepository::update($id, $data);

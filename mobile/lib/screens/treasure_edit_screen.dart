@@ -33,9 +33,6 @@ class _TreasureEditScreenState extends State<TreasureEditScreen> {
 
   /// O TESOURO está pausado? Pausado = as equipes param nele até liberar.
   bool _paused = false;
-
-  /// Quantas equipes já completaram o tesouro (trava a pausa quando > 0).
-  int _completedCount = 0;
   final _riddle1Controller = TextEditingController();
   final _answer1Controller = TextEditingController();
   final _riddle2Controller = TextEditingController();
@@ -93,7 +90,6 @@ class _TreasureEditScreenState extends State<TreasureEditScreen> {
         final t = (data['with_teacher'] as num?)?.toInt() == 1;
         _companion = t ? 'teacher' : (g ? 'guardian' : '');
         _paused = (data['paused'] as num?)?.toInt() == 1;
-        _completedCount = (data['completed_count'] as num?)?.toInt() ?? 0;
         _riddle1Controller.text = (data['riddle1'] as String?) ?? '';
         _answer1Controller.text = (data['answer1'] as String?) ?? '';
         _riddle2Controller.text = (data['riddle2'] as String?) ?? '';
@@ -122,9 +118,9 @@ class _TreasureEditScreenState extends State<TreasureEditScreen> {
   /// Chave liga/desliga do TESOURO. Ligada = pausado: as equipes param
   /// aqui na tela "Estamos aguardando a liberação do próximo tesouro.".
   ///
-  /// Só dá para pausar enquanto NENHUMA equipe completou o tesouro.
+  /// Pode pausar/liberar a qualquer momento, mesmo que uma equipe já tenha
+  /// completado o tesouro (a que passou segue; a que não chegou espera).
   Widget _buildPausedSwitch() {
-    final canPause = _completedCount == 0;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -145,9 +141,7 @@ class _TreasureEditScreenState extends State<TreasureEditScreen> {
           SwitchListTile(
             contentPadding: EdgeInsets.zero,
             value: _paused,
-            onChanged: canPause
-                ? (v) => setState(() => _paused = v)
-                : null,
+            onChanged: (v) => setState(() => _paused = v),
             activeThumbColor: Colors.redAccent,
             secondary: Icon(
               _paused ? Icons.pause_circle : Icons.play_circle,
@@ -162,24 +156,7 @@ class _TreasureEditScreenState extends State<TreasureEditScreen> {
               ),
             ),
           ),
-          if (!canPause)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 8, left: 2, right: 2),
-              child: Text(
-                _completedCount == 1
-                    ? '🔒 1 equipe já completou este tesouro — a pausa só vale '
-                        'enquanto nenhuma equipe o completou.'
-                    : '🔒 $_completedCount equipes já completaram este tesouro — '
-                        'a pausa só vale enquanto nenhuma equipe o completou.',
-                style: const TextStyle(
-                  color: Colors.orangeAccent,
-                  fontSize: 12.5,
-                  height: 1.4,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            )
-          else if (_paused)
+          if (_paused)
             const Padding(
               padding: EdgeInsets.only(bottom: 8, left: 2, right: 2),
               child: Text(

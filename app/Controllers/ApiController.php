@@ -2097,28 +2097,14 @@ final class ApiController
         }
 
         // ── PAUSA DO TESOURO ───────────────────────────────────────
-        // Só pode pausar enquanto NENHUMA equipe completou o tesouro.
+        // Pode pausar/liberar a QUALQUER momento — inclusive depois que uma
+        // equipe já completou (a que já passou segue; a que não chegou espera).
         $pauseUpdate = [];
 
         if (array_key_exists('paused', $body)) {
             $wantsPause = form_flag($body['paused'] ?? null);
 
-            if ($wantsPause) {
-                $completed = GameRepository::treasureCompletedCount((int) $treasure['id']);
-
-                if ($completed > 0) {
-                    return $this->json($response, [
-                        'success' => false,
-                        'error'   => $completed === 1
-                            ? 'Este tesouro não pode ser pausado: 1 equipe já o completou.'
-                            : 'Este tesouro não pode ser pausado: ' . $completed
-                                . ' equipes já o completaram.',
-                    ], 400);
-                }
-            }
-
-        $pauseUpdate['paused'] = $wantsPause ? '1' : '0';
-
+            $pauseUpdate['paused'] = $wantsPause ? '1' : '0';
         }
 
         // Responsável ou professor: '' (nenhum) | 'guardian' | 'teacher'.

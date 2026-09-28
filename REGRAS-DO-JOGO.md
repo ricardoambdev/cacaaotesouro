@@ -183,10 +183,9 @@ No cadastro do tesouro existe a chave **"Pausar este tesouro"**:
 - Ao **liberar e salvar**, o jogo volta ao normal e a **dica** aparece de novo
   (no app, basta tocar em **Atualizar**).
 
-> 🔒 **Regra da pausa:** só é possível pausar um tesouro enquanto **NENHUMA
-> equipe o completou**. Depois que qualquer equipe passa por ele, a chave fica
-> **travada** (a tela mostra *"Pausa do tesouro indisponível"*) — segurar uma
-> equipe num tesouro que a outra já resolveu seria injusto.
+> 💡 **Pode pausar a QUALQUER momento** — inclusive depois que uma equipe já
+> completou o tesouro. Quem já passou **segue no próximo**; quem ainda não chegou
+> **fica em espera**. A pausa é 100% servidor: **não precisa atualizar o app**.
 
 Serve para **segurar o ritmo** da gincana: você deixa o próximo tesouro pausado
 e libera só quando quiser que as equipes avancem.
