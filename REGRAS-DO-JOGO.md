@@ -331,6 +331,9 @@ reaparece se o vencedor mudar.
 - Endereço **público**: `/telao` (sem login — abra em qualquer máquina).
 - Mostra: **placar das equipes**, **mapa** com **cada aparelho conectado**
   (nome + cor da equipe) e as **selfies** mais recentes.
+- As **selfies só aparecem depois que AS DUAS equipes encontraram aquele
+  tesouro**. Enquanto só uma equipe achou, a selfie daquele local fica escondida
+  (não entrega o ponto para a outra equipe).
 - A lista **"Dispositivos conectados"** só mostra quem está **conectado agora**:
   ao **sair do jogo** (Sair no app) o aparelho some **na hora**, e um aparelho que
   parou de enviar posição (app fechado, sem sinal) some em **até 30 segundos**.

@@ -3003,6 +3003,9 @@ final class ApiController
      */
     private static function recentSelfies(int $limit): array
     {
+        // REGRA DO TELÃO: só entram as selfies de tesouros que TODAS as
+        // equipes já encontraram. Enquanto só uma equipe achou, a selfie
+        // daquele local não aparece (não entrega o ponto para a outra).
         $stmt = Database::get()->prepare(
             'SELECT t.color AS team_color, t.name AS team_name, '
             . 'tr.name AS treasure_name, p.selfie_path, p.found_at '
@@ -3011,6 +3014,13 @@ final class ApiController
             . 'JOIN treasures tr ON tr.id = p.treasure_id '
             . 'WHERE p.selfie_path IS NOT NULL AND p.selfie_path != \'\' '
             . 'AND p.found_at IS NOT NULL '
+            . 'AND p.disqualified = 0 '
+            // Quantas equipes JÁ acharam este tesouro...
+            . 'AND (SELECT COUNT(*) FROM team_treasure_progress x '
+            . '     WHERE x.treasure_id = p.treasure_id '
+            . '     AND x.riddle_correct = 1 AND x.disqualified = 0) '
+            // ...precisa ser o total de equipes do jogo (as duas).
+            . '>= (SELECT COUNT(*) FROM teams) '
             . 'ORDER BY p.found_at DESC, p.id DESC '
             . 'LIMIT ' . (int) $limit
         );
