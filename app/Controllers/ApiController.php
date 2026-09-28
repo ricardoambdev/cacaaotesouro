@@ -1436,7 +1436,7 @@ final class ApiController
             // Um item por APARELHO conectado (nome + cor da equipe + posição).
             'devices'   => $devices,
             'treasures' => $treasures,
-            'selfies'   => self::recentSelfies(6),
+            'selfies'   => self::recentSelfies(0),
         ]);
     }
 
@@ -2996,18 +2996,18 @@ final class ApiController
     }
 
     /**
-     * Selfies mais recentes (selfie_path != ''), com nome/cor da equipe
-     * e nome do tesouro.
+     * Selfies dos tesouros que TODAS as equipes já encontraram, em ordem de
+     * descoberta (as primeiras descobertas aparecem primeiro).
      *
+     * @param int $limit 0 = sem limite (o telão mostra todas)
      * @return array<int, array<string, string>>
      */
-    private static function recentSelfies(int $limit): array
+    private static function recentSelfies(int $limit = 0): array
     {
         // REGRA DO TELÃO: só entram as selfies de tesouros que TODAS as
         // equipes já encontraram. Enquanto só uma equipe achou, a selfie
         // daquele local não aparece (não entrega o ponto para a outra).
-        $stmt = Database::get()->prepare(
-            'SELECT t.color AS team_color, t.name AS team_name, '
+        $sql = 'SELECT t.color AS team_color, t.name AS team_name, '
             . 'tr.name AS treasure_name, p.selfie_path, p.found_at '
             . 'FROM team_treasure_progress p '
             . 'JOIN teams t ON t.id = p.team_id '
@@ -3019,11 +3019,16 @@ final class ApiController
             . 'AND (SELECT COUNT(*) FROM team_treasure_progress x '
             . '     WHERE x.treasure_id = p.treasure_id '
             . '     AND x.riddle_correct = 1 AND x.disqualified = 0) '
-            // ...precisa ser o total de equipes do jogo (as duas).
+            // ...precisa ser o total de equipes do jogo.
             . '>= (SELECT COUNT(*) FROM teams) '
-            . 'ORDER BY p.found_at DESC, p.id DESC '
-            . 'LIMIT ' . (int) $limit
-        );
+            // Ordem de descoberta.
+            . 'ORDER BY p.found_at ASC, p.id ASC';
+
+        if ($limit > 0) {
+            $sql .= ' LIMIT ' . $limit;
+        }
+
+        $stmt = Database::get()->prepare($sql);
         $stmt->execute();
 
         return array_map(static function (array $row): array {

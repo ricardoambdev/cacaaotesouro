@@ -334,6 +334,11 @@ reaparece se o vencedor mudar.
 - As **selfies só aparecem depois que AS DUAS equipes encontraram aquele
   tesouro**. Enquanto só uma equipe achou, a selfie daquele local fica escondida
   (não entrega o ponto para a outra equipe).
+- Cada equipe tem uma **selfie GRANDE** que fica **trocando sozinha** entre todas
+  as selfies dela (troca a cada 4 segundos, com **fade**), e **todas** as
+  selfies aparecem como **miniaturas** logo abaixo.
+- O espaço das selfies **se ajusta sozinho**: quanto mais selfies, menores ficam
+  as miniaturas, e a área cresce para caber tudo.
 - A lista **"Dispositivos conectados"** só mostra quem está **conectado agora**:
   ao **sair do jogo** (Sair no app) o aparelho some **na hora**, e um aparelho que
   parou de enviar posição (app fechado, sem sinal) some em **até 30 segundos**.

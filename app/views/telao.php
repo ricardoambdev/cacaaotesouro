@@ -272,9 +272,70 @@ $cartoKey = trim((string) app_config('map.carto_key', ''));
 
         /* Selfies area */
         .sb-selfies {
-            margin-top: auto;
+            margin-top: 12px;
             padding-top: 14px;
             border-top: 1px solid rgba(247, 236, 212, 0.08);
+            display: flex;
+            flex-direction: column;
+            /* Cresce e ocupa o espaço que sobrar no card. */
+            flex: 1 1 auto;
+            min-height: 0;
+        }
+
+        /* ---- SELFIE GRANDE (troca sozinha, com fade) ---- */
+        .sb-selfie-hero {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 4 / 3;
+            border-radius: 12px;
+            overflow: hidden;
+            background: rgba(5, 11, 18, 0.6);
+            border: 2px solid rgba(249, 115, 22, 0.35);
+            margin-bottom: 12px;
+            flex-shrink: 0;
+        }
+
+        .sb-selfie-hero img {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            opacity: 0;
+            transition: opacity 1s ease-in-out;
+        }
+
+        .sb-selfie-hero img.visivel {
+            opacity: 1;
+        }
+
+        .sb-selfie-hero-empty {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.72rem;
+            color: rgba(247, 236, 212, 0.3);
+            text-align: center;
+            padding: 10px;
+        }
+
+        .sb-selfie-hero-label {
+            position: absolute;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            padding: 6px 10px;
+            font-size: 0.62rem;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            color: #FFFFFF;
+            background: linear-gradient(to top, rgba(5, 11, 18, 0.85), transparent);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            z-index: 2;
         }
 
         .sb-selfies-title {
@@ -286,16 +347,24 @@ $cartoKey = trim((string) app_config('map.carto_key', ''));
             text-align: center;
         }
 
+        /* Miniaturas: TODAS as selfies. As colunas se ajustam sozinhas, então
+           quanto mais selfies, menores ficam — sem estourar o espaço. */
         .sb-selfies-grid {
-            display: flex;
-            flex-wrap: wrap;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(42px, 1fr));
             gap: 6px;
-            justify-content: center;
+            align-content: start;
+            justify-items: center;
+            overflow-y: auto;
+            flex: 1 1 auto;
+            min-height: 0;
+            scrollbar-width: thin;
         }
 
         .sb-selfie-thumb {
-            width: 48px;
-            height: 48px;
+            width: 100%;
+            aspect-ratio: 1 / 1;
+            height: auto;
             border-radius: 8px;
             object-fit: cover;
             border: 2px solid rgba(249, 115, 22, 0.3);
@@ -714,6 +783,16 @@ $cartoKey = trim((string) app_config('map.carto_key', ''));
                     </div>
                 </div>
                 <div class="sb-selfies" id="sb-laranja-selfies">
+                    <!-- Selfie GRANDE: troca sozinha entre as selfies
+                         deste time (em fade) -->
+                    <div class="sb-selfie-hero" id="sb-laranja-hero">
+                        <img id="sb-laranja-hero-a" alt="">
+                        <img id="sb-laranja-hero-b" alt="">
+                        <div class="sb-selfie-hero-empty" id="sb-laranja-hero-empty">
+                            Sem selfies ainda
+                        </div>
+                        <div class="sb-selfie-hero-label" id="sb-laranja-hero-label"></div>
+                    </div>
                     <div class="sb-selfies-title">Selfies</div>
                     <div class="sb-selfies-grid" id="sb-laranja-selfies-grid"></div>
                 </div>
@@ -748,6 +827,16 @@ $cartoKey = trim((string) app_config('map.carto_key', ''));
                     </div>
                 </div>
                 <div class="sb-selfies" id="sb-preta-selfies">
+                    <!-- Selfie GRANDE: troca sozinha entre as selfies
+                         deste time (em fade) -->
+                    <div class="sb-selfie-hero" id="sb-preta-hero">
+                        <img id="sb-preta-hero-a" alt="">
+                        <img id="sb-preta-hero-b" alt="">
+                        <div class="sb-selfie-hero-empty" id="sb-preta-hero-empty">
+                            Sem selfies ainda
+                        </div>
+                        <div class="sb-selfie-hero-label" id="sb-preta-hero-label"></div>
+                    </div>
                     <div class="sb-selfies-title">Selfies</div>
                     <div class="sb-selfies-grid" id="sb-preta-selfies-grid"></div>
                 </div>
@@ -1084,9 +1173,16 @@ $cartoKey = trim((string) app_config('map.carto_key', ''));
             grids.laranja.innerHTML = '';
             grids.preta.innerHTML = '';
 
+            /* Listas por equipe — usadas pela selfie grande. */
+            const porEquipe = { laranja: [], preta: [] };
+
             selfies.forEach(selfie => {
                 const colorKey = (selfie.team_color || '').toLowerCase();
                 const grid = grids[colorKey] || grids.preta;
+
+                if (porEquipe[colorKey]) {
+                    porEquipe[colorKey].push(selfie);
+                }
 
                 const img = document.createElement('img');
                 img.className = 'sb-selfie-thumb';
@@ -1100,7 +1196,96 @@ $cartoKey = trim((string) app_config('map.carto_key', ''));
 
                 grid.appendChild(img);
             });
+
+            /* Selfie grande de cada equipe. */
+            atualizarHero('laranja', porEquipe.laranja);
+            atualizarHero('preta', porEquipe.preta);
         }
+
+        /* ============================================================
+           SELFIE GRANDE (troca sozinha entre as selfies da equipe, em fade)
+           Duas camadas <img> alternando a opacidade: sem "piscar" preto
+           entre uma foto e outra.
+           ============================================================ */
+        const HERO_INTERVALO_MS = 4000;
+
+        const hero = {
+            laranja: { lista: [], idx: 0, frente: 'a', elA: null, elB: null },
+            preta:   { lista: [], idx: 0, frente: 'a', elA: null, elB: null },
+        };
+
+        function atualizarHero(colorKey, lista) {
+            const st = hero[colorKey];
+            if (!st) return;
+
+            st.elA = document.getElementById('sb-' + colorKey + '-hero-a');
+            st.elB = document.getElementById('sb-' + colorKey + '-hero-b');
+
+            const vazio = lista.length === 0;
+            const elEmpty = document.getElementById('sb-' + colorKey + '-hero-empty');
+            const elLabel = document.getElementById('sb-' + colorKey + '-hero-label');
+
+            if (elEmpty) elEmpty.style.display = vazio ? 'flex' : 'none';
+
+            /* A lista mudou? Reinicia a partir da primeira selfie. */
+            const assinatura = lista.map(function (s) { return s.image_path; }).join('|');
+
+            if (st.assinatura === assinatura) return;
+
+            st.assinatura = assinatura;
+            st.lista = lista;
+            st.idx = 0;
+
+            if (st.elA) st.elA.classList.remove('visivel');
+            if (st.elB) st.elB.classList.remove('visivel');
+
+            if (vazio) {
+                if (elLabel) elLabel.textContent = '';
+                if (st.elA) st.elA.removeAttribute('src');
+                if (st.elB) st.elB.removeAttribute('src');
+                return;
+            }
+
+            /* Primeira selfie já visível. */
+            st.frente = 'a';
+            st.elA.src = st.lista[0].image_path;
+            st.elA.classList.add('visivel');
+
+            if (elLabel) {
+                elLabel.textContent = st.lista[0].team_name
+                    + ' — ' + st.lista[0].treasure_name;
+            }
+        }
+
+        function trocarHero(colorKey) {
+            const st = hero[colorKey];
+            if (!st || st.lista.length < 2) return;
+
+            const proxima = st.lista[(st.idx + 1) % st.lista.length];
+            const daFrente = st.frente === 'a' ? st.elA : st.elB;
+            const atras = st.frente === 'a' ? st.elB : st.elA;
+
+            if (!daFrente || !atras) return;
+
+            /* A camada de trás recebe a próxima foto e aparece por cima,
+               enquanto a da frente desaparece (fade cruzado). */
+            atras.src = proxima.image_path;
+            atras.classList.add('visivel');
+            daFrente.classList.remove('visivel');
+
+            st.frente = st.frente === 'a' ? 'b' : 'a';
+            st.idx = (st.idx + 1) % st.lista.length;
+
+            const elLabel = document.getElementById('sb-' + colorKey + '-hero-label');
+            if (elLabel) {
+                elLabel.textContent = proxima.team_name + ' — ' + proxima.treasure_name;
+            }
+        }
+
+        setInterval(function () {
+            trocarHero('laranja');
+            trocarHero('preta');
+        }, HERO_INTERVALO_MS);
 
         /* ============================================================
            SELFIE MODAL
