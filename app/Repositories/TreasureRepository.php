@@ -125,9 +125,10 @@ final class TreasureRepository
             ':sort_order'    => (int) ($data['sort_order'] ?? 0),
             ':active'        => (int) ($data['active'] ?? 0),
             ':created_at'    => (string) ($data['created_at'] ?? date('Y-m-d H:i:s')),
-            // Tesouro pausado (padrão: não).
-            ':paused'      => (int) ($data['paused'] ?? 0),
-            ':with_teacher' => (int) ($data['with_teacher'] ?? 0),
+            // Responsável ou professor (só um) + tesouro pausado.
+            ':with_guardian' => (int) ($data['with_guardian'] ?? 0),
+            ':with_teacher'  => (int) ($data['with_teacher'] ?? 0),
+            ':paused'        => (int) ($data['paused'] ?? 0),
         ]);
 
         return (int) $pdo->lastInsertId();
