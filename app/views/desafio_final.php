@@ -106,7 +106,7 @@ $finalWrongPenalty = $finalWrongPenalty ?? '20';
 <!-- ============================================================
      ANULAR O DESAFIO FINAL
      ============================================================ -->
-<div class="settings-card" style="border:1px solid rgba(239,68,68,0.35); background:rgba(239,68,68,0.05);">
+<div class="settings-card" style="margin-top:28px; border:1px solid rgba(239,68,68,0.35); background:rgba(239,68,68,0.05);">
     <h2 class="settings-card-title">
         <?= icon('restart_alt', 20) ?>
         Anular o desafio final
