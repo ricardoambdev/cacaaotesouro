@@ -1,4 +1,6 @@
+import 'dart:io';
 import 'dart:math';
+import 'package:device_info_plus/device_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// Serviço para gerenciar o device_id persistente.
@@ -26,6 +28,7 @@ class DeviceService {
   DeviceService._internal();
 
   String? _deviceId;
+  String? _deviceModel;
 
   /// Retorna o device_id. Gera um novo se não existir.
   Future<String> getDeviceId() async {
@@ -41,6 +44,40 @@ class DeviceService {
 
     _deviceId = id;
     return id;
+  }
+
+  /// MODELO do celular (ex.: "Samsung SM-M556B"), usado na lista de
+  /// aparelhos da equipe no painel. Fica em cache: só consulta uma vez.
+  Future<String> getDeviceModel() async {
+    if (_deviceModel != null) return _deviceModel!;
+
+    try {
+      final info = DeviceInfoPlugin();
+
+      if (Platform.isAndroid) {
+        final android = await info.androidInfo;
+        // Ex.: "Samsung SM-M556B"
+        final marca = android.manufacturer;
+        final modelo = android.model;
+        _deviceModel = '${_capitalizar(marca)} $modelo'.trim();
+      } else if (Platform.isIOS) {
+        final ios = await info.iosInfo;
+        _deviceModel = 'Apple ${ios.utsname.machine}';
+      } else {
+        _deviceModel = Platform.operatingSystem;
+      }
+    } catch (_) {
+      // Nunca deixa isso atrapalhar o login/jogo.
+      _deviceModel = '';
+    }
+
+    return _deviceModel!;
+  }
+
+  /// "samsung" -> "Samsung"
+  String _capitalizar(String texto) {
+    if (texto.isEmpty) return texto;
+    return texto[0].toUpperCase() + texto.substring(1);
   }
 
   /// Retorna a versão da história salva localmente (default 0).

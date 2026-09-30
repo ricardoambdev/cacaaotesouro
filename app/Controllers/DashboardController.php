@@ -60,11 +60,41 @@ final class DashboardController
             ];
         }
 
+        // ── APARELHOS de cada equipe (nome, modelo, 1º acesso, última posição) ──
+        // Serve para a organização saber QUAIS celulares estão jogando.
+        $devices = [];
+        $lastSeen = [];
+
+        $locRows = $pdo->query(
+            'SELECT device_id, MAX(created_at) AS visto FROM team_locations '
+            . "WHERE device_id <> '' GROUP BY device_id"
+        )->fetchAll(PDO::FETCH_ASSOC);
+
+        foreach ($locRows as $row) {
+            $lastSeen[(string) $row['device_id']] = (string) $row['visto'];
+        }
+
+        foreach (TeamRepository::all() as $team) {
+            $teamId = (int) $team['id'];
+
+            foreach (TeamRepository::devices($teamId) as $device) {
+                $devices[] = [
+                    'team'       => (string) $team['name'],
+                    'color'      => (string) $team['color'],
+                    'name'       => $device['name'] !== '' ? $device['name'] : 'Sem nome',
+                    'model'      => $device['model'] !== '' ? $device['model'] : '—',
+                    'first_seen' => (string) $device['first_seen_at'],
+                    'last_seen'  => $lastSeen[$device['device_id']] ?? '',
+                ];
+            }
+        }
+
         $content = View::render('dashboard', [
             'user'         => $user,
             'config'       => SettingsRepository::all(),
             'teams'        => $teams,
             'foundByTeam'  => $foundByTeam,
+            'devices'      => $devices,
         ]);
 
         $html = View::render('layout', [

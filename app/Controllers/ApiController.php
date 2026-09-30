@@ -129,7 +129,10 @@ final class ApiController
             $deviceName = '';
         }
 
-        TeamRepository::addDevice($teamId, $deviceId, $deviceName);
+        // Modelo do celular (o app manda sozinho; a equipe não digita).
+        $deviceModel = trim((string) ($body['model'] ?? ''));
+
+        TeamRepository::addDevice($teamId, $deviceId, $deviceName, $deviceModel);
 
         // Ao entrar o PRIMEIRO aparelho, limpa posições antigas: só quem está
         // ativo agora aparece no mapa do painel.
@@ -237,6 +240,7 @@ final class ApiController
         }
 
         $teamId = (int) $team['id'];
+        $deviceId = trim($request->getHeaderLine('X-Device-Id'));
         $currentTreasureId = GameRepository::currentTreasureId($team);
         $finalAvailable = GameRepository::finalAvailable($team);
 
@@ -360,7 +364,7 @@ final class ApiController
             // Bloqueio do Desafio Final pela organização: o app fica em espera.
             'final_blocked'   => GameRepository::finalBlocked(),
             'leaderboard'     => $leaderboard,
-            'messages'        => self::teamMessages($teamId),
+            'messages'        => self::teamMessages($teamId, $deviceId),
         ];
 
         // A dica só é enviada quando o desafio está liberado de verdade.
@@ -1096,7 +1100,11 @@ final class ApiController
 
         return $this->json($response, [
             'success'  => true,
-            'messages' => self::teamMessages((int) $team['id'], 50),
+            'messages' => self::teamMessages(
+                (int) $team['id'],
+                trim($request->getHeaderLine('X-Device-Id')),
+                50
+            ),
         ]);
     }
 
@@ -1137,15 +1145,33 @@ final class ApiController
             ], 400);
         }
 
-        $placeholders = implode(',', array_fill(0, count($ids), '?'));
+        $teamId = (int) $team['id'];
+        $deviceId = trim($request->getHeaderLine('X-Device-Id'));
+
+        // Cada APARELHO guarda até qual mensagem já viu: assim o aviso
+        // continua aparecendo nos OUTROS celulares da mesma equipe.
+        if ($deviceId !== '') {
+            TeamRepository::setDeviceLastMessage($teamId, $deviceId, max($ids));
+        }
+
+        // Compatibilidade (painel/relatórios antigos): marca a mensagem como
+        // lida quando TODOS os aparelhos da equipe já passaram por ela.
         $stmt = Database::get()->prepare(
-            'UPDATE team_messages SET read_at = ? '
-            . 'WHERE team_id = ? AND read_at IS NULL AND id IN (' . $placeholders . ')'
+            'SELECT MIN(last_message_id) FROM team_devices WHERE team_id = :team_id'
         );
-        $stmt->execute(array_merge(
-            [date('Y-m-d H:i:s'), (int) $team['id']],
-            array_map('intval', $ids)
-        ));
+        $stmt->execute([':team_id' => $teamId]);
+        $menor = $stmt->fetchColumn();
+
+        if ($menor !== false && $menor !== null) {
+            Database::get()->prepare(
+                'UPDATE team_messages SET read_at = :now '
+                . 'WHERE team_id = :team_id AND read_at IS NULL AND id <= :ate'
+            )->execute([
+                ':now'     => date('Y-m-d H:i:s'),
+                ':team_id' => $teamId,
+                ':ate'     => (int) $menor,
+            ]);
+        }
 
         return $this->json($response, ['success' => true]);
     }
@@ -1235,7 +1261,10 @@ final class ApiController
             ], 400);
         }
 
-        TeamRepository::setDeviceName((int) $team['id'], $deviceId, $name);
+        // Modelo do celular (a equipe não digita: o app manda sozinho).
+        $model = trim((string) ($body['model'] ?? ''));
+
+        TeamRepository::setDeviceName((int) $team['id'], $deviceId, $name, $model);
 
         return $this->json($response, [
             'success' => true,
@@ -1492,6 +1521,9 @@ final class ApiController
                     'color'    => (string) $team['color'],
                     'team'     => (string) $team['name'],
                     'name'     => $device['name'] !== '' ? $device['name'] : 'Sem nome',
+                    // Lista de aparelhos: modelo do celular e 1º acesso.
+                    'model'         => (string) ($device['model'] ?? ''),
+                    'first_seen_at' => (string) ($device['first_seen_at'] ?? ''),
                     'lat'      => $last['lat'] ?? null,
                     'lng'      => $last['lng'] ?? null,
                     'online'   => $online,
@@ -2879,15 +2911,28 @@ final class ApiController
      *
      * @return array<int, array{id: int, message: string, created_at: string}>
      */
-    private static function teamMessages(int $teamId, int $limit = 50): array
+    private static function teamMessages(int $teamId, ?string $deviceId = null, int $limit = 50): array
     {
+        // MENSAGEM PARA TODOS OS APARELHOS: o que manda é o `last_message_id`
+        // de CADA aparelho (não o read_at da equipe). Quem entrou depois da
+        // mensagem não recebe as antigas.
+        $desde = 0;
+
+        if ($deviceId !== null && $deviceId !== '') {
+            $dev = TeamRepository::device($teamId, $deviceId);
+
+            if ($dev !== null) {
+                $desde = (int) ($dev['last_message_id'] ?? 0);
+            }
+        }
+
         $stmt = Database::get()->prepare(
             'SELECT id, message, title, kind, created_at FROM team_messages '
-            . 'WHERE team_id = :team_id AND read_at IS NULL '
+            . 'WHERE team_id = :team_id AND id > :desde '
             . 'ORDER BY created_at ASC, id ASC '
             . 'LIMIT ' . (int) $limit
         );
-        $stmt->execute([':team_id' => $teamId]);
+        $stmt->execute([':team_id' => $teamId, ':desde' => $desde]);
 
         return array_map(static function (array $row): array {
             // `kind` define a cor/ícone do aviso no app:

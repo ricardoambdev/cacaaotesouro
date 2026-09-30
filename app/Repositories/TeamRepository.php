@@ -54,56 +54,135 @@ final class TeamRepository
      * @param string $name Nome do aparelho/pessoa (ex.: "Ricardo"). Vazio
      *                     mantém o nome que já estava salvo.
      */
-    public static function addDevice(int $teamId, string $deviceId, string $name = ''): void
-    {
+    /**
+     * Registra/atualiza um APARELHO da equipe.
+     *
+     * A lista de aparelhos guarda: nome (escolhido pela equipe), MODELO do
+     * celular, a hora do PRIMEIRO acesso e até qual mensagem do admin este
+     * aparelho já viu (`last_message_id` — cada aparelho tem o seu, então
+     * TODOS recebem os avisos).
+     *
+     * Regras:
+     * - Primeiro acesso deste aparelho: grava a hora e marca "já vi tudo até
+     *   agora" — ele só recebe os avisos enviados DEPOIS que entrou.
+     * - Já conhecido: atualiza nome/modelo sem mexer no primeiro acesso nem
+     *   na posição das mensagens.
+     * - Nome/modelo vazios mantêm o que já estava salvo.
+     */
+    public static function addDevice(
+        int $teamId,
+        string $deviceId,
+        string $name = '',
+        string $model = ''
+    ): void {
         // Compatibilidade: guarda também o último token em `teams`.
         self::setSessionToken($teamId, $deviceId);
 
         $pdo = Database::get();
-        $driver = app_config('db.driver', 'sqlite');
         $now = date('Y-m-d H:i:s');
+        $existing = self::device($teamId, $deviceId);
 
-        // Nome vazio = mantém o que já estava salvo neste aparelho.
-        // (Resolvido aqui porque o mesmo parâmetro não pode ser usado duas
-        //  vezes na query com prepared statements nativos.)
-        $existing = self::deviceName($teamId, $deviceId);
         $finalName = trim($name) !== ''
             ? mb_substr(trim($name), 0, 60)
-            : $existing;
+            : (string) ($existing['name'] ?? '');
 
-        if ($driver === 'mysql') {
+        $finalModel = trim($model) !== ''
+            ? mb_substr(trim($model), 0, 80)
+            : (string) ($existing['model'] ?? '');
+
+        if ($existing !== null) {
             $stmt = $pdo->prepare(
-                'INSERT INTO team_devices (team_id, device_id, name, created_at) '
-                . 'VALUES (:team_id, :device_id, :name, :created_at) '
-                . 'ON DUPLICATE KEY UPDATE name = :name_u, created_at = :created_at_u'
+                'UPDATE team_devices SET name = :name, model = :model '
+                . 'WHERE team_id = :team_id AND device_id = :device_id'
             );
-
             $stmt->execute([
-                ':team_id'      => $teamId,
-                ':device_id'    => $deviceId,
-                ':name'         => $finalName,
-                ':created_at'   => $now,
-                ':name_u'       => $finalName,
-                ':created_at_u' => $now,
+                ':name'      => $finalName,
+                ':model'     => $finalModel,
+                ':team_id'   => $teamId,
+                ':device_id' => $deviceId,
             ]);
 
             return;
         }
 
+        // PRIMEIRO acesso: só recebe avisos enviados a partir de agora.
+        $lastMessageId = self::lastMessageId($teamId);
+
         $stmt = $pdo->prepare(
-            'INSERT INTO team_devices (team_id, device_id, name, created_at) '
-            . 'VALUES (:team_id, :device_id, :name, :created_at) '
-            . 'ON CONFLICT(team_id, device_id) DO UPDATE SET '
-            . 'name = :name_u, created_at = :created_at_u'
+            'INSERT INTO team_devices '
+            . '(team_id, device_id, name, model, last_message_id, created_at) '
+            . 'VALUES (:team_id, :device_id, :name, :model, :last_message_id, :created_at)'
         );
 
+        try {
+            $stmt->execute([
+                ':team_id'         => $teamId,
+                ':device_id'       => $deviceId,
+                ':name'            => $finalName,
+                ':model'           => $finalModel,
+                ':last_message_id' => $lastMessageId,
+                ':created_at'      => $now,
+            ]);
+        } catch (\PDOException $e) {
+            // Corrida: outro request registrou o mesmo aparelho antes.
+            $stmt = $pdo->prepare(
+                'UPDATE team_devices SET name = :name, model = :model '
+                . 'WHERE team_id = :team_id AND device_id = :device_id'
+            );
+            $stmt->execute([
+                ':name'      => $finalName,
+                ':model'     => $finalModel,
+                ':team_id'   => $teamId,
+                ':device_id' => $deviceId,
+            ]);
+        }
+    }
+
+    /**
+     * Linha completa de um aparelho da equipe (null se ainda não existe).
+     *
+     * @return array<string, mixed>|null
+     */
+    public static function device(int $teamId, string $deviceId): ?array
+    {
+        $stmt = Database::get()->prepare(
+            'SELECT * FROM team_devices WHERE team_id = :team_id AND device_id = :device_id'
+        );
+        $stmt->execute([':team_id' => $teamId, ':device_id' => $deviceId]);
+
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return $row === false ? null : $row;
+    }
+
+    /**
+     * Id da ÚLTIMA mensagem do admin enviada para a equipe (0 = nenhuma).
+     */
+    public static function lastMessageId(int $teamId): int
+    {
+        $stmt = Database::get()->prepare(
+            'SELECT COALESCE(MAX(id), 0) FROM team_messages WHERE team_id = :team_id'
+        );
+        $stmt->execute([':team_id' => $teamId]);
+
+        return (int) $stmt->fetchColumn();
+    }
+
+    /**
+     * Marca até qual mensagem ESTE aparelho já viu.
+     */
+    public static function setDeviceLastMessage(int $teamId, string $deviceId, int $messageId): void
+    {
+        $stmt = Database::get()->prepare(
+            'UPDATE team_devices SET last_message_id = :mid '
+            . 'WHERE team_id = :team_id AND device_id = :device_id '
+            . 'AND last_message_id < :mid2'
+        );
         $stmt->execute([
-            ':team_id'      => $teamId,
-            ':device_id'    => $deviceId,
-            ':name'         => $finalName,
-            ':created_at'   => $now,
-            ':name_u'       => $finalName,
-            ':created_at_u' => $now,
+            ':mid'       => $messageId,
+            ':team_id'   => $teamId,
+            ':device_id' => $deviceId,
+            ':mid2'      => $messageId,
         ]);
     }
 
@@ -115,8 +194,8 @@ final class TeamRepository
     public static function devices(int $teamId): array
     {
         $stmt = Database::get()->prepare(
-            'SELECT device_id, name, created_at FROM team_devices '
-            . 'WHERE team_id = :team_id ORDER BY id ASC'
+            'SELECT device_id, name, model, last_message_id, created_at '
+            . 'FROM team_devices WHERE team_id = :team_id ORDER BY id ASC'
         );
         $stmt->execute([':team_id' => $teamId]);
 
@@ -124,6 +203,9 @@ final class TeamRepository
             return [
                 'device_id'  => (string) $row['device_id'],
                 'name'       => (string) ($row['name'] ?? ''),
+                'model'      => (string) ($row['model'] ?? ''),
+                'first_seen_at' => (string) ($row['created_at'] ?? ''),
+                'last_message_id' => (int) ($row['last_message_id'] ?? 0),
                 'created_at' => (string) ($row['created_at'] ?? ''),
             ];
         }, $stmt->fetchAll(PDO::FETCH_ASSOC));
@@ -148,12 +230,12 @@ final class TeamRepository
      * O nome é do DISPOSITIVO: cada celular da equipe tem o seu (o mapa
      * mostra um marcador por aparelho, com o nome e a cor da equipe).
      */
-    public static function setDeviceName(int $teamId, string $deviceId, string $name): void
+    public static function setDeviceName(int $teamId, string $deviceId, string $name, string $model = ''): void
     {
         $pdo = Database::get();
 
-        // Garante a linha do aparelho (caso ainda não exista).
-        self::addDevice($teamId, $deviceId);
+        // Garante a linha do aparelho (caso ainda não exista) já com o modelo.
+        self::addDevice($teamId, $deviceId, '', $model);
 
         $stmt = $pdo->prepare(
             'UPDATE team_devices SET name = :name '

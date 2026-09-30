@@ -204,6 +204,23 @@ final class Database
             'TINYINT(1) NOT NULL DEFAULT 0'
         );
 
+        // Lista de APARELHOS da equipe: modelo do celular e até qual mensagem
+        // este aparelho já viu (para TODOS os aparelhos receberem os avisos).
+        self::ensureSimpleColumn(
+            $pdo,
+            $driver,
+            'team_devices',
+            'model',
+            'VARCHAR(80) NOT NULL DEFAULT \'\''
+        );
+        self::ensureSimpleColumn(
+            $pdo,
+            $driver,
+            'team_devices',
+            'last_message_id',
+            'INT NOT NULL DEFAULT 0'
+        );
+
         // Migração: o tesouro pode exigir um RESPONSÁVEL ("with_guardian")
         // OU um PROFESSOR ("with_teacher").
         self::ensureSimpleColumn(
@@ -615,6 +632,9 @@ final class Database
         $allowed = [
             'team_locations.device_id' => 'VARCHAR(64) NOT NULL DEFAULT \'\'',
             'team_devices.name'        => 'VARCHAR(60) NOT NULL DEFAULT \'\'',
+            // Lista de aparelhos: modelo + até qual mensagem ele já viu.
+            'team_devices.model'       => 'VARCHAR(80) NOT NULL DEFAULT \'\'',
+            'team_devices.last_message_id' => 'INT NOT NULL DEFAULT 0',
             'treasures.with_guardian'  => 'TINYINT(1) NOT NULL DEFAULT 0',
             // Responsável ou professor.
             'treasures.with_teacher'   => 'TINYINT(1) NOT NULL DEFAULT 0',

@@ -39,6 +39,7 @@ dependencies:
 
   # Geração de QR Code (a aba "Cofre")
   qr_flutter: ^4.1.0
+  device_info_plus: ^13.2.0
 
 dev_dependencies:
   flutter_test:

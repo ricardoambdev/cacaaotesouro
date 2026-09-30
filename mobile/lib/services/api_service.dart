@@ -258,6 +258,7 @@ class ApiService {
   Future<Map<String, dynamic>> teamLogin(
       String username, String password, {String? deviceName}) async {
     final deviceId = await DeviceService().getDeviceId();
+    final deviceModel = await DeviceService().getDeviceModel();
     final response = await http.post(
       Uri.parse('$baseUrl/team/login'),
       headers: {
@@ -268,6 +269,8 @@ class ApiService {
         'username': username,
         'password': password,
         'device_id': deviceId,
+        // Aparelho que entra: fica na lista com nome + modelo + 1º acesso.
+        'model': deviceModel,
         if (deviceName != null && deviceName.isNotEmpty)
           'device_name': deviceName,
       }),
@@ -971,7 +974,10 @@ class ApiService {
         .post(
           Uri.parse('$baseUrl/team/name'),
           headers: headers,
-          body: json.encode({'name': name}),
+          body: json.encode({
+            'name': name,
+            'model': await DeviceService().getDeviceModel(),
+          }),
         )
         .timeout(requestTimeout);
 

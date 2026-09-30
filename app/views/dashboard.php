@@ -667,6 +667,59 @@ $colorMap = [
             </div>
             <?php endforeach; ?>
 
+            <!-- ==================================================
+                 APARELHOS DAS EQUIPES (nome, modelo, 1º acesso)
+                 ================================================== -->
+            <div class="db-card">
+                <div class="db-card-header">
+                    <div class="db-card-dot" style="background:#22C55E;color:#22C55E"></div>
+                    <div class="db-card-info">
+                        <div class="db-card-name">Aparelhos das equipes</div>
+                        <div class="db-card-status offline">
+                            <?= count($devices ?? []) ?> aparelho(s) já entraram
+                        </div>
+                    </div>
+                </div>
+
+                <?php if (($devices ?? []) === []): ?>
+                    <p style="color:rgba(247,236,212,0.5);font-size:.85rem;margin:0;">
+                        Nenhum aparelho entrou ainda.
+                    </p>
+                <?php else: ?>
+                    <div style="overflow-x:auto;">
+                        <table style="width:100%;border-collapse:collapse;font-size:.82rem;">
+                            <thead>
+                                <tr style="color:rgba(247,236,212,0.45);text-align:left;">
+                                    <th style="padding:6px 8px;">Equipe</th>
+                                    <th style="padding:6px 8px;">Nome</th>
+                                    <th style="padding:6px 8px;">Modelo</th>
+                                    <th style="padding:6px 8px;">1º acesso</th>
+                                    <th style="padding:6px 8px;">Última vez</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php foreach ($devices as $dev): ?>
+                                    <tr style="border-top:1px solid rgba(247,236,212,0.07);color:#f7ecd4;">
+                                        <td style="padding:6px 8px;white-space:nowrap;color:<?= $dev['color'] === 'laranja' ? '#F97316' : '#94a3b8' ?>;">
+                                            <?= e($dev['team']) ?>
+                                        </td>
+                                        <td style="padding:6px 8px;font-weight:600;"><?= e($dev['name']) ?></td>
+                                        <td style="padding:6px 8px;color:rgba(247,236,212,0.7);"><?= e($dev['model']) ?></td>
+                                        <td style="padding:6px 8px;color:rgba(247,236,212,0.6);white-space:nowrap;"
+                                            data-ts="<?= e($dev['first_seen']) ?>">
+                                            <?= e($dev['first_seen']) ?>
+                                        </td>
+                                        <td style="padding:6px 8px;color:rgba(247,236,212,0.6);white-space:nowrap;">
+                                            <?= $dev['last_seen'] !== '' ? e($dev['last_seen']) : '—' ?>
+                                        </td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                <?php endif; ?>
+            </div>
+
         </div>
     </div>
 </div>

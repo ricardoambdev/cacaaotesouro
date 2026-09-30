@@ -81,6 +81,18 @@ Serve tanto para a organização quanto para explicar às equipes.
   - e **avançam sozinhos** para o próximo tesouro.
 - **Todos** os aparelhos da equipe aparecem no mapa, **cada um com o seu nome**.
 
+### 4.5 📱 Lista de APARELHOS da equipe
+
+A mesma equipe pode entrar em **vários celulares**. Cada aparelho entra na lista
+com: **nome** (escolhido pela equipe), **modelo do celular** e a **hora do
+primeiro acesso**. A lista aparece no **painel** (card *"Aparelhos das equipes"*)
+e no telão.
+
+**Mensagens do admin vão para TODOS os aparelhos da equipe.** Cada aparelho tem o
+seu próprio controle de leitura: quando um lê, a mensagem **continua aparecendo**
+nos outros. Um aparelho que **entra depois** de uma mensagem **não recebe as
+antigas** (só as enviadas a partir da entrada dele).
+
 ### 4.4 👨‍👩‍👧👩‍🏫 Tesouro que precisa de um RESPONSÁVEL ou de um PROFESSOR
 Alguns tesouros podem ser configurados (no painel, ao editar o tesouro) para
 serem encontrados **na companhia dos responsáveis**.
