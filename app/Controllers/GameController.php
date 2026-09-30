@@ -171,6 +171,75 @@ final class GameController
     }
 
     // ------------------------------------------------------------------
+    // Anular o Desafio Final (POST /desafio-final/anular)
+    // ------------------------------------------------------------------
+
+    /**
+     * ANULA o Desafio Final: devolve a equipe que acertou para o jogo (tira os
+     * pontos do desafio final), limpa a vencedora e deixa o Desafio Final
+     * PAUSADO — as duas equipes voltam para o desafio e ficam esperando a
+     * liberação da organização.
+     */
+    public function resetFinalChallenge(Request $request, Response $response): Response
+    {
+        // Quem venceu: `winnerTeamId` e, se não houver, a equipe marcada como
+        // finished (caso o jogo tenha sido encerrado por outro caminho).
+        $winnerId = (int) SettingsRepository::get('winnerTeamId', '0');
+
+        if ($winnerId === 0) {
+            foreach (TeamRepository::all() as $team) {
+                if ((string) ($team['status'] ?? 'playing') === 'finished') {
+                    $winnerId = (int) $team['id'];
+                    break;
+                }
+            }
+        }
+
+        $removidos = 0;
+        $nome = '';
+
+        if ($winnerId > 0) {
+            $winner = TeamRepository::find($winnerId);
+
+            if ($winner !== null) {
+                $nome = (string) $winner['name'];
+
+                // Tira os pontos que a equipe ganhou pelo desafio final.
+                $pontos = GameRepository::lastFinalChallengePoints($winnerId);
+
+                if ($pontos > 0) {
+                    TeamRepository::addPoints($winnerId, -$pontos);
+                    GameRepository::logPoints($winnerId, -$pontos, 'desafio final anulado');
+                    $removidos = $pontos;
+                }
+
+                // Volta a equipe para "jogando" (ela volta ao desafio final).
+                TeamRepository::markPlaying($winnerId);
+            }
+        }
+
+        // O jogo volta a estar em andamento, sem vencedor, e o Desafio Final
+        // fica PAUSADO: as equipes veem "Aguardando a liberação...".
+        SettingsRepository::update([
+            'winnerTeamId' => '',
+            'gameActive'   => '1',
+            'finalBlocked' => '1',
+            'gameStatus'   => 'playing',
+        ]);
+
+        $msg = 'Desafio final ANULADO. As duas equipes voltaram para o desafio.';
+
+        if ($nome !== '') {
+            $msg .= ' ' . $nome . ' perdeu ' . $removidos . ' pontos.';
+        }
+
+        $msg .= ' O desafio ficou BLOQUEADO (aguardando liberação).';
+
+        flash_set('success', $msg);
+        redirect('/desafio-final');
+    }
+
+    // ------------------------------------------------------------------
     // Estado geral do jogo (GET /jogo)
     // ------------------------------------------------------------------
 

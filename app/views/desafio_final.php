@@ -102,3 +102,35 @@ $finalWrongPenalty = $finalWrongPenalty ?? '20';
         <button type="submit" class="btn btn-primary" style="width: auto;">Salvar desafio final</button>
     </div>
 </form>
+
+<!-- ============================================================
+     ANULAR O DESAFIO FINAL
+     ============================================================ -->
+<div class="settings-card" style="border:1px solid rgba(239,68,68,0.35); background:rgba(239,68,68,0.05);">
+    <h2 class="settings-card-title">
+        <?= icon('restart_alt', 20) ?>
+        Anular o desafio final
+    </h2>
+
+    <p class="form-help-text" style="margin:0 0 14px;">
+        Use quando a equipe acertou mas o desafio precisa ser <strong>refeito</strong>.
+        Ao anular:
+    </p>
+
+    <ul style="color:rgba(247,236,212,0.75); font-size:.88rem; line-height:1.9; margin:0 0 16px; padding-left:20px;">
+        <li>a equipe que acertou <strong>volta a jogar</strong>; no lugar dela <strong>volta o desafio final</strong>;</li>
+        <li>os <strong>pontos do desafio final</strong> são <strong>retirados</strong> da equipe que acertou;</li>
+        <li>a equipe vencedora é <strong>limpa</strong> e o jogo volta a estar em andamento;</li>
+        <li>o desafio final fica <strong style="color:#EF4444;">BLOQUEADO</strong> —
+            as duas equipes ficam esperando você liberar de novo.</li>
+    </ul>
+
+    <form method="post" action="/desafio-final/anular"
+          data-confirm="Anular o desafio final?&#10;&#10;A equipe que acertou volta a jogar, os pontos do desafio final serão RETIRADOS dela e o desafio ficará BLOQUEADO para as duas equipes (aguardando você liberar).&#10;&#10;Continuar?">
+        <?= csrf_field() ?>
+        <button type="submit" class="btn btn-danger" style="width:auto;">
+            <?= icon('restart_alt', 18) ?>
+            Anular o desafio final
+        </button>
+    </form>
+</div>

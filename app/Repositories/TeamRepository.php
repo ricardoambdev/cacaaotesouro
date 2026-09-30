@@ -513,6 +513,21 @@ final class TeamRepository
     /**
      * Marca a equipe como finalizada (status 'finished' + horário).
      */
+    /**
+     * Volta a equipe para "jogando" (usado quando o desafio final é anulado).
+     */
+    public static function markPlaying(int $id): void
+    {
+        $stmt = Database::get()->prepare(
+            "UPDATE teams SET status = 'playing', finished_at = NULL, updated_at = :updated_at "
+            . 'WHERE id = :id'
+        );
+        $stmt->execute([
+            ':updated_at' => date('Y-m-d H:i:s'),
+            ':id'         => $id,
+        ]);
+    }
+
     public static function markFinished(int $id, string $when): void
     {
         $stmt = Database::get()->prepare(

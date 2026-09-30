@@ -145,6 +145,8 @@ $app->get('/regras', [GameController::class, 'rules'])->add($mw['authRequired'])
 $app->post('/regras', [GameController::class, 'rules'])->add($mw['authRequired']);
 $app->get('/desafio-final', [GameController::class, 'finalChallenge'])->add($mw['authRequired']);
 $app->post('/desafio-final', [GameController::class, 'finalChallenge'])->add($mw['authRequired']);
+// Anular o desafio final: devolve as equipes ao desafio e tira os pontos.
+$app->post('/desafio-final/anular', [GameController::class, 'resetFinalChallenge'])->add($mw['authRequired']);
 
 // Cofre da gincana — CONFIGURAÇÃO no painel (a página pública é /cofre)
 // QR CODES FALSOS (iscas) — mensagens que não identificam tesouros.

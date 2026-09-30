@@ -335,6 +335,20 @@ Quando o jogo encerra, o **telão** mostra automaticamente uma tela cheia com
 O operador pode fechar no **✕** (ou **Esc**) para voltar ao placar — a tela só
 reaparece se o vencedor mudar.
 
+### 10.5 🔄 Anular o Desafio Final
+
+Na página **Desafio Final** existe o botão **"Anular o desafio final"** (vermelho,
+com confirmação). Use quando a equipe acertou mas o desafio precisa ser refeito.
+
+O que ele faz:
+- a equipe que acertou **volta a jogar** (volta para o desafio final);
+- os **pontos do desafio final** são **retirados** dela (exatamente os pontos que
+  ela ganhou ao acertar, registrados no histórico de pontos);
+- a **equipe vencedora é limpa** e o jogo volta a estar em andamento;
+- o desafio final fica **BLOQUEADO** — as **duas equipes** ficam na tela
+  *"Estamos aguardando a liberação do Desafio Final."* até você liberar de novo
+  (desmarque o bloqueio e salve, ou use o botão "Atualizar" no app).
+
 ---
 
 ## 11. 📺 Telão

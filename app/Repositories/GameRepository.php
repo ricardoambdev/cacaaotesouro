@@ -346,6 +346,23 @@ final class GameRepository
     }
 
     /**
+     * Pontos do DESAFIO FINAL que esta equipe ganhou (o último lançamento
+     * positivo com motivo "desafio final"). Usado para ANULAR o desafio
+     * final e devolver a equipe ao estado anterior.
+     */
+    public static function lastFinalChallengePoints(int $teamId): int
+    {
+        $stmt = Database::get()->prepare(
+            'SELECT delta FROM points_log '
+            . "WHERE team_id = :team_id AND reason = 'desafio final' AND delta > 0 "
+            . 'ORDER BY id DESC LIMIT 1'
+        );
+        $stmt->execute([':team_id' => $teamId]);
+
+        return (int) $stmt->fetchColumn();
+    }
+
+    /**
      * Número de tesouros encontrados (charada correta) por uma equipe.
      */
     public static function foundCount(int $teamId): int
